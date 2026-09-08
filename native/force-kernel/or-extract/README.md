@@ -80,7 +80,7 @@ Done in `or_hex_force.F90` / `or_hex_commons.F`:
 3. Pack `PM`/`MAT_PARAM` LAW2, `GEO`/`IGEO`, `IXS`, `X`/`V`, LBUF `SIG`/`PLA`/`VOL`
 4. Opt-in `WMBD_OR_CALL_S8E=1` → `S8EFORC3`; scatter `-(F11..F38)` into `f_out` (OR FORINT sign)
 5. Unit-cube smoke: `||F||` matches C-mirror `jcvt=1` to ~1e-14 relative after sign flip
-6. CD via koffi: `hexInternalForcesOr` → `wmbd_hex_internal_forces_or_pthread` (64 MiB stack; Node JS thread is too small for S8E MVSIZ locals) with per-element SMSTR/OFF cache
+6. CD via koffi: `hexInternalForcesOr` → `wmbd_hex_internal_forces_or_pthread` (persistent 64 MiB-stack worker; Node JS thread is too small for S8E MVSIZ locals) with per-element SMSTR/OFF cache. One-shot create/join was ~100× too slow for production Taylor.
 7. **GP pack/scatter order** must use OR’s `IP = IR + ((IS-1)+(IT-1)*NPTS)*NPTR` (ξ / IR fastest = `RADIOSS_GAUSS`). Nesting `IR→IS→IT` with `ip++` permutes state and blew up Rf / collapsed CFL; fixed.
 8. **MAT_PARAM / PM** match `hm_read_mat02_jc` (IFORM=0 JC, ICC=1, VP=2, EPS0=1, PMIN=−EP20).
 9. **`hist_io[32]`** persists LBUF EINT/EPSD/QVIS/RHO per element through koffi (shared ELBUF otherwise leaks across hexes).

@@ -5,7 +5,13 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 OR_SRC="${OR_SRC:-/tmp/OpenRadioss-src}"
-CBDIR="$OR_SRC/engine/cbuild_engine_linux64_gf"
+if [[ -z "${CBDIR:-}" ]]; then
+  if [[ -f "$OR_SRC/engine/cbuild_engine_linux64_gf_h8c_lib/CMakeFiles/libor_h8c.dir/objects1.rsp" ]]; then
+    CBDIR="$OR_SRC/engine/cbuild_engine_linux64_gf_h8c_lib"
+  else
+    CBDIR="$OR_SRC/engine/cbuild_engine_linux64_gf"
+  fi
+fi
 OUT_DIR="${OUT_DIR:-$ROOT/build}"
 MODDIR="$CBDIR/CMakeFiles/modules"
 
