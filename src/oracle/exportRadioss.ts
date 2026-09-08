@@ -63,7 +63,7 @@ Taylor bar OFHC-like J2 linear hardening
 /SPMD
          0         1                   0                   1
 /DEF_SOLID
-        17         0                   0                                       0
+        17         4                   0         1                   0         0         0         1
 /MAT/PLAS_JOHNS/1
 taylor_copper
 ${f20(mat.density)}${f20(0)}
@@ -75,7 +75,7 @@ ${f20(0)}${f20(0)}${f20(0)}${f20(0)}
 ${nodes.join("\n")}
 /PROP/SOLID/1
 taylor_hex_full
-${i10(17)}${i10(0)}${i10(0)}${i10(0)}${i10(0)}${i10(0)}${i10(0)}${i10(0)}${i10(0)}
+${i10(17)}${i10(4)}${i10(0)}${i10(1)}${i10(0)}${i10(0)}${i10(0)}${i10(1)}${i10(0)}
 ${f20(1e-20)}${f20(1e-21)}
 ${f20(0)}
 /PART/1
@@ -114,7 +114,7 @@ ${f20(0)}${f20(controls.endTime)}
 ${f20(model.output.historyInterval)}
 /PRINT/-1/100
 /MON/ON
-/PARITH/ON
+/PARITH/OFF
 /VERS/2023
 `;
 
