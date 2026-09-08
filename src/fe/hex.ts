@@ -480,7 +480,7 @@ export function hexInternalForces(args: {
   }
 
   const cd = dilatationalWaveSpeed(mat);
-  const { mu, bulk } = lame(mat);
+  const { mu, bulk } = lame(mat.young, mat.poisson);
   // Radioss mqviscb / m2law: SSP = sqrt((4/3 G + K)/ρ₀)
   const ssp = Math.sqrt(((4 / 3) * mu + bulk) / mat.density);
   let vol0Sum = 0;
