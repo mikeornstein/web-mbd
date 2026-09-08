@@ -5,7 +5,7 @@ import {
   j2Update,
   type J2State,
 } from "./materialJ2.js";
-import { mat3Det, mat3Inverse, mat3Mul, mat3Transpose } from "./math3.js";
+import { mat3Det, mat3Inverse } from "./math3.js";
 
 const G = 1 / Math.sqrt(3);
 const GAUSS = [-G, G];
@@ -88,12 +88,25 @@ export function hexLumpedNodalMass(x0: Float64Array, density: number): Float64Ar
   return Float64Array.from({ length: 8 }, () => share);
 }
 
-export function createHexGpStates(): J2State[] {
-  return Array.from({ length: 8 }, () => createJ2State());
+export function createHexGpStates(x0?: Float64Array): J2State[] {
+  if (!x0) return Array.from({ length: 8 }, () => createJ2State());
+  return Array.from({ length: 8 }, (_, gp) => {
+    const detJ = mat3Det(jacobian(SHAPES[gp]!.dN, x0));
+    return createJ2State(detJ * W1 * W1 * W1);
+  });
 }
 
 export function characteristicLength(x0: Float64Array): number {
   return Math.cbrt(Math.abs(hexVolume(x0)));
+}
+
+export interface HexForceOptions {
+  /** Mean-dilatation / constant-pressure (Radioss Icpre=1). Default true. */
+  constantPressure?: boolean;
+  /** Quadratic bulk viscosity qa (Radioss). Default 0. */
+  bulkViscQuad?: number;
+  /** Linear bulk viscosity qb (Radioss). Default 0. */
+  bulkViscLin?: number;
 }
 
 /** Returns ∫σ:D dV dt. `fOut` accumulates +∫Bᵀσ dV. */
@@ -104,18 +117,32 @@ export function hexInternalForces(args: {
   mat: MaterialJ2Linear;
   dt: number;
   fOut: Float64Array;
+  options?: HexForceOptions;
 }): number {
   const { x, v, states, mat, dt, fOut } = args;
+  const constantPressure = args.options?.constantPressure !== false;
+  const qa = args.options?.bulkViscQuad ?? 0;
+  const qb = args.options?.bulkViscLin ?? 0;
   fOut.fill(0);
   let dU = 0;
+
+  type GpCache = {
+    detJ: number;
+    gN: number[][];
+    L: number[];
+    d: Float64Array;
+    vol: number;
+    q: number;
+  };
+  const cache: GpCache[] = [];
+  let volSum = 0;
 
   for (let gp = 0; gp < 8; gp++) {
     const { dN } = SHAPES[gp]!;
     const J = jacobian(dN, x);
     const detJ = mat3Det(J);
     if (detJ <= 0) throw new Error("hex inversion");
-    const Jinv = mat3Inverse(J);
-    const gN = gradN(dN, Jinv);
+    const gN = gradN(dN, mat3Inverse(J));
 
     const L: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     for (let a = 0; a < 8; a++) {
@@ -144,52 +171,72 @@ export function hexInternalForces(args: {
     d[4] = 0.5 * (L[5]! + L[7]!);
     d[5] = 0.5 * (L[2]! + L[6]!);
 
-    // Wilkins-style artificial bulk viscosity (stabilize shocks / prevent inversion).
+    const vol = detJ * W1 * W1 * W1;
+    volSum += vol;
+    cache.push({ detJ, gN, L, d, vol, q: 0 });
+  }
+
+  const cd = dilatationalWaveSpeed(mat);
+
+  for (let gp = 0; gp < 8; gp++) {
+    const gpCache = cache[gp]!;
+    const { detJ, L, d, vol } = gpCache;
+
+    // Radioss H8C (Icpre=1) does NOT replace GP strain rates with mean dilatation;
+    // constant pressure is applied in the force assembly (s8efmoy3 + s8zfintp3).
     const trD = d[0]! + d[1]! + d[2]!;
     const h = Math.cbrt(Math.abs(detJ));
-    const cd = dilatationalWaveSpeed(mat);
-    const q =
-      trD < 0
-        ? mat.density * (1.5 * h * trD) ** 2 + 0.06 * mat.density * cd * h * -trD
-        : 0;
+    gpCache.q =
+      trD < 0 ? mat.density * ((qa * h * trD) ** 2 + qb * cd * h * -trD) : 0;
 
-    const W = [
-      0,
-      0.5 * (L[1]! - L[3]!),
-      0.5 * (L[2]! - L[6]!),
-      0.5 * (L[3]! - L[1]!),
-      0,
-      0.5 * (L[5]! - L[7]!),
-      0.5 * (L[6]! - L[2]!),
-      0.5 * (L[7]! - L[5]!),
-      0,
-    ];
-
+    // Radioss SROTA3 Jaumann (Iframe=1 / JCVT=0): Wα = (dt/2)*(∂vβ/∂xγ − ∂vγ/∂xβ)
+    // matches ω_α * dt, applied to Voigt stress with engineering shear convention.
+    const wzz = 0.5 * dt * (L[3]! - L[1]!); // DT1D2*(DYX-DXY)
+    const wyy = 0.5 * dt * (L[2]! - L[6]!); // DT1D2*(DXZ-DZX)
+    const wxx = 0.5 * dt * (L[7]! - L[5]!); // DT1D2*(DZY-DYZ)
     const state = states[gp]!;
     const sigma = state.stress;
-    const sm = [
-      sigma[0]!,
-      sigma[3]!,
-      sigma[5]!,
-      sigma[3]!,
-      sigma[1]!,
-      sigma[4]!,
-      sigma[5]!,
-      sigma[4]!,
-      sigma[2]!,
-    ];
-    const Ws = mat3Mul(W, sm);
-    const sWt = mat3Mul(sm, mat3Transpose(W));
-    sigma[0]! += dt * (Ws[0]! + sWt[0]!);
-    sigma[1]! += dt * (Ws[4]! + sWt[4]!);
-    sigma[2]! += dt * (Ws[8]! + sWt[8]!);
-    sigma[3]! += dt * (Ws[1]! + sWt[1]!);
-    sigma[4]! += dt * (Ws[5]! + sWt[5]!);
-    sigma[5]! += dt * (Ws[2]! + sWt[2]!);
+    const s1 = sigma[0]!,
+      s2 = sigma[1]!,
+      s3 = sigma[2]!,
+      s4 = sigma[3]!,
+      s5 = sigma[4]!,
+      s6 = sigma[5]!;
+    const q1 = 2 * s4 * wzz;
+    const q2 = 2 * s6 * wyy;
+    const q3 = 2 * s5 * wxx;
+    sigma[0] = s1 - q1 + q2;
+    sigma[1] = s2 + q1 - q3;
+    sigma[2] = s3 - q2 + q3;
+    sigma[3] = s4 + wzz * (s1 - s2) + wyy * s5 - wxx * s6;
+    sigma[4] = s5 + wxx * (s2 - s3) + wzz * s6 - wyy * s4;
+    sigma[5] = s6 + wyy * (s3 - s1) + wxx * s4 - wzz * s5;
 
-    j2Update(mat, state, d, dt);
+    j2Update(mat, state, d, dt, vol);
+  }
 
-    // Bulk viscosity contributes to this step's force only — do not bake into history.
+  // Icpre=1: replace per-GP pressure with the volume-weighted element mean.
+  if (constantPressure) {
+    let pVol = 0;
+    for (let gp = 0; gp < 8; gp++) {
+      const sigma = states[gp]!.stress;
+      const p = -(sigma[0]! + sigma[1]! + sigma[2]!) / 3;
+      pVol += p * cache[gp]!.vol;
+    }
+    const pBar = volSum > 0 ? pVol / volSum : 0;
+    for (let gp = 0; gp < 8; gp++) {
+      const sigma = states[gp]!.stress;
+      const p = -(sigma[0]! + sigma[1]! + sigma[2]!) / 3;
+      const dp = pBar - p;
+      sigma[0]! -= dp;
+      sigma[1]! -= dp;
+      sigma[2]! -= dp;
+    }
+  }
+
+  for (let gp = 0; gp < 8; gp++) {
+    const { gN, d, vol, q } = cache[gp]!;
+    const sigma = states[gp]!.stress;
     const s0 = sigma[0]! - q;
     const s1 = sigma[1]! - q;
     const s2 = sigma[2]! - q;
@@ -197,7 +244,6 @@ export function hexInternalForces(args: {
     const s4 = sigma[4]!;
     const s5 = sigma[5]!;
 
-    const vol = detJ * W1 * W1 * W1;
     dU += (s0 * d[0]! + s1 * d[1]! + s2 * d[2]! + 2 * (s3 * d[3]! + s4 * d[4]! + s5 * d[5]!)) * vol * dt;
 
     for (let a = 0; a < 8; a++) {
@@ -209,5 +255,6 @@ export function hexInternalForces(args: {
       fOut[a * 3 + 2]! += (s5 * gx + s4 * gy + s2 * gz) * vol;
     }
   }
+
   return dU;
 }

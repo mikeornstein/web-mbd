@@ -18,7 +18,14 @@ export interface HexMesh {
 export interface RigidWallPlane {
   point: Vec3;
   normal: Vec3;
+  /** Penalty stiffness (used when kind === "penalty"). */
   penalty: number;
+  /**
+   * Contact idealization.
+   * - penalty: soft spring (legacy MVP)
+   * - kinematic: Radioss /RWALL ITIED=0 style (default for Taylor oracle parity)
+   */
+  kind?: "penalty" | "kinematic";
 }
 
 export interface ModelIR {
@@ -41,6 +48,8 @@ export interface ModelIR {
     cfl: number;
     fixedDt?: number;
     maxSteps?: number;
+    /** If true, never early-exit on residual KE (needed for oracle parity). */
+    runToEnd?: boolean;
   };
   output: {
     historyInterval: number;

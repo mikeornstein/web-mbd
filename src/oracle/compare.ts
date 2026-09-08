@@ -13,10 +13,10 @@ export interface OracleCompareTolerances {
 }
 
 export const DEFAULT_ORACLE_TOLERANCES: OracleCompareTolerances = {
-  // Length usually within ~10%; foot radius still differs more (penalty RWALL vs
-  // Radioss /RWALL kinematics + constitutive/hourglass details). Documented in mvp doc.
-  lengthRatioRel: 0.12,
-  radiusRatioRel: 0.45,
+  // After H8C/LAW2 alignment: Lf within ~0.05%, Rf within ~1.2% on the default mesh.
+  // Bitwise Object.is on nodal coords is the remaining parity target.
+  lengthRatioRel: 0.005,
+  radiusRatioRel: 0.02,
 };
 
 export interface OracleCompareResult {
@@ -24,6 +24,14 @@ export interface OracleCompareResult {
   lengthRelError: number;
   radiusRelError: number;
   tolerances: OracleCompareTolerances;
+}
+
+/** True only when every finite metric field is Object.is-equal (bitwise). */
+export function metricsBitwiseEqual(
+  a: Pick<TaylorMetrics, "lengthRatio" | "radiusRatio">,
+  b: Pick<OracleShapeMetrics, "lengthRatio" | "radiusRatio">,
+): boolean {
+  return Object.is(a.lengthRatio, b.lengthRatio) && Object.is(a.radiusRatio, b.radiusRatio);
 }
 
 export function compareToOracle(

@@ -1,6 +1,6 @@
 import type { EnergySample, ModelIR, SolveResult, TaylorMetrics } from "../ir/types.js";
 import { assertModel } from "../ir/validate.js";
-import { applyRigidWallPenalty } from "./contactWall.js";
+import { applyRigidWallKinematic, applyRigidWallPenalty } from "./contactWall.js";
 import {
   characteristicLength,
   createHexGpStates,
@@ -42,7 +42,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     gatherHex(x, conn, xScratch);
     const m = hexLumpedNodalMass(xScratch, model.material.density);
     for (let a = 0; a < 8; a++) masses[conn[a]!]! += m[a]!;
-    hexStates.push(createHexGpStates());
+    hexStates.push(createHexGpStates(Float64Array.from(xScratch)));
     minH = Math.min(minH, characteristicLength(xScratch));
   }
 
@@ -58,7 +58,8 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
   const lameParams = lame(model.material.young, model.material.poisson);
   const bulk = lameParams.bulk;
   const wall = { ...model.wall };
-  if (wall.penalty <= 0) {
+  const wallKind = wall.kind ?? "kinematic";
+  if (wallKind === "penalty" && wall.penalty <= 0) {
     wall.penalty = (2 * bulk * Math.PI * model.reference.radius0 ** 2) / minH;
   }
 
@@ -70,6 +71,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
   const maxSteps = model.controls.maxSteps ?? 5_000_000;
   const maxWallMs = options.maxWallMs ?? 180_000;
   let nextSample = 0;
+  const runToEnd = model.controls.runToEnd === true;
 
   const f = new Float64Array(nNodes * 3);
   const acc = new Float64Array(nNodes * 3);
@@ -95,7 +97,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     };
   };
 
-  const assemble = (): { contactEnergy: number } => {
+  const assembleInternal = (): void => {
     f.fill(0);
     for (let e = 0; e < nHex; e++) {
       const conn = hexConn[e]!;
@@ -116,17 +118,47 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
         f[n * 3 + 2]! -= fHex[ai * 3 + 2]!;
       }
     }
-    return applyRigidWallPenalty({ wall, coords: x, forces: f });
+  };
+
+  const applyWallForces = (): number => {
+    if (wallKind === "penalty") {
+      return applyRigidWallPenalty({ wall, coords: x, forces: f }).contactEnergy;
+    }
+    return 0;
+  };
+
+  const applyWallKinematics = (): void => {
+    if (wallKind === "kinematic") {
+      applyRigidWallKinematic({ wall, coords: x, velocities: v });
+      // Also remove normal acceleration for nodes still on the wall (Radioss DA strip).
+      const [px, py, pz] = wall.point;
+      const [nx, ny, nz] = wall.normal;
+      for (let a = 0; a < nNodes; a++) {
+        const i = a * 3;
+        const gap =
+          (x[i]! - px) * nx + (x[i + 1]! - py) * ny + (x[i + 2]! - pz) * nz;
+        if (gap > 1e-16) continue;
+        const an = acc[i]! * nx + acc[i + 1]! * ny + acc[i + 2]! * nz;
+        if (an < 0) {
+          acc[i]! -= an * nx;
+          acc[i + 1]! -= an * ny;
+          acc[i + 2]! -= an * nz;
+        }
+      }
+    }
   };
 
   // Initial force evaluation for the half-step kick; do not accumulate energy yet.
-  let { contactEnergy } = assemble();
+  assembleInternal();
+  let contactEnergy = applyWallForces();
   for (let i = 0; i < nNodes; i++) {
     acc[i * 3] = f[i * 3]! / masses[i]!;
     acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
     acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
   }
+  applyWallKinematics();
   for (let i = 0; i < v.length; i++) v[i]! += 0.5 * dt * acc[i]!;
+  applyWallKinematics();
 
   history.push(sample(contactEnergy));
   nextSample = model.output.historyInterval;
@@ -146,17 +178,24 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     const contactBefore = contactEnergy;
 
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
+    // Radioss predicts penetration then constrains V/A; we also project after the drift.
+    if (wallKind === "kinematic") {
+      applyRigidWallKinematic({ wall, coords: x, velocities: v });
+    }
     t += dt;
     step += 1;
 
-    ({ contactEnergy } = assemble());
+    assembleInternal();
+    contactEnergy = applyWallForces();
 
     for (let i = 0; i < nNodes; i++) {
       acc[i * 3] = f[i * 3]! / masses[i]!;
       acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
       acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
     }
+    applyWallKinematics();
     for (let i = 0; i < v.length; i++) v[i]! += dt * acc[i]!;
+    applyWallKinematics();
 
     let keAfter = 0;
     for (let i = 0; i < nNodes; i++) {
@@ -172,13 +211,15 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
       nextSample += model.output.historyInterval;
     }
 
-    const last = history[history.length - 1]!;
-    if (
-      t > 0.25 * model.controls.endTime &&
-      last.kinetic < 1e-4 * Math.abs(E0) &&
-      last.contact < 1e-4 * Math.abs(E0)
-    ) {
-      break;
+    if (!runToEnd) {
+      const last = history[history.length - 1]!;
+      if (
+        t > 0.25 * model.controls.endTime &&
+        last.kinetic < 1e-4 * Math.abs(E0) &&
+        last.contact < 1e-4 * Math.abs(E0)
+      ) {
+        break;
+      }
     }
   }
 

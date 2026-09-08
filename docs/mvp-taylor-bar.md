@@ -6,10 +6,10 @@ First end-to-end explicit solid model for web-mbd.
 
 - Typed `ModelIR` (nodes, hex mesh, J2 linear hardening, rigid wall, ICs)
 - Explicit central-difference solver (TypeScript / WASM-ready reference path)
-- Full-integration hex + Wilkins bulk viscosity, lumped mass, CFL timestep, energy ledger
+- Full-integration hex aligned toward OpenRadioss H8C (`Isolid=17`, `Icpre=1`, `Iframe=1`, `Ismstr=4`) + LAW2 / PLAS_JOHNS
 - Shape metrics: \(L_f/L_0\), \(R_f/R_0\), axial shortening, max \(|u|\), max \(\bar\varepsilon^p\)
-- Deterministic repeats
-- Tightened quantitative gates + **same-mesh OpenRadioss oracle compare**
+- Deterministic repeats (bitwise-stable self runs)
+- Same-mesh OpenRadioss oracle compare (live via `pnpm oracle:taylor`)
 
 ## Run
 
@@ -35,11 +35,12 @@ pnpm oracle:taylor
 | ρ | 8930 kg/m³ |
 | Default mesh | structured square→disk hex, **nSide=6, nZ=16** (576 hexes) — **not Gmsh** |
 | CFL | 0.2 |
+| Wall | kinematic (Radioss `/RWALL` style) |
 
-Acceptance (refined mesh):
+Acceptance (refined mesh, H8C/LAW2-aligned):
 
-- L_f / L₀ ∈ [0.59, 0.64]
-- R_f / R₀ ∈ [1.35, 1.55]
+- L_f / L₀ ∈ [0.65, 0.69]
+- R_f / R₀ ∈ [2.15, 2.35]
 - \|energy error\| ≤ 5%
 - max \(\bar\varepsilon^p\) ∈ [0.5, 8]
 - Bitwise-stable metrics across repeated runs
@@ -48,26 +49,26 @@ Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
 | | web-mbd | OpenRadioss | rel. error |
 | --- | --- | --- | --- |
-| L_f / L₀ | ~0.618 | ~0.667 | ~7% |
-| R_f / R₀ | ~1.47 | ~2.23 | ~34% |
+| L_f / L₀ | ~0.6668 | ~0.6666 | ~0.05% |
+| R_f / R₀ | ~2.256 | ~2.232 | ~1.1% |
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
-- \|Δ(L_f/L₀)\| / oracle ≤ 12%
-- \|Δ(R_f/R₀)\| / oracle ≤ 45%
+- \|Δ(L_f/L₀)\| / oracle ≤ 0.5%
+- \|Δ(R_f/R₀)\| / oracle ≤ 2%
 
-Foot-radius disagreement is expected for now: penalty rigid wall + hypoelastic J2 vs Radioss `/RWALL` + `PLAS_JOHNS` (n=1) on `Isolid=17`. Length agrees much more closely. Tighten radius further as contact/HG align.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~1% foot radius / ~0.09 mm max nearest-neighbor nodal gap after aligning kinematic wall, mean-pressure Icpre, SROTA3 Jaumann, and LAW2 bulk EOS pressure \(P=K(V_0/V-1)\). Remaining work: Radioss H8C selective RI force path (`s8efint3`/`s8zfintp3`), adaptive `/DT`, and contact timing.
 
 ## Element / mesh notes
 
-- **Element:** 8-node hex, trilinear, **2×2×2 Gauss**, updated Lagrangian, Jaumann stress rate, hypoelastic J2 return map, artificial bulk viscosity.
+- **Element:** 8-node hex, trilinear, **2×2×2 Gauss**, updated Lagrangian, Radioss SROTA3 Jaumann, LAW2-style hypoelastic J2 + bulk EOS pressure, mean-pressure Icpre, kinematic rigid wall.
 - **Mesh:** `src/mesh/cylinderHex.ts` structured generator (square mapped to disk, extruded in Z). Gmsh is still future work.
 
 ## Layout
 
 ```
 src/ir/           Model IR + validation
-src/fe/           hex, J2, rigid wall, explicit solver
+src/fe/           hex, J2/LAW2, rigid wall, explicit solver
 src/mesh/         cylinder hex generator
 src/fixtures/     Taylor bar model
 src/research/     stock models from research notes
@@ -78,11 +79,3 @@ src/cli/          headless runner + OpenRadioss driver
 tests/            vitest golden + determinism + oracle pin
 e2e/              Playwright workbench proof
 ```
-
-## Browser workbench
-
-The Vite app loads this fixture from the research catalog (`src/research/catalog.ts`), shows undeformed mesh + model tree in **Pre**, runs `solveExplicit` in **Solve**, and plots deformed mesh + energy history + displacement/plastic-strain metrics in **Post**. Prove with `pnpm test:e2e`.
-
-## Out of scope (still)
-
-WebGPU path, shells/FMBD, STEP/Gmsh, deck import, mass scaling. Live OpenRadioss in default CI (pin is checked offline).

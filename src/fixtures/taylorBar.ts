@@ -54,7 +54,8 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
     wall: {
       point: [0, 0, 0],
       normal: [0, 0, 1],
-      penalty: 0, // solver default from bulk modulus
+      penalty: 0,
+      kind: "kinematic",
     },
     initialVelocity: [0, 0, -speed],
     reference: { length0, radius0 },
@@ -62,6 +63,7 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
       endTime: 80e-6,
       cfl: 0.2,
       maxSteps: 2_000_000,
+      runToEnd: true,
     },
     output: {
       historyInterval: 2e-6,
@@ -70,13 +72,13 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
 }
 
 /**
- * Tightened Layer-1 bands for the refined default mesh (6×6×16 hexes, CFL 0.2).
- * Absolute bands are centered on the web-mbd solution; OpenRadioss same-mesh
- * compare lives in `src/oracle/` (foot flare still differs by contact/formulation).
+ * Layer-1 bands for the refined default mesh (6×6×16 hexes, CFL 0.2) after
+ * aligning to Radioss H8C / LAW2 (kinematic RWALL, Icpre mean pressure, M2LAW
+ * bulk EOS pressure). Shape sits next to the same-mesh OpenRadioss oracle.
  */
 export const TAYLOR_ACCEPTANCE = {
-  lengthRatio: { min: 0.59, max: 0.64 },
-  radiusRatio: { min: 1.35, max: 1.55 },
+  lengthRatio: { min: 0.65, max: 0.69 },
+  radiusRatio: { min: 2.15, max: 2.35 },
   energyErrorPctAbsMax: 5,
   maxEqPlasticStrain: { min: 0.5, max: 8 },
 } as const;

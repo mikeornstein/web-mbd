@@ -21,12 +21,18 @@ POINTS 5 float
   });
 
   it("compares relative shape errors against tolerances", () => {
-    const cmp = compareToOracle(
+    const near = compareToOracle(
+      { lengthRatio: 0.6668, radiusRatio: 2.256 },
+      { lengthRatio: 0.6666, radiusRatio: 2.232 },
+    );
+    expect(near.lengthRelError).toBeLessThan(0.005);
+    expect(near.radiusRelError).toBeLessThan(0.02);
+    expect(near.ok).toBe(true);
+
+    const far = compareToOracle(
       { lengthRatio: 0.62, radiusRatio: 1.5 },
       { lengthRatio: 0.67, radiusRatio: 2.2 },
     );
-    expect(cmp.lengthRelError).toBeLessThan(0.12);
-    expect(cmp.radiusRelError).toBeLessThan(0.45);
-    expect(cmp.ok).toBe(true);
+    expect(far.ok).toBe(false);
   });
 });
