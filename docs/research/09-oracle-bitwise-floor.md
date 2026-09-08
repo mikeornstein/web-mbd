@@ -162,12 +162,30 @@ Live engine packs **NEL=min(128,NUMELS)** into one `S8EFORC3` (`forint.F` /
 | 1–2 | Object.is | Object.is | Object.is | Object.is |
 | ≥3 | false (2 dofs, 1 ulp) | false (8 dofs, 1 ulp) | false (8 dofs, **same**) | **Object.is** |
 
-**Conclusion:** NEL=16 group evaluation is bit-identical to sixteen NEL=1
-calls on this mesh — the remaining few-ulp floor vs live is **not** explained
-by MVSIZ packet width alone. Suspect live-only differences outside the
-one-group extract (starter IXS/group ordering, IFRAME/JCVT effective state,
-wall/DT bookkeeping, or engine build flags). Production adaptive Object.is
-remains open.
+**NEL=16 ≡ NEL=1** — MVSIZ packet width alone is not the floor.
+
+### Step 2→3 transition (`scripts/step23-divergence-probe.ts`)
+
+Evidence in `docs/research/step23-divergence-probe.json`:
+
+| Check | Result |
+| --- | --- |
+| First-diff nodes (18/20/24/26) | Mid-bar **z=0.0162**, **not** impact face (z=0) |
+| IXS `/BRICK` vs web-mbd hexes | **Exact match** (16 elems) |
+| Lumped mass vs starter TOTAL MASS | **Object.is** (`8.3799498430164e-3`) |
+| **No RWALL** (live starter stripped; web-mbd wall → z=−1e6) @ 3 steps | **TS ↔ live Object.is**; free-flight `X0+V0·t` exact |
+| With RWALL @ 3 steps | TS: 2 dofs / 1 ulp (node 26 x,y); OR: 8 dofs |
+| TS vs OR nodal F @ step 2 (coords still Object.is) | All 135 dofs differ (~1e-9 N) — force noise under wall-driven V |
+
+**Conclusion:** the few-ulp floor is **RWALL-activated FORINT cascade**, not
+MVSIZ, mass, IXS, or CD bookkeeping in free flight. `contactWall.ts` matches
+`rgwall.F` ITIED=0 strip (`V/A −= (·n)n` after UX=X+(V+A·DT12)·DT2 test).
+Next: dump live nodal **A after FORINT** at cycle 3 (engine patch) on the
+shared Object.is (X,V) state from end of cycle 2, and diff against TS/C-mirror —
+that isolates the mismatched force routine under wall-induced nonuniform V.
+OR-ABI remains noisier than TS even with no wall (9×~1e-20 on z).
+
+Production adaptive Object.is remains open.
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.
