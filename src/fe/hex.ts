@@ -123,6 +123,138 @@ export function characteristicLength(x0: Float64Array): number {
   return minEdge;
 }
 
+/** Radioss constant.inc: ZEP3 = 3/10 used in Icpre=1 force splitting. */
+const ZEP3 = 0.3;
+const ONE_OVER_64 = 1 / 64;
+
+/**
+ * Mid-face mean-dilatation operators PXC/PYC/PZC (Radioss `s8ederic3` / `s8zjac_ic`).
+ * Four paired-node weights for diagonals (1,7), (2,8), (3,5), (4,6) — 0-based
+ * (0,6), (1,7), (2,4), (3,5). `det` is the element Jacobian determinant at the
+ * natural-space origin (equals physical volume for a parallelepiped).
+ */
+export function meanDilatationOperators(x: Float64Array): {
+  pxc: [number, number, number, number];
+  pyc: [number, number, number, number];
+  pzc: [number, number, number, number];
+  det: number;
+} {
+  const x1 = x[0]!,
+    y1 = x[1]!,
+    z1 = x[2]!;
+  const x2 = x[3]!,
+    y2 = x[4]!,
+    z2 = x[5]!;
+  const x3 = x[6]!,
+    y3 = x[7]!,
+    z3 = x[8]!;
+  const x4 = x[9]!,
+    y4 = x[10]!,
+    z4 = x[11]!;
+  const x5 = x[12]!,
+    y5 = x[13]!,
+    z5 = x[14]!;
+  const x6 = x[15]!,
+    y6 = x[16]!,
+    z6 = x[17]!;
+  const x7 = x[18]!,
+    y7 = x[19]!,
+    z7 = x[20]!;
+  const x8 = x[21]!,
+    y8 = x[22]!,
+    z8 = x[23]!;
+
+  const x17 = x7 - x1,
+    x28 = x8 - x2,
+    x35 = x5 - x3,
+    x46 = x6 - x4;
+  const y17 = y7 - y1,
+    y28 = y8 - y2,
+    y35 = y5 - y3,
+    y46 = y6 - y4;
+  const z17 = z7 - z1,
+    z28 = z8 - z2,
+    z35 = z5 - z3,
+    z46 = z6 - z4;
+
+  const aj4 = x17 + x28 - x35 - x46;
+  const aj5 = y17 + y28 - y35 - y46;
+  const aj6 = z17 + z28 - z35 - z46;
+  const a17 = x17 + x46,
+    a28 = x28 + x35;
+  const b17 = y17 + y46,
+    b28 = y28 + y35;
+  const c17 = z17 + z46,
+    c28 = z28 + z35;
+  const aj7 = a17 + a28,
+    aj8 = b17 + b28,
+    aj9 = c17 + c28;
+  const aj1 = a17 - a28,
+    aj2 = b17 - b28,
+    aj3 = c17 - c28;
+
+  const jac_59_68 = aj5 * aj9 - aj6 * aj8;
+  const jac_67_49 = aj6 * aj7 - aj4 * aj9;
+  const jac_48_57 = aj4 * aj8 - aj5 * aj7;
+  const jac_38_29 = -aj2 * aj9 + aj3 * aj8;
+  const jac_19_37 = aj1 * aj9 - aj3 * aj7;
+  const jac_27_18 = -aj1 * aj8 + aj2 * aj7;
+  const jac_26_35 = aj2 * aj6 - aj3 * aj5;
+  const jac_34_16 = -aj1 * aj6 + aj3 * aj4;
+  const jac_15_24 = aj1 * aj5 - aj2 * aj4;
+
+  const det = ONE_OVER_64 * (aj1 * jac_59_68 + aj2 * jac_67_49 + aj3 * jac_48_57);
+  const dett = ONE_OVER_64 / Math.max(det, 1e-30);
+
+  const aji1 = dett * jac_59_68;
+  const aji4 = dett * jac_67_49;
+  const aji7 = dett * jac_48_57;
+  const aji2 = dett * jac_38_29;
+  const aji5 = dett * jac_19_37;
+  const aji8 = dett * jac_27_18;
+  const aji3 = dett * jac_26_35;
+  const aji6 = dett * jac_34_16;
+  const aji9 = dett * jac_15_24;
+
+  const aj12 = aji1 - aji2;
+  const aj45 = aji4 - aji5;
+  const aj78 = aji7 - aji8;
+  const aj12p = aji1 + aji2;
+  const aj45p = aji4 + aji5;
+  const aj78p = aji7 + aji8;
+
+  return {
+    pxc: [-aj12p - aji3, aj12 - aji3, aj12p - aji3, -aj12 - aji3],
+    pyc: [-aj45p - aji6, aj45 - aji6, aj45p - aji6, -aj45 - aji6],
+    pzc: [-aj78p - aji9, aj78 - aji9, aj78p - aji9, -aj78 - aji9],
+    det,
+  };
+}
+
+/** Mean dilatation rate from PXC (Radioss `s8edefoc3`). */
+export function meanDilatationRate(
+  pxc: [number, number, number, number],
+  pyc: [number, number, number, number],
+  pzc: [number, number, number, number],
+  v: Float64Array,
+): number {
+  // Pairs (0,6), (1,7), (2,4), (3,5)
+  return (
+    pxc[0]! * (v[0]! - v[18]!) +
+    pxc[1]! * (v[3]! - v[21]!) +
+    pxc[2]! * (v[6]! - v[12]!) +
+    pxc[3]! * (v[9]! - v[15]!) +
+    pyc[0]! * (v[1]! - v[19]!) +
+    pyc[1]! * (v[4]! - v[22]!) +
+    pyc[2]! * (v[7]! - v[13]!) +
+    pyc[3]! * (v[10]! - v[16]!) +
+    pzc[0]! * (v[2]! - v[20]!) +
+    pzc[1]! * (v[5]! - v[23]!) +
+    pzc[2]! * (v[8]! - v[14]!) +
+    pzc[3]! * (v[11]! - v[17]!)
+  );
+}
+
 export interface HexForceOptions {
   /** Mean-dilatation / constant-pressure (Radioss Icpre=1). Default true. */
   constantPressure?: boolean;
@@ -159,6 +291,8 @@ export function hexInternalForces(args: {
   };
   const cache: GpCache[] = [];
   let volSum = 0;
+
+  const pxcOps = constantPressure ? meanDilatationOperators(x) : null;
 
   for (let gp = 0; gp < 8; gp++) {
     const { dN } = SHAPES[gp]!;
@@ -202,6 +336,7 @@ export function hexInternalForces(args: {
   const cd = dilatationalWaveSpeed(mat);
   let vol0Sum = 0;
   for (let gp = 0; gp < 8; gp++) vol0Sum += states[gp]!.vol0;
+  // Element-mean AMU mirrors Radioss constant-pressure EOS; force path uses PXC.
   const amuElem =
     constantPressure && vol0Sum > 0 ? vol0Sum / Math.max(volSum, 1e-30) - 1 : undefined;
 
@@ -209,8 +344,8 @@ export function hexInternalForces(args: {
     const gpCache = cache[gp]!;
     const { detJ, L, d, vol } = gpCache;
 
-    // Radioss H8C (Icpre=1) does NOT replace GP strain rates with mean dilatation;
-    // constant pressure is applied in the force assembly (s8efmoy3 + s8zfintp3).
+    // Radioss H8C (Icpre=1) keeps GP strain rates; mean pressure is selectively
+    // re-assembled via s8efmoy3 (ZEP3) + s8zfintp3 (PXC).
     const trD = d[0]! + d[1]! + d[2]!;
     const h = Math.cbrt(Math.abs(detJ));
     gpCache.q =
@@ -242,17 +377,30 @@ export function hexInternalForces(args: {
     j2Update(mat, state, d, dt, vol, amuElem);
   }
 
+  // Volume-weighted mean pressure (Radioss s8efmoy3 with ICP=1).
+  let pp = 0;
+
   for (let gp = 0; gp < 8; gp++) {
     const { gN, d, vol, q } = cache[gp]!;
     const sigma = states[gp]!.stress;
-    const s0 = sigma[0]! - q;
-    const s1 = sigma[1]! - q;
-    const s2 = sigma[2]! - q;
+    let s0 = sigma[0]! - q;
+    let s1 = sigma[1]! - q;
+    let s2 = sigma[2]! - q;
     const s3 = sigma[3]!;
     const s4 = sigma[4]!;
     const s5 = sigma[5]!;
 
     dU += (s0 * d[0]! + s1 * d[1]! + s2 * d[2]! + 2 * (s3 * d[3]! + s4 * d[4]! + s5 * d[5]!)) * vol * dt;
+
+    if (constantPressure && pxcOps) {
+      // s8efint3 ICP=1: strip ZEP3*tr(σ) at the GP, assemble with standard B;
+      // mean pressure returns through PXC (s8zfintp3) below.
+      const pLoc = ZEP3 * (s0 + s1 + s2);
+      pp += (vol / Math.max(volSum, 1e-30)) * pLoc;
+      s0 -= pLoc;
+      s1 -= pLoc;
+      s2 -= pLoc;
+    }
 
     for (let a = 0; a < 8; a++) {
       const gx = gN[a]![0]!,
@@ -261,6 +409,29 @@ export function hexInternalForces(args: {
       fOut[a * 3]! += (s0 * gx + s3 * gy + s5 * gz) * vol;
       fOut[a * 3 + 1]! += (s3 * gx + s1 * gy + s4 * gz) * vol;
       fOut[a * 3 + 2]! += (s5 * gx + s4 * gy + s2 * gz) * vol;
+    }
+  }
+
+  if (constantPressure && pxcOps) {
+    // s8zfintp3: SP = PP * VOLG; our fOut is +f_int so signs flip vs Radioss F.
+    const { pxc, pyc, pzc } = pxcOps;
+    const sp = pp * volSum;
+    const pairs: [number, number, number][] = [
+      [0, 6, 0],
+      [1, 7, 1],
+      [2, 4, 2],
+      [3, 5, 3],
+    ];
+    for (const [a, b, k] of pairs) {
+      const sx = sp * pxc[k]!;
+      const sy = sp * pyc[k]!;
+      const sz = sp * pzc[k]!;
+      fOut[a * 3]! += sx;
+      fOut[a * 3 + 1]! += sy;
+      fOut[a * 3 + 2]! += sz;
+      fOut[b * 3]! -= sx;
+      fOut[b * 3 + 1]! -= sy;
+      fOut[b * 3 + 2]! -= sz;
     }
   }
 
