@@ -81,8 +81,23 @@ scrub |x|≤1e-18 on both sides before `alignedCoordGap`.
 | 100×Δt / 10 μs | false (~1e-16) | false |
 | 80 μs adaptive CFL | false (~9e-6) | false (~0.16 μm) |
 
-Host float64 removes the E20.13 wall. Remaining production residual is adaptive
-CFL phase (+ OR cycle bookkeeping off-by-one on short fixed-Δt runs).
+Host float64 removes the E20.13 wall. Remaining production residual without a
+shared DT schedule is adaptive CFL phase (~5e-6).
+
+### Live DT schedule replay (patched `ecrit.F`)
+
+Patched engine also writes `TAYLOR_dt.f64bin` each print cycle
+(`int32 NCYCLE` + `float64 TT` + `float64 DT2`). Replaying that schedule in
+web-mbd (`SolveOptions.dtSchedule`) on coarse 2×2×4 @ 80 μs:
+
+| Driver | relLf | relRf | Lf `Object.is` | Rf `Object.is` | aligned max |
+| --- | --- | --- | --- | --- | --- |
+| OR-ABI + live DT | **0** | ~4×10⁻¹⁵ | **true** | false (~2 ulp on R) | ~9×10⁻¹⁷ |
+| TS `jcvt:0` + live DT | ~1×10⁻¹⁵ | ~4×10⁻¹⁵ | false | false | ~6×10⁻¹⁷ |
+
+So the adaptive ~1e-5 gap is almost entirely **DT-phase**, not force formulation.
+Rf still misses `Object.is` by ~2 ulps on max radius; coords similarly.
+See `scripts/replay-or-dt-schedule.ts` and `docs/research/or-patches/ecrit.dt-f64bin.patch`.
 
 ## Shared kernel status (web-mbd)
 

@@ -10,8 +10,8 @@ Patched `stat_node.F` writes a STREAM unformatted sibling of each `.sta`:
 
 ```bash
 # Against OpenRadioss engine source matching the oracle binary:
-#   engine/source/output/sta/stat_node.F
-# See the web-mbd session notes / this folder's `stat_node.f64bin.patch` if present.
+patch -p1 < docs/research/or-patches/stat_node.f64bin.patch   # .f64bin nodes
+patch -p1 < docs/research/or-patches/ecrit.dt-f64bin.patch     # .f64bin DT schedule
 #
 # Build (example):
 cd "$OPENRADIOSS_SRC/engine"
@@ -23,6 +23,7 @@ cp cbuild_engine_linux64_gf/engine_linux64_gf "$OPENRADIOSS_PATH/exec/"
 
 web-mbd prefers `.f64bin` beside the selected endTime `.sta` when present
 (`src/cli/openRadiossRunner.ts`, `coordSource: "f64bin"`).
+Replay live DT with `scripts/replay-or-dt-schedule.ts`.
 
 ## Object.is prerequisites
 
