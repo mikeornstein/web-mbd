@@ -97,7 +97,7 @@ pnpm test:e2e
 pnpm build
 ```
 
-The production site is [GitHub Pages](https://mikeornstein.github.io/web-mbd/). Changes land through pull requests. `main` is protected.
+The production site is [GitHub Pages](https://mikeornstein.github.io/web-mbd/). Changes land through pull requests. `main` is protected. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
