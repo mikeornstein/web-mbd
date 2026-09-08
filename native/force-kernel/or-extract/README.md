@@ -18,6 +18,11 @@ behind the existing `wmbd_hex_internal_forces` ABI so the web-mbd CD loop can
 | Float64 OR state compare (`.sta`) | done (`shapeFromSta`, oracle runner) |
 | OR `s8eforc3`/`m2law` behind ABI | **not linked** — inventory below |
 
+**Note:** stock `engine_linux64_gf` is an ELF `EXEC` (not PIE) and cannot be
+`dlopen`ed (`cannot dynamically load executable`), even though `s8eforc3_` /
+`m2law_` are present unstripped. A shared extract must be **rebuilt** with
+`-fPIC` (option 1 below).
+
 ## Extract options (preferred order)
 
 1. **PIC object archive from engine build** — build `engine_linux64_gf` from
