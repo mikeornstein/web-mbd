@@ -27,13 +27,15 @@ export function applyRigidWallPenalty(args: {
 }
 
 /**
- * OpenRadioss `/RWALL/PLANE` ITIED=0 (slide) kinematic constraint.
+ * OpenRadioss `/RWALL/PLANE` ITIED=0 (slide) kinematic constraint for an
+ * **infinite** plane (`rgwall.F`, ITYP=1).
  *
  * Predicts mid-step motion with Radioss variable-dt factors:
  * `VX = V + A·DT12`, `UX = X + VX·DT2` where `DT12 = ½(DT1+DT2)`.
  * If that prediction penetrates and the relative normal velocity approaches
  * the wall, strip the normal components of V and A. Positions are **not**
- * hard-projected (matches `rgwall.F`).
+ * hard-projected. (Finite-plane `rgwalp.F` adds a `DP0DT` penetration
+ * velocity correction — not used for this infinite wall.)
  */
 export function applyRigidWallKinematic(args: {
   wall: RigidWallPlane;

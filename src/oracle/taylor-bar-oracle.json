@@ -21,12 +21,12 @@
     "lengthRelError": 0.00000403604971710483,
     "radiusRelError": 0.000005116098346505013,
     "tolerances": {
-      "lengthRatioRel": 0.001,
-      "radiusRatioRel": 0.002
+      "lengthRatioRel": 0.00001,
+      "radiusRatioRel": 0.00002
     },
     "bitwiseEqual": false,
     "nearestNeighborMax": 1.420036553266977e-7,
-    "nearestNeighborMean": 3.758253670729142e-8
+    "nearestNeighborMean": 3.758253670729759e-8
   },
   "acceptancePass": true,
   "acceptance": {

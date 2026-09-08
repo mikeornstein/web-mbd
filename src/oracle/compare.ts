@@ -13,10 +13,10 @@ export interface OracleCompareTolerances {
 }
 
 export const DEFAULT_ORACLE_TOLERANCES: OracleCompareTolerances = {
-  // After Radioss resol CD order + PXC/DSV/SMAX/DT12: Lf ~0.0004%, Rf ~0.0005%.
-  // Bitwise Object.is on nodal coords remains the parity target (JS vs Fortran floor).
-  lengthRatioRel: 0.001,
-  radiusRatioRel: 0.002,
+  // CFL=0.9 adaptive: Lf ~0.0004%, Rf ~0.0005% (~4–5e-6 rel). Fine fixed DT
+  // shrinks this to ~1e-6 (truncation floor). Object.is still needs a shared kernel.
+  lengthRatioRel: 1e-5,
+  radiusRatioRel: 2e-5,
 };
 
 export interface OracleCompareResult {

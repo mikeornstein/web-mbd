@@ -101,11 +101,12 @@ ${f20(wall.point[0] + wall.normal[0])}${f20(wall.point[1] + wall.normal[1])}${f2
 `;
 
   const tEnd = controls.endTime * 1.01;
+  const dtScale = controls.cfl > 0 ? controls.cfl : 0.9;
   const engine = `#RADIOSS ENGINE
 /RUN/${root}/1
 ${f20(tEnd)}
 /DT
-${f20(0.9)}${f20(0)}
+${f20(dtScale)}${f20(0)}
 /ANIM/DT
 ${f20(0)}${f20(controls.endTime)}
 /ANIM/NODA/DT

@@ -14,3 +14,8 @@ playwright-report
 blob-report
 playwright/.cache
 e2e/artifacts
+
+# Native force-kernel build products
+native/**/*.so
+native/**/*.dylib
+native/**/*.o

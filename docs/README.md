@@ -15,6 +15,7 @@ Research and design notes for building a client-side flexible multibody / explic
 | [06 — Geometry, meshing, pre/post](research/06-geometry-meshing-prepost.md) | CAD kernels, meshers, unified UI, I/O formats |
 | [07 — Agentic APIs / MCP](research/07-agentic-apis-mcp.md) | Model IR as the agent surface, tool design |
 | [08 — Architecture recommendations](research/08-architecture-recommendations.md) | Concrete build plan for web-mbd |
+| [09 — Oracle bitwise floor](research/09-oracle-bitwise-floor.md) | Taylor H8C/LAW2 residual = truncation; shared-kernel path to Object.is |
 
 ## Sources
 

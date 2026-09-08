@@ -54,10 +54,17 @@ Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
-- \|Δ(L_f/L₀)\| / oracle ≤ 0.1%
-- \|Δ(R_f/R₀)\| / oracle ≤ 0.2%
+- \|Δ(L_f/L₀)\| / oracle ≤ 0.001% (1×10⁻⁵ rel)
+- \|Δ(R_f/R₀)\| / oracle ≤ 0.002% (2×10⁻⁵ rel)
+- Fine fixed-DT live probe (`tests/taylor-fine-dt-parity.test.ts`, needs `OPENRADIOSS_PATH`): ≤ 5×10⁻⁶ rel and NN < 0.1 μm
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Adaptive DT tracks OpenRadioss within ~0.01% mean (lockstep with printed OR DT2 does not close the residual). Mid-run anims show the gap is **largest early** (~0.07% Rf / ~11 μm NN at 20 μs) and shrinks by 80 μs — pointing at early plastic-wave / contact coupling rather than late-time drift. Same-algorithm element-order FP noise is only ~1e-15, so the ~5e-6 end residual is still formulation. Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current CFL=0.9 adaptive residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), infinite-plane `/RWALL` ITIED=0 (`rgwall.F`), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Adaptive DT tracks OpenRadioss within ~0.01% mean; lockstep with printed OR DT2 does not close the residual.
+
+**Residual diagnostics (same mesh):**
+- Mid-run anims (20/40/60/80 μs): relative Lf error peaks near **60 μs** (~0.007%) then shrinks by 80 μs; NN peaks ~1.8 μm at 60 μs → ~0.14 μm at end.
+- Elastic-only + shared fixed DT already sits near the anim float32 floor.
+- Plastic **fixed-DT refinement** (both codes): at Δt=5×10⁻⁸ residual ~3×10⁻⁵; at Δt=2.5×10⁻⁸ → ~1×10⁻⁶ Lf / ~3×10⁻⁷ Rf / ~0.05 μm NN. So the CFL=0.9 gap is primarily **independent truncation / FP contraction** between TypeScript and gfortran, not a missing constitutive or contact term (Grad N hierarchical vs isoparametric agree to ~1e-15).
+- Same-algorithm element-order FP noise alone is ~1e-15. True `Object.is` at production CFL still requires a **shared compiled force kernel** (OR H8C/LAW2 path callable from the web-mbd CD loop). See `docs/research/09-oracle-bitwise-floor.md`.
 
 ## Element / mesh notes
 
