@@ -78,6 +78,28 @@ Greenfield. Research docs are in-tree; the solver implementation is next.
 
 If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.
 
+## Develop
+
+Install [Node.js](https://nodejs.org/) 22 or newer and [pnpm](https://pnpm.io/) 10, then:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Checks:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+pnpm build
+```
+
+The production site is [GitHub Pages](https://mikeornstein.github.io/web-mbd/). Changes land through pull requests. `main` is protected.
+
 ## License
 
-TBD.
+Apache License 2.0. See [LICENSE](LICENSE).
+
