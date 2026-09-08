@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync, readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
@@ -6,8 +6,8 @@ import { createTaylorBarModel } from "../src/fixtures/taylorBar.js";
 import { solveExplicit } from "../src/fe/solver.js";
 import { exportTaylorRadiossDecks } from "../src/oracle/exportRadioss.js";
 import { alignedCoordGap, compareToOracle, nearestNeighborGap } from "../src/oracle/compare.js";
-import { shapeFromSta } from "../src/oracle/shapeFromSta.js";
-import { openRadiossAvailable } from "../src/cli/openRadiossRunner.js";
+import { openRadiossAvailable, selectEndTimeSta } from "../src/cli/openRadiossRunner.js";
+import { shapeFromVtk } from "../src/oracle/shapeFromVtk.js";
 
 /**
  * Under a shared fixed DT ≪ CFL, independent TS vs gfortran truncation shrinks
@@ -29,7 +29,7 @@ describe("taylor fine-DT OpenRadioss parity", () => {
       const decks = exportTaylorRadiossDecks(model);
       const engine = `#RADIOSS ENGINE
 /RUN/${decks.root}/1
-${(tEnd * 1.01).toExponential(10).padStart(20)}
+${tEnd.toExponential(10).padStart(20)}
 /DTIX
 ${fixedDt.toExponential(10).padStart(20)}${fixedDt.toExponential(10).padStart(20)}
 /DT
@@ -46,6 +46,14 @@ ${tEnd.toExponential(10).padStart(20)}${tEnd.toExponential(10).padStart(20)}
 `;
       const workDir = join(process.cwd(), "artifacts", "oracle-taylor-fine-dt");
       mkdirSync(workDir, { recursive: true });
+      // Fresh artifacts only — stale .sta/.anim poison endTime selection.
+      for (const f of readdirSync(workDir)) {
+        try {
+          unlinkSync(join(workDir, f));
+        } catch {
+          /* ignore */
+        }
+      }
       writeFileSync(join(workDir, `${decks.root}_0000.rad`), decks.starter);
       writeFileSync(join(workDir, `${decks.root}_0001.rad`), engine);
 
@@ -75,17 +83,34 @@ ${tEnd.toExponential(10).padStart(20)}${tEnd.toExponential(10).padStart(20)}
       );
       expect(engineRun.status).toBe(0);
 
-      const sta = readdirSync(workDir)
+      const staNames = readdirSync(workDir)
         .filter((f) => f.endsWith(".sta"))
+        .sort();
+      expect(staNames.length).toBeGreaterThan(0);
+      const anim = readdirSync(workDir)
+        .filter((f) => /A\d{3}$/.test(f))
         .sort()
         .at(-1);
-      expect(sta).toBeTruthy();
-      const orShape = shapeFromSta(
-        readFileSync(join(workDir, sta!), "utf8"),
+      let vtkText: string | undefined;
+      if (anim) {
+        const conv = spawnSync(join(orPath, "exec/anim_to_vtk_linux64_gf"), [join(workDir, anim)], {
+          cwd: workDir,
+          env,
+          encoding: "utf8",
+          maxBuffer: 64 << 20,
+        });
+        expect(conv.status).toBe(0);
+        vtkText = conv.stdout;
+      }
+      const picked = selectEndTimeSta(
+        staNames,
+        workDir,
         model.reference.length0,
         model.reference.radius0,
-        { expectedNodes: model.mesh.coords.length / 3 },
+        model.mesh.coords.length / 3,
+        vtkText,
       );
+      const orShape = picked.shape;
       const web = solveExplicit(model, { maxWallMs: 600_000 });
       const cmp = compareToOracle(web.metrics, orShape, {
         lengthRatioRel: 5e-6,
@@ -100,6 +125,12 @@ ${tEnd.toExponential(10).padStart(20)}${tEnd.toExponential(10).padStart(20)}
       // Still not bitwise at CFL-scale or fine DT without a shared force kernel.
       expect(cmp.bitwiseEqual).toBe(false);
       expect(aligned.bitwiseEqual).toBe(false);
+      if (vtkText) {
+        const vtk = shapeFromVtk(vtkText, model.reference.length0, model.reference.radius0, {
+          expectedNodes: model.mesh.coords.length / 3,
+        });
+        expect(Math.abs(orShape.lengthRatio - vtk.lengthRatio)).toBeLessThan(1e-6);
+      }
     },
     600_000,
   );

@@ -1,4 +1,11 @@
-import { mkdirSync, readdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readdirSync,
+  writeFileSync,
+  existsSync,
+  readFileSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ModelIR } from "../ir/types.js";
@@ -40,6 +47,89 @@ export function openRadiossAvailable(): boolean {
   return existsSync(join(path, "exec/starter_linux64_gf"));
 }
 
+/** Remove prior OR artifacts so stale A00x / .sta cannot poison selection. */
+function clearOracleArtifacts(workDir: string, root: string): void {
+  if (!existsSync(workDir)) return;
+  for (const f of readdirSync(workDir)) {
+    if (
+      f.startsWith(root) ||
+      f.endsWith(".sta") ||
+      f.endsWith(".vtk") ||
+      f.endsWith(".rst") ||
+      /A\d{3}$/.test(f)
+    ) {
+      try {
+        unlinkSync(join(workDir, f));
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
+/**
+ * Prefer the `.sta` written at fixture endTime (same dump as the last anim).
+ * OpenRadioss may also force-write a final `.sta` after TSTOP; that later dump
+ * must not be used for parity.
+ */
+export function selectEndTimeSta(
+  staNames: string[],
+  workDir: string,
+  length0: number,
+  radius0: number,
+  expectedNodes: number,
+  animVtkText: string | undefined,
+): { name: string; shape: ReturnType<typeof shapeFromSta> } {
+  if (staNames.length === 0) throw new Error("no .sta files to select");
+  const parsed = staNames.map((name) => ({
+    name,
+    shape: shapeFromSta(readFileSync(join(workDir, name), "utf8"), length0, radius0, {
+      expectedNodes,
+    }),
+  }));
+  if (parsed.length === 1) return parsed[0]!;
+  if (animVtkText) {
+    const vtk = shapeFromVtk(animVtkText, length0, radius0, { expectedNodes });
+    let best = parsed[0]!;
+    let bestScore = Infinity;
+    for (const p of parsed) {
+      const score =
+        Math.abs(p.shape.lengthRatio - vtk.lengthRatio) +
+        Math.abs(p.shape.radiusRatio - vtk.radiusRatio);
+      if (score < bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    return best;
+  }
+  // Without VTK: earliest numbered dump at endTime is `_0001.sta` when STATE
+  // Tstart=endTime (t=0 is not dumped). Prefer the first sorted name.
+  return parsed[0]!;
+}
+
+function convertLastAnim(
+  workDir: string,
+  animToVtk: string,
+  env: NodeJS.ProcessEnv,
+): { anim: string; vtkText: string; vtkPath: string } | undefined {
+  const animFiles = readdirSync(workDir)
+    .filter((f) => /A\d{3}$/.test(f) && !f.includes("."))
+    .sort();
+  const lastAnim = animFiles[animFiles.length - 1];
+  if (!lastAnim) return undefined;
+  const conv = spawnSync(animToVtk, [join(workDir, lastAnim)], {
+    cwd: workDir,
+    env,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (conv.status !== 0 || !conv.stdout.includes("POINTS")) return undefined;
+  const vtkPath = join(workDir, `${lastAnim}.vtk`);
+  writeFileSync(vtkPath, conv.stdout);
+  return { anim: lastAnim, vtkText: conv.stdout, vtkPath };
+}
+
 /**
  * Run OpenRadioss starter+engine on the exported Taylor deck.
  * Prefer float64 `.sta` (`/STATE/DT/ALL`); fall back to anim→VTK (float32).
@@ -51,6 +141,7 @@ export function runOpenRadiossTaylorOracle(
   const orPath = requireEnv("OPENRADIOSS_PATH");
   const decks = exportTaylorRadiossDecks(model);
   mkdirSync(workDir, { recursive: true });
+  clearOracleArtifacts(workDir, decks.root);
   const starterFile = join(workDir, `${decks.root}_0000.rad`);
   const engineFile = join(workDir, `${decks.root}_0001.rad`);
   writeFileSync(starterFile, decks.starter);
@@ -95,65 +186,52 @@ export function runOpenRadiossTaylorOracle(
   }
 
   const expectedNodes = model.mesh.coords.length / 3;
+  const anim = convertLastAnim(workDir, animToVtk, env);
   const staFiles = readdirSync(workDir)
     .filter((f) => f.endsWith(".sta"))
     .sort();
-  const lastSta = staFiles[staFiles.length - 1];
-  if (lastSta) {
-    const staPath = join(workDir, lastSta);
-    const shape = shapeFromSta(readFileSync(staPath, "utf8"), model.reference.length0, model.reference.radius0, {
+
+  if (staFiles.length > 0) {
+    const picked = selectEndTimeSta(
+      staFiles,
+      workDir,
+      model.reference.length0,
+      model.reference.radius0,
       expectedNodes,
-    });
+      anim?.vtkText,
+    );
+    const staPath = join(workDir, picked.name);
     return {
       metrics: {
-        finalLength: shape.finalLength,
-        finalMaxRadius: shape.finalMaxRadius,
-        lengthRatio: shape.lengthRatio,
-        radiusRatio: shape.radiusRatio,
+        finalLength: picked.shape.finalLength,
+        finalMaxRadius: picked.shape.finalMaxRadius,
+        lengthRatio: picked.shape.lengthRatio,
+        radiusRatio: picked.shape.radiusRatio,
         source: "openradioss",
         root: decks.root,
         coordSource: "sta",
       },
-      coords: shape.coords,
+      coords: picked.shape.coords,
       workDir,
       starterLog: starter.stdout,
       engineLog: engine.stdout,
       staFile: staPath,
+      ...(anim?.vtkPath ? { vtkFile: anim.vtkPath } : {}),
     };
   }
 
-  const animFiles = readdirSync(workDir)
-    .filter((f) => /A\d{3}$/.test(f) && !f.includes("."))
-    .sort();
-  const lastAnim = animFiles[animFiles.length - 1];
-  if (!lastAnim) {
+  if (!anim) {
     throw new Error(`no .sta or animation files in ${workDir}: ${readdirSync(workDir).join(", ")}`);
   }
-
-  const conv = spawnSync(animToVtk, [join(workDir, lastAnim)], {
-    cwd: workDir,
-    env,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  if (conv.status !== 0 || !conv.stdout.includes("POINTS")) {
-    throw new Error(
-      `anim_to_vtk failed for ${lastAnim}: status=${String(conv.status)}\n${conv.stdout}\n${conv.stderr}\nfiles=${readdirSync(workDir).join(",")}`,
-    );
-  }
-  const produced = join(workDir, `${lastAnim}.vtk`);
-  writeFileSync(produced, conv.stdout);
-  const vtkText = conv.stdout;
-
-  const shape = shapeFromVtk(vtkText, model.reference.length0, model.reference.radius0, {
+  const shape = shapeFromVtk(anim.vtkText, model.reference.length0, model.reference.radius0, {
     expectedNodes,
   });
   return {
     metrics: { ...shape, source: "openradioss", root: decks.root, coordSource: "vtk" },
-    coords: parseVtkPoints(vtkText, { expectedNodes }),
+    coords: parseVtkPoints(anim.vtkText, { expectedNodes }),
     workDir,
     starterLog: starter.stdout,
     engineLog: engine.stdout,
-    vtkFile: produced,
+    vtkFile: anim.vtkPath,
   };
 }

@@ -100,10 +100,12 @@ ${f20(wall.point[0] + wall.normal[0])}${f20(wall.point[1] + wall.normal[1])}${f2
 /END
 `;
 
-  const tEnd = controls.endTime * 1.01;
+  // Stop at fixture endTime (not 1.01×): OR also force-writes a final .sta after
+  // TSTOP, which must not be used for parity (see openRadiossRunner pick).
+  const tEnd = controls.endTime;
   const dtScale = controls.cfl > 0 ? controls.cfl : 0.9;
   // Float64 nodal dump for Object.is gates (stat_node.F E20.13). Anim VTK is float32.
-  // /STATE/DT/ALL tags every node (NSTATALL); dump once at fixture endTime.
+  // /STATE/DT/ALL tags every node (NSTATALL); dump at fixture endTime.
   const engine = `#RADIOSS ENGINE
 /RUN/${root}/1
 ${f20(tEnd)}

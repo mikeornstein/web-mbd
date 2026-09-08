@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   coordsSortedById,
   parseStaNodes,
   shapeFromSta,
 } from "../src/oracle/shapeFromSta.js";
 import { alignedCoordGap } from "../src/oracle/compare.js";
+import { selectEndTimeSta } from "../src/cli/openRadiossRunner.js";
 
-const SAMPLE_STA = `#RADIOSS STATE FILE TAYLOR_0001.sta
+function staBlock(idLines: string[]): string {
+  return `#RADIOSS STATE FILE X.sta
 /BEGIN
 TAYLOR
       2023         0
@@ -14,11 +19,16 @@ TAYLOR
   1.0000000000000E+00  1.0000000000000E+00  1.0000000000000E+00
 /NODE
 #    NODID               XCOOR               YCOOR               ZCOOR
-         2 1.0000000000000E-03-2.0000000000000E-03 3.0000000000000E-02
-         1 0.0000000000000E+00 0.0000000000000E+00 0.0000000000000E+00
-         3 3.2000000000000E-03 0.0000000000000E+00 3.2400000000000E-02
+${idLines.join("\n")}
 /BRICK/         1
 `;
+}
+
+const SAMPLE_STA = staBlock([
+  "         2 1.0000000000000E-03-2.0000000000000E-03 3.0000000000000E-02",
+  "         1 0.0000000000000E+00 0.0000000000000E+00 0.0000000000000E+00",
+  "         3 3.2000000000000E-03 0.0000000000000E+00 3.2400000000000E-02",
+]);
 
 describe("shapeFromSta", () => {
   it("parses E20.13 /NODE rows and sorts by ITAB", () => {
@@ -50,5 +60,45 @@ describe("shapeFromSta", () => {
     const gap = alignedCoordGap(shape.coords, shape.coords);
     expect(gap.bitwiseEqual).toBe(true);
     expect(gap.max).toBe(0);
+  });
+
+  it("selectEndTimeSta picks the dump matching anim shape, not TSTOP overshoot", () => {
+    const dir = join(tmpdir(), `sta-pick-${process.pid}`);
+    mkdirSync(dir, { recursive: true });
+    try {
+      const animVtk = `# vtk DataFile Version 3.0
+vtk output
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+0.0032 0 0.0216
+0 0.0032 0.0108
+`;
+      const endTime3 = staBlock([
+        "         1 0.0000000000000E+00 0.0000000000000E+00 0.0000000000000E+00",
+        "         2 3.2000000000000E-03 0.0000000000000E+00 2.1600000000000E-02",
+        "         3 0.0000000000000E+00 3.2000000000000E-03 1.0800000000000E-02",
+      ]);
+      const overshoot3 = staBlock([
+        "         1 0.0000000000000E+00 0.0000000000000E+00 0.0000000000000E+00",
+        "         2 3.2000000000000E-03 0.0000000000000E+00 2.1500000000000E-02",
+        "         3 0.0000000000000E+00 3.2000000000000E-03 1.0800000000000E-02",
+      ]);
+      writeFileSync(join(dir, "TAYLOR_0001.sta"), endTime3);
+      writeFileSync(join(dir, "TAYLOR_0002.sta"), overshoot3);
+      const picked = selectEndTimeSta(
+        ["TAYLOR_0001.sta", "TAYLOR_0002.sta"],
+        dir,
+        0.0324,
+        0.0032,
+        3,
+        animVtk,
+      );
+      expect(picked.name).toBe("TAYLOR_0001.sta");
+      expect(picked.shape.finalLength).toBeCloseTo(0.0216, 12);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
