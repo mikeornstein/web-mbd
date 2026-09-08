@@ -29,3 +29,4 @@ native/force-kernel/or-extract/smoke_symbols
 native/force-kernel/*.o
 native/force-kernel/or-extract/*.o
 
+native/force-kernel/.build.lock
