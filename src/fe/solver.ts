@@ -141,22 +141,13 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
 
   const applyWallKinematics = (): void => {
     if (wallKind === "kinematic") {
-      applyRigidWallKinematic({ wall, coords: x, velocities: v });
-      // Also remove normal acceleration for nodes still on the wall (Radioss DA strip).
-      const [px, py, pz] = wall.point;
-      const [nx, ny, nz] = wall.normal;
-      for (let a = 0; a < nNodes; a++) {
-        const i = a * 3;
-        const gap =
-          (x[i]! - px) * nx + (x[i + 1]! - py) * ny + (x[i + 2]! - pz) * nz;
-        if (gap > 1e-16) continue;
-        const an = acc[i]! * nx + acc[i + 1]! * ny + acc[i + 2]! * nz;
-        if (an < 0) {
-          acc[i]! -= an * nx;
-          acc[i + 1]! -= an * ny;
-          acc[i + 2]! -= an * nz;
-        }
-      }
+      applyRigidWallKinematic({
+        wall,
+        coords: x,
+        velocities: v,
+        accelerations: acc,
+        dt,
+      });
     }
   };
 
@@ -190,10 +181,6 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     const contactBefore = contactEnergy;
 
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
-    // Radioss predicts penetration then constrains V/A; we also project after the drift.
-    if (wallKind === "kinematic") {
-      applyRigidWallKinematic({ wall, coords: x, velocities: v });
-    }
     t += dt;
     step += 1;
 
