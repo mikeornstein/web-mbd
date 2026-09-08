@@ -40,10 +40,14 @@ describe("OpenRadioss S8EFORC3 force backend", () => {
       expect(Number.isFinite(or.metrics.radiusRatio)).toBe(true);
       expect(or.metrics.lengthRatio).toBeLessThan(1);
       expect(or.metrics.radiusRatio).toBeGreaterThan(1);
-      // Short coarse horizon: formulation residual still O(0.1) on Rf.
-      expect(Math.abs(or.metrics.lengthRatio - ts.metrics.lengthRatio) / ts.metrics.lengthRatio).toBeLessThan(
-        0.02,
-      );
+      // After GP pack order fix (OR IP = IR+(…)*NPTR, ξ-fastest), short
+      // coarse OR-ABI vs TS jcvt:1 is ~1e-5 relative — not Object.is yet.
+      const relLf =
+        Math.abs(or.metrics.lengthRatio - ts.metrics.lengthRatio) / ts.metrics.lengthRatio;
+      const relRf =
+        Math.abs(or.metrics.radiusRatio - ts.metrics.radiusRatio) / ts.metrics.radiusRatio;
+      expect(relLf).toBeLessThan(1e-4);
+      expect(relRf).toBeLessThan(1e-4);
     },
     180_000,
   );

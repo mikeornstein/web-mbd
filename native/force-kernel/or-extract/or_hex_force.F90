@@ -468,11 +468,12 @@ contains
       elbuf_tab(1)%gbuf%smstr(k) = smstr_io(k)
     end do
 
-    ip = 0
-    do ir = 1, 2
+    ! Match S8EFORC3: IP = IR + ((IS-1)+(IT-1)*NPTS)*NPTR with NPTR=NPTS=NPTT=2
+    ! (ξ / IR fastest — same as web-mbd RADIOSS_GAUSS / s8eprst_ini KSI).
+    do it = 1, 2
       do is = 1, 2
-        do it = 1, 2
-          ip = ip + 1
+        do ir = 1, 2
+          ip = ir + ((is - 1) + (it - 1) * 2) * 2
           lbuf => elbuf_tab(1)%bufly(1)%lbuf(ir, is, it)
           do k = 1, 6
             lbuf%sig(k) = stress_io(6 * (ip - 1) + k)
@@ -501,11 +502,10 @@ contains
     integer :: ir, is, it, ip, k
     type(l_bufel_), pointer :: lbuf
 
-    ip = 0
-    do ir = 1, 2
+    do it = 1, 2
       do is = 1, 2
-        do it = 1, 2
-          ip = ip + 1
+        do ir = 1, 2
+          ip = ir + ((is - 1) + (it - 1) * 2) * 2
           lbuf => elbuf_tab(1)%bufly(1)%lbuf(ir, is, it)
           do k = 1, 6
             stress_io(6 * (ip - 1) + k) = lbuf%sig(k)

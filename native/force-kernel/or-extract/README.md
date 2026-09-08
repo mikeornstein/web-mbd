@@ -81,6 +81,15 @@ Done in `or_hex_force.F90` / `or_hex_commons.F`:
 4. Opt-in `WMBD_OR_CALL_S8E=1` → `S8EFORC3`; scatter `-(F11..F38)` into `f_out` (OR FORINT sign)
 5. Unit-cube smoke: `||F||` matches C-mirror `jcvt=1` to ~1e-14 relative after sign flip
 6. CD via koffi: `hexInternalForcesOr` → `wmbd_hex_internal_forces_or_pthread` (64 MiB stack; Node JS thread is too small for S8E MVSIZ locals) with per-element SMSTR/OFF cache
+7. **GP pack/scatter order** must use OR’s `IP = IR + ((IS-1)+(IT-1)*NPTS)*NPTR` (ξ / IR fastest = `RADIOSS_GAUSS`). Nesting `IR→IS→IT` with `ip++` permutes state and blew up Rf / collapsed CFL; fixed.
+
+Coarse Taylor (2×2×4) OR-ABI vs TS `jcvt:1` after the GP fix (`scripts/or-residual-probe.ts`):
+
+| t | relLf | relRf | notes |
+| --- | --- | --- | --- |
+| 1 μs | ~0 | ~2e-6 | stable |
+| 5 μs | ~1e-5 | ~1e-5 | was ~0.33 Rf before fix |
+| 80 μs | ~2e-5 | ~1e-4 | same step count; no dt collapse |
 
 Remaining for production `Object.is` on full Taylor:
 
