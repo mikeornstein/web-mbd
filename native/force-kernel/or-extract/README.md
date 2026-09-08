@@ -62,18 +62,39 @@ S8EFORC3(TIMERS, OUTPUT, ELBUF_TAB, NG, PM, GEO, … IXS, X, A, V, … IPARG, �
 
 Packing checklist for one Taylor hex group (`NEL=1`, `NPG=8`, LAW2, Isolid=17):
 
+Verified from live starter `TAYLOR_0000.out` (default Taylor deck):
+
+| Flag | Value | Notes |
+| --- | --- | --- |
+| ISOLID / JHBE | 17 | H8C → `S8EFORC3` |
+| ISMSTR | 4 | small strain; `GBUF%SMSTR` live |
+| ICPRE | 1 | PXC mean pressure |
+| **IFRAME / JCVT** | **1** | **co-rotational** (`SRCOOR3` + `SRROTA3`); **not** Jaumann/`SROTA3` |
+| NPT / NPG | 8 | `NPTR=NPTS=NPTT=2` |
+| COROTATIONAL SYSTEM FLAG | 1 | starter echo of JCVT |
+
+> web-mbd currently applies Radioss `SROTA3` Jaumann (as if `JCVT=0`). The live
+> oracle deck uses `JCVT=1`. That mismatch is a residual contributor; full
+> `Object.is` still needs the shared OR force kernel, but aligning TS/C to
+> `SRCOOR3`/`SRROTA3` is the next physics step while ELBUF packing lands.
+
 1. Allocate / zero `ELBUF_TAB(NG)` LBUF: `SIG(6,8)`, `PLA(8)`, volumes
-2. Fill `PM` / `MAT_PARAM` LAW2 (ρ, E, ν, a, b, n=1)
+2. Fill `PM` / `MAT_PARAM` LAW2 (ρ, E, ν, a, b, n=1); `uparam(1:11)`, `iparam(1:4)`
 3. Fill `GEO` / `IGEO` solid props (Icpre=1, Iframe=1, Ismstr=4)
 4. Pack nodal `X`,`V` (and zero `A`) into OR node arrays for 8 ITAB ids
-5. Set `DT1` / group `IPARG` flags matching the exported deck
+5. Set `DT1` / group `IPARG` flags matching the exported deck (`JCVT=1`)
 6. Call `S8EFORC3` (or a thin Fortran wrapper that sets commons first)
 7. Scatter `FINT` / updated `SIG`/`PLA` back to `f_out` / `stress_io` / `eqps_io`
 
-`wmbd_hex_internal_forces_or` is exported from `libwmbd_or_hex.so` (Fortran
-BIND(C) in `or_hex_force.F90`) and currently returns `-1` after setting `DT1`.
-Legacy C stub `or_bridge.c` remains for the mirror ABI. Smokes:
-`smoke_or_hex` / `tests/or-h8c-symbols.test.ts`.
+**Commons:** wrapper must be relinked into the same `.so` as engine objects
+(`relink-or-hex.sh` → `libwmbd_or_hex.so`). A separate `.so` gets a private
+`/COM08/` BSS.
+
+**ELBUF alloc:** engine `allocbuf_auto_` reads restart `READ_DB` — not usable
+from scratch. Prefer starter-style hand alloc or compile starter `allocbuf_auto`
+deps. `wmbd_hex_internal_forces_or` currently sets `DT1` and returns `-1`.
+
+Smokes: `smoke_or_hex` / `tests/or-h8c-symbols.test.ts`.
 
 ## Dependency inventory
 
