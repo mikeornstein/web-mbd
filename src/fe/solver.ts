@@ -7,6 +7,7 @@ import {
   gatherHex,
   hexInternalForces,
   hexLumpedNodalMass,
+  type HexForceOptions,
 } from "./hex.js";
 import { dilatationalWaveSpeed, lame, type J2State } from "./materialJ2.js";
 import type { MaterialJ2Linear } from "../ir/types.js";
@@ -19,6 +20,7 @@ export type HexForceFn = (args: {
   mat: MaterialJ2Linear;
   dt: number;
   fOut: Float64Array;
+  options?: HexForceOptions;
 }) => number;
 
 export interface SolveOptions {

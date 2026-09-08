@@ -16,15 +16,16 @@ typedef struct {
 
 /**
  * One hex force evaluation (H8C-like / LAW2-like), matching web-mbd `hexInternalForces`
- * defaults: Icpre=1, DSV on, qa=qb=0.
+ * defaults: Icpre=1, DSV on, qa=qb=0, jcvt=1 (co-rotational).
  *
  * @param x0  current 8×3 nodal coords (node-major xyz)
  * @param v0  current 8×3 nodal velocities
- * @param stress_io  8 Gauss × 6 Voigt stresses (in/out)
+ * @param stress_io  8 Gauss × 6 Voigt stresses (in/out; local-frame when jcvt=1)
  * @param eqps_io    8 Gauss equivalent plastic strains (in/out)
  * @param vol0_io    8 Gauss reference volumes (in/out; DSV updates)
  * @param dt         constitutive DT1
- * @param f_out      8×3 +∫Bᵀσ dV (node-major)
+ * @param f_out      8×3 +∫Bᵀσ dV (node-major, global)
+ * @param jcvt       1 = SRCOOR3/SRROTA3 co-rot (Taylor deck); 0 = SROTA3 Jaumann
  * @return internal energy increment ∫σ:D dV dt
  */
 double wmbd_hex_internal_forces(
@@ -35,7 +36,8 @@ double wmbd_hex_internal_forces(
     double eqps_io[8],
     double vol0_io[8],
     double dt,
-    double f_out[24]);
+    double f_out[24],
+    int jcvt);
 
 #ifdef __cplusplus
 }

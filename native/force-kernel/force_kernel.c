@@ -278,6 +278,93 @@ typedef struct {
   double q;
 } GpCache;
 
+static void normalize3(double v[3]) {
+  double n = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  if (n != 0.0) {
+    double inv = 1.0 / n;
+    v[0] *= inv;
+    v[1] *= inv;
+    v[2] *= inv;
+  }
+}
+
+static void hex_corot_R(const double x[24], double R[9]) {
+  double x1 = x[0], y1 = x[1], z1 = x[2];
+  double x2 = x[3], y2 = x[4], z2 = x[5];
+  double x3 = x[6], y3 = x[7], z3 = x[8];
+  double x4 = x[9], y4 = x[10], z4 = x[11];
+  double x5 = x[12], y5 = x[13], z5 = x[14];
+  double x6 = x[15], y6 = x[16], z6 = x[17];
+  double x7 = x[18], y7 = x[19], z7 = x[20];
+  double x8 = x[21], y8 = x[22], z8 = x[23];
+  double x17 = x7 - x1, x28 = x8 - x2, x35 = x5 - x3, x46 = x6 - x4;
+  double y17 = y7 - y1, y28 = y8 - y2, y35 = y5 - y3, y46 = y6 - y4;
+  double z17 = z7 - z1, z28 = z8 - z2, z35 = z5 - z3, z46 = z6 - z4;
+  double a17 = x17 + x46, a28 = x28 + x35;
+  double b17 = y17 + y46, b28 = y28 + y35;
+  double c17 = z17 + z46, c28 = z28 + z35;
+  double U[3], V[3], W[3];
+  double e1[3], e2[3], e3[3];
+  int n;
+
+  U[0] = x17 + x28 - x35 - x46;
+  U[1] = y17 + y28 - y35 - y46;
+  U[2] = z17 + z28 - z35 - z46;
+  V[0] = a17 + a28;
+  V[1] = b17 + b28;
+  V[2] = c17 + c28;
+  W[0] = a17 - a28;
+  W[1] = b17 - b28;
+  W[2] = c17 - c28;
+  normalize3(U);
+  normalize3(V);
+  normalize3(W);
+  for (n = 0; n < 3; n++) {
+    e1[0] = V[1] * W[2] - V[2] * W[1] + U[0];
+    e1[1] = V[2] * W[0] - V[0] * W[2] + U[1];
+    e1[2] = V[0] * W[1] - V[1] * W[0] + U[2];
+    e2[0] = W[1] * U[2] - W[2] * U[1] + V[0];
+    e2[1] = W[2] * U[0] - W[0] * U[2] + V[1];
+    e2[2] = W[0] * U[1] - W[1] * U[0] + V[2];
+    e3[0] = U[1] * V[2] - U[2] * V[1] + W[0];
+    e3[1] = U[2] * V[0] - U[0] * V[2] + W[1];
+    e3[2] = U[0] * V[1] - U[1] * V[0] + W[2];
+    U[0] = e1[0]; U[1] = e1[1]; U[2] = e1[2];
+    V[0] = e2[0]; V[1] = e2[1]; V[2] = e2[2];
+    W[0] = e3[0]; W[1] = e3[1]; W[2] = e3[2];
+    normalize3(U);
+    normalize3(V);
+    normalize3(W);
+  }
+  e1[0] = U[0]; e1[1] = U[1]; e1[2] = U[2];
+  e3[0] = e1[1] * V[2] - e1[2] * V[1];
+  e3[1] = e1[2] * V[0] - e1[0] * V[2];
+  e3[2] = e1[0] * V[1] - e1[1] * V[0];
+  normalize3(e3);
+  e2[0] = e3[1] * e1[2] - e3[2] * e1[1];
+  e2[1] = e3[2] * e1[0] - e3[0] * e1[2];
+  e2[2] = e3[0] * e1[1] - e3[1] * e1[0];
+  R[0] = e1[0]; R[1] = e1[1]; R[2] = e1[2];
+  R[3] = e2[0]; R[4] = e2[1]; R[5] = e2[2];
+  R[6] = e3[0]; R[7] = e3[1]; R[8] = e3[2];
+}
+
+static void rotate_nodes8(const double R[9], const double src[24], double dst[24], int rT) {
+  int a;
+  for (a = 0; a < 8; a++) {
+    double ox = src[a * 3], oy = src[a * 3 + 1], oz = src[a * 3 + 2];
+    if (rT) {
+      dst[a * 3] = R[0] * ox + R[1] * oy + R[2] * oz;
+      dst[a * 3 + 1] = R[3] * ox + R[4] * oy + R[5] * oz;
+      dst[a * 3 + 2] = R[6] * ox + R[7] * oy + R[8] * oz;
+    } else {
+      dst[a * 3] = R[0] * ox + R[3] * oy + R[6] * oz;
+      dst[a * 3 + 1] = R[1] * ox + R[4] * oy + R[7] * oz;
+      dst[a * 3 + 2] = R[2] * ox + R[5] * oy + R[8] * oz;
+    }
+  }
+}
+
 double wmbd_hex_internal_forces(
     const double x0[24],
     const double v0[24],
@@ -286,7 +373,8 @@ double wmbd_hex_internal_forces(
     double eqps_io[8],
     double vol0_io[8],
     double dt,
-    double f_out[24]) {
+    double f_out[24],
+    int jcvt) {
   int gp, a;
   double dU = 0.0;
   double volSum = 0.0;
@@ -300,26 +388,41 @@ double wmbd_hex_internal_forces(
   MeanDilOps pxcOps;
   int have_pxc = 0;
   GpCache cache[8];
+  double R[9];
+  double x_loc[24], v_loc[24];
+  const double *x;
+  const double *v;
+  double f_loc[24];
 
   ensure_shapes();
   memset(f_out, 0, 24 * sizeof(double));
 
+  if (jcvt == 1) {
+    hex_corot_R(x0, R);
+    rotate_nodes8(R, x0, x_loc, 1);
+    rotate_nodes8(R, v0, v_loc, 1);
+    x = x_loc;
+    v = v_loc;
+  } else {
+    x = x0;
+    v = v0;
+  }
+
   if (CONSTANT_PRESSURE || DSV_VOL0) {
-    pxcOps = mean_dilatation_operators(x0);
+    pxcOps = mean_dilatation_operators(x);
     have_pxc = 1;
   }
   if (DSV_VOL0 && have_pxc) {
-    dsv = mean_dilatation_rate(&pxcOps, v0);
+    dsv = mean_dilatation_rate(&pxcOps, v);
   }
 
   for (gp = 0; gp < 8; gp++) {
     double J[9], Jinv[9], detJ;
     GpCache *c = &cache[gp];
 
-    jacobian(SHAPES_DN[gp], x0, J);
+    jacobian(SHAPES_DN[gp], x, J);
     detJ = mat3_det(J);
     if (detJ <= 0.0) {
-      /* ABI: do not abort; leave f_out zeroed, return NAN */
       return NAN;
     }
     mat3_inverse(J, Jinv);
@@ -330,9 +433,9 @@ double wmbd_hex_internal_forces(
       double gx = c->gN[a][0];
       double gy = c->gN[a][1];
       double gz = c->gN[a][2];
-      double vx = v0[a * 3];
-      double vy = v0[a * 3 + 1];
-      double vz = v0[a * 3 + 2];
+      double vx = v[a * 3];
+      double vy = v[a * 3 + 1];
+      double vz = v[a * 3 + 2];
       c->L[0] += vx * gx;
       c->L[1] += vx * gy;
       c->L[2] += vx * gz;
@@ -375,9 +478,6 @@ double wmbd_hex_internal_forces(
     double trD = d[0] + d[1] + d[2];
     double *sigma = &stress_io[gp * 6];
     double al, ad, rho;
-    double wzz, wyy, wxx;
-    double s1, s2, s3, s4, s5, s6;
-    double q1, q2, q3;
 
     if (DSV_VOL0 && vol0_io[gp] > 0.0) {
       double dv = (dsv - trD) * dt;
@@ -390,25 +490,22 @@ double wmbd_hex_internal_forces(
     rho = mat->density * (vol0_io[gp] / fmax(vol, 1e-30));
     c->q = rho * ad * al * (QA * QA * ad * al + QB * ssp);
 
-    /* Jaumann SROTA3 */
-    wzz = 0.5 * dt * (L[3] - L[1]);
-    wyy = 0.5 * dt * (L[2] - L[6]);
-    wxx = 0.5 * dt * (L[7] - L[5]);
-    s1 = sigma[0];
-    s2 = sigma[1];
-    s3 = sigma[2];
-    s4 = sigma[3];
-    s5 = sigma[4];
-    s6 = sigma[5];
-    q1 = 2.0 * s4 * wzz;
-    q2 = 2.0 * s6 * wyy;
-    q3 = 2.0 * s5 * wxx;
-    sigma[0] = s1 - q1 + q2;
-    sigma[1] = s2 + q1 - q3;
-    sigma[2] = s3 - q2 + q3;
-    sigma[3] = s4 + wzz * (s1 - s2) + wyy * s5 - wxx * s6;
-    sigma[4] = s5 + wxx * (s2 - s3) + wzz * s6 - wyy * s4;
-    sigma[5] = s6 + wyy * (s3 - s1) + wxx * s4 - wzz * s5;
+    if (jcvt == 0) {
+      double wzz = 0.5 * dt * (L[3] - L[1]);
+      double wyy = 0.5 * dt * (L[2] - L[6]);
+      double wxx = 0.5 * dt * (L[7] - L[5]);
+      double s1 = sigma[0], s2 = sigma[1], s3 = sigma[2];
+      double s4 = sigma[3], s5 = sigma[4], s6 = sigma[5];
+      double q1 = 2.0 * s4 * wzz;
+      double q2 = 2.0 * s6 * wyy;
+      double q3 = 2.0 * s5 * wxx;
+      sigma[0] = s1 - q1 + q2;
+      sigma[1] = s2 + q1 - q3;
+      sigma[2] = s3 - q2 + q3;
+      sigma[3] = s4 + wzz * (s1 - s2) + wyy * s5 - wxx * s6;
+      sigma[4] = s5 + wxx * (s2 - s3) + wzz * s6 - wyy * s4;
+      sigma[5] = s6 + wyy * (s3 - s1) + wxx * s4 - wzz * s5;
+    }
 
     j2_update(mat, sigma, &eqps_io[gp], vol0_io[gp], d, dt, vol, have_amu, amuElem);
   }
@@ -457,7 +554,6 @@ double wmbd_hex_internal_forces(
     const double *pyc = pxcOps.pyc;
     const double *pzc = pxcOps.pzc;
     double sp = pp * volSum;
-    /* pairs (a,b,k): (0,6,0), (1,7,1), (2,4,2), (3,5,3) */
     static const int pairs[4][3] = {{0, 6, 0}, {1, 7, 1}, {2, 4, 2}, {3, 5, 3}};
     int k;
     for (k = 0; k < 4; k++) {
@@ -474,6 +570,11 @@ double wmbd_hex_internal_forces(
       f_out[ib * 3 + 1] -= sy;
       f_out[ib * 3 + 2] -= sz;
     }
+  }
+
+  if (jcvt == 1) {
+    memcpy(f_loc, f_out, 24 * sizeof(double));
+    rotate_nodes8(R, f_loc, f_out, 0);
   }
 
   return dU;

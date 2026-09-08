@@ -43,6 +43,7 @@ describe("native force kernel ↔ TypeScript", () => {
       mat: model.material,
       dt,
       fOut,
+      options: { jcvt: 0 },
     });
 
     const doubles: number[] = [

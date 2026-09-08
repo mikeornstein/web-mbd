@@ -73,10 +73,9 @@ Verified from live starter `TAYLOR_0000.out` (default Taylor deck):
 | NPT / NPG | 8 | `NPTR=NPTS=NPTT=2` |
 | COROTATIONAL SYSTEM FLAG | 1 | starter echo of JCVT |
 
-> web-mbd currently applies Radioss `SROTA3` Jaumann (as if `JCVT=0`). The live
-> oracle deck uses `JCVT=1`. That mismatch is a residual contributor; full
-> `Object.is` still needs the shared OR force kernel, but aligning TS/C to
-> `SRCOOR3`/`SRROTA3` is the next physics step while ELBUF packing lands.
+> web-mbd default is now `jcvt: 1` (`SRCOOR3`/`SRROTA3` in `hex.ts` /
+> `force_kernel.c`). Pin `jcvt: 0` for Jaumann golden / TS↔C Object.is tests.
+> Shared OR `S8EFORC3` packing remains required for production `Object.is`.
 
 1. Allocate / zero `ELBUF_TAB(NG)` LBUF: `SIG(6,8)`, `PLA(8)`, volumes
 2. Fill `PM` / `MAT_PARAM` LAW2 (ρ, E, ν, a, b, n=1); `uparam(1:11)`, `iparam(1:4)`

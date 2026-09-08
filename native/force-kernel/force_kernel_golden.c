@@ -93,7 +93,8 @@ int main(int argc, char **argv) {
   memcpy(vol0, g + o, 8 * sizeof(double));
   o += 8;
 
-  dU = wmbd_hex_internal_forces(x0, v0, &mat, stress, eqps, vol0, dt, f_out);
+  /* jcvt=0 preserves historical Jaumann golden Object.is */
+  dU = wmbd_hex_internal_forces(x0, v0, &mat, stress, eqps, vol0, dt, f_out, 0);
 
   for (i = 0; i < 24; i++) {
     if (!doubles_object_is(f_out[i], g[o + i])) {

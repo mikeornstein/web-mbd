@@ -8,7 +8,7 @@
 
 - `resol` CD order: FORINT(X) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2
 - Infinite-plane `/RWALL` ITIED=0 (`rgwall.F`): predict UX with DT12/DT2; strip normal V/A (no `DP0DT` — that is finite-plane `rgwalp` only)
-- H8C: 2×2×2, PG=`0.577350269189625`, **deck IFRAME=1 → JCVT=1 co-rotational** (`SRCOOR3`/`SRROTA3`; starter echo “COROTATIONAL SYSTEM FLAG = 1”). web-mbd still uses `SROTA3` Jaumann (`JCVT=0`) — known residual contributor. Icpre=1 PXC + ZEP3, DSV `vol0`
+- H8C: 2×2×2, PG=`0.577350269189625`, **deck IFRAME=1 → JCVT=1 co-rotational** (`SRCOOR3`/`SRROTA3`). web-mbd default is now `jcvt: 1` (stresses in co-rot frame; no Jaumann). Use `jcvt: 0` for the historical Jaumann path (golden / TS↔C Object.is). Icpre=1 PXC + ZEP3, DSV `vol0`
 - LAW2 / M2LAW-style J2 + bulk EOS `P=K·AMU`; shear engineering-rate convention
 - CFL: `128·V·SMAX` DELTAX, scale from `controls.cfl` (default 0.9)
 - Hierarchical `S8EJACIP3` Grad N ≡ isoparametric Grad N to ~1e-15 relative on distorted impact-face hexes

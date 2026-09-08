@@ -379,6 +379,157 @@ export function meanDilatationRate(
   );
 }
 
+/**
+ * Radioss `srepiso3` edge vectors at the natural origin (same combos as PXC aj*).
+ * Returns ξ, η, ζ covariant vectors (RX, SX, TX).
+ */
+export function hexEdgeVectors(x: Float64Array): {
+  rx: [number, number, number];
+  sx: [number, number, number];
+  tx: [number, number, number];
+} {
+  const x1 = x[0]!,
+    y1 = x[1]!,
+    z1 = x[2]!;
+  const x2 = x[3]!,
+    y2 = x[4]!,
+    z2 = x[5]!;
+  const x3 = x[6]!,
+    y3 = x[7]!,
+    z3 = x[8]!;
+  const x4 = x[9]!,
+    y4 = x[10]!,
+    z4 = x[11]!;
+  const x5 = x[12]!,
+    y5 = x[13]!,
+    z5 = x[14]!;
+  const x6 = x[15]!,
+    y6 = x[16]!,
+    z6 = x[17]!;
+  const x7 = x[18]!,
+    y7 = x[19]!,
+    z7 = x[20]!;
+  const x8 = x[21]!,
+    y8 = x[22]!,
+    z8 = x[23]!;
+
+  const x17 = x7 - x1,
+    x28 = x8 - x2,
+    x35 = x5 - x3,
+    x46 = x6 - x4;
+  const y17 = y7 - y1,
+    y28 = y8 - y2,
+    y35 = y5 - y3,
+    y46 = y6 - y4;
+  const z17 = z7 - z1,
+    z28 = z8 - z2,
+    z35 = z5 - z3,
+    z46 = z6 - z4;
+  const a17 = x17 + x46,
+    a28 = x28 + x35;
+  const b17 = y17 + y46,
+    b28 = y28 + y35;
+  const c17 = z17 + z46,
+    c28 = z28 + z35;
+
+  return {
+    rx: [x17 + x28 - x35 - x46, y17 + y28 - y35 - y46, z17 + z28 - z35 - z46],
+    sx: [a17 + a28, b17 + b28, c17 + c28],
+    tx: [a17 - a28, b17 - b28, c17 - c28],
+  };
+}
+
+function normalize3(v: [number, number, number]): [number, number, number] {
+  const n = Math.hypot(v[0], v[1], v[2]);
+  if (n === 0) return [0, 0, 0];
+  const inv = 1 / n;
+  return [v[0] * inv, v[1] * inv, v[2] * inv];
+}
+
+function cross3(
+  a: [number, number, number],
+  b: [number, number, number],
+): [number, number, number] {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+}
+
+/**
+ * Radioss `sortho3` (NITER=3): orthonormal triad from ξ/η/ζ edge vectors.
+ * Returns column-major R = [e1|e2|e3] as 9 doubles (R11,R21,R31, R12,…).
+ */
+export function hexOrthoR(
+  rx: [number, number, number],
+  sx: [number, number, number],
+  tx: [number, number, number],
+): Float64Array {
+  let U = normalize3(rx);
+  let V = normalize3(sx);
+  let W = normalize3(tx);
+  for (let n = 0; n < 3; n++) {
+    const e1: [number, number, number] = [
+      V[1] * W[2] - V[2] * W[1] + U[0],
+      V[2] * W[0] - V[0] * W[2] + U[1],
+      V[0] * W[1] - V[1] * W[0] + U[2],
+    ];
+    const e2: [number, number, number] = [
+      W[1] * U[2] - W[2] * U[1] + V[0],
+      W[2] * U[0] - W[0] * U[2] + V[1],
+      W[0] * U[1] - W[1] * U[0] + V[2],
+    ];
+    const e3: [number, number, number] = [
+      U[1] * V[2] - U[2] * V[1] + W[0],
+      U[2] * V[0] - U[0] * V[2] + W[1],
+      U[0] * V[1] - U[1] * V[0] + W[2],
+    ];
+    U = normalize3(e1);
+    V = normalize3(e2);
+    W = normalize3(e3);
+  }
+  const e1 = U;
+  const e3 = normalize3(cross3(e1, V));
+  const e2 = cross3(e3, e1);
+  // Column-major: e1, e2, e3
+  return Float64Array.from([
+    e1[0],
+    e1[1],
+    e1[2],
+    e2[0],
+    e2[1],
+    e2[2],
+    e3[0],
+    e3[1],
+    e3[2],
+  ]);
+}
+
+/** Radioss `srcoor3` R from current global hex coords (JHBE=17 path). */
+export function hexCorotR(x: Float64Array): Float64Array {
+  const { rx, sx, tx } = hexEdgeVectors(x);
+  return hexOrthoR(rx, sx, tx);
+}
+
+/** Apply x' = Rᵀ x (or F = R F') for all 8 nodes. `rT` true → Rᵀ, false → R. */
+export function rotateNodes8(r: Float64Array, src: Float64Array, dst: Float64Array, rT: boolean): void {
+  for (let a = 0; a < 8; a++) {
+    const ox = src[a * 3]!,
+      oy = src[a * 3 + 1]!,
+      oz = src[a * 3 + 2]!;
+    if (rT) {
+      dst[a * 3] = r[0]! * ox + r[1]! * oy + r[2]! * oz;
+      dst[a * 3 + 1] = r[3]! * ox + r[4]! * oy + r[5]! * oz;
+      dst[a * 3 + 2] = r[6]! * ox + r[7]! * oy + r[8]! * oz;
+    } else {
+      dst[a * 3] = r[0]! * ox + r[3]! * oy + r[6]! * oz;
+      dst[a * 3 + 1] = r[1]! * ox + r[4]! * oy + r[7]! * oz;
+      dst[a * 3 + 2] = r[2]! * ox + r[5]! * oy + r[8]! * oz;
+    }
+  }
+}
+
 export interface HexForceOptions {
   /** Mean-dilatation / constant-pressure (Radioss Icpre=1). Default true. */
   constantPressure?: boolean;
@@ -396,6 +547,11 @@ export interface HexForceOptions {
   bulkViscQuad?: number;
   /** Linear bulk viscosity qb (Radioss). Default 0. */
   bulkViscLin?: number;
+  /**
+   * Radioss JCVT: 1 = co-rotational (`SRCOOR3`/`SRROTA3`, no Jaumann; Taylor
+   * deck default). 0 = global + `SROTA3` Jaumann. Default 1.
+   */
+  jcvt?: 0 | 1;
 }
 
 /** Returns ∫σ:D dV dt. `fOut` accumulates +∫Bᵀσ dV. */
@@ -408,14 +564,29 @@ export function hexInternalForces(args: {
   fOut: Float64Array;
   options?: HexForceOptions;
 }): number {
-  const { x, v, states, mat, dt, fOut } = args;
+  const { states, mat, dt, fOut } = args;
   const constantPressure = args.options?.constantPressure !== false;
   const dsvVol0 = args.options?.dsvVol0 ?? constantPressure;
   const meanAmu = args.options?.meanAmu === true;
   const qa = args.options?.bulkViscQuad ?? 0;
   const qb = args.options?.bulkViscLin ?? 0;
+  const jcvt = args.options?.jcvt ?? 1;
   fOut.fill(0);
   let dU = 0;
+
+  // JCVT=1: work in co-rotational frame (Radioss SRCOOR3); stresses stay local.
+  let x = args.x;
+  let v = args.v;
+  let R: Float64Array | null = null;
+  if (jcvt === 1) {
+    R = hexCorotR(args.x);
+    const xLoc = new Float64Array(24);
+    const vLoc = new Float64Array(24);
+    rotateNodes8(R, args.x, xLoc, true);
+    rotateNodes8(R, args.v, vLoc, true);
+    x = xLoc;
+    v = vLoc;
+  }
 
   type GpCache = {
     detJ: number;
@@ -506,27 +677,29 @@ export function hexInternalForces(args: {
     const rho = mat.density * (state.vol0 / Math.max(vol, 1e-30));
     gpCache.q = rho * ad * al * (qa * qa * ad * al + qb * ssp);
 
-    // Radioss SROTA3 Jaumann (Iframe=1 / JCVT=0): Wα = (dt/2)*(∂vβ/∂xγ − ∂vγ/∂xβ)
-    // matches ω_α * dt, applied to Voigt stress with engineering shear convention.
-    const wzz = 0.5 * dt * (L[3]! - L[1]!); // DT1D2*(DYX-DXY)
-    const wyy = 0.5 * dt * (L[2]! - L[6]!); // DT1D2*(DXZ-DZX)
-    const wxx = 0.5 * dt * (L[7]! - L[5]!); // DT1D2*(DZY-DYZ)
     const sigma = state.stress;
-    const s1 = sigma[0]!,
-      s2 = sigma[1]!,
-      s3 = sigma[2]!,
-      s4 = sigma[3]!,
-      s5 = sigma[4]!,
-      s6 = sigma[5]!;
-    const q1 = 2 * s4 * wzz;
-    const q2 = 2 * s6 * wyy;
-    const q3 = 2 * s5 * wxx;
-    sigma[0] = s1 - q1 + q2;
-    sigma[1] = s2 + q1 - q3;
-    sigma[2] = s3 - q2 + q3;
-    sigma[3] = s4 + wzz * (s1 - s2) + wyy * s5 - wxx * s6;
-    sigma[4] = s5 + wxx * (s2 - s3) + wzz * s6 - wyy * s4;
-    sigma[5] = s6 + wyy * (s3 - s1) + wxx * s4 - wzz * s5;
+    if (jcvt === 0) {
+      // Radioss SROTA3 Jaumann (JCVT=0): Wα = (dt/2)*(∂vβ/∂xγ − ∂vγ/∂xβ)
+      const wzz = 0.5 * dt * (L[3]! - L[1]!);
+      const wyy = 0.5 * dt * (L[2]! - L[6]!);
+      const wxx = 0.5 * dt * (L[7]! - L[5]!);
+      const s1 = sigma[0]!,
+        s2 = sigma[1]!,
+        s3 = sigma[2]!,
+        s4 = sigma[3]!,
+        s5 = sigma[4]!,
+        s6 = sigma[5]!;
+      const q1 = 2 * s4 * wzz;
+      const q2 = 2 * s6 * wyy;
+      const q3 = 2 * s5 * wxx;
+      sigma[0] = s1 - q1 + q2;
+      sigma[1] = s2 + q1 - q3;
+      sigma[2] = s3 - q2 + q3;
+      sigma[3] = s4 + wzz * (s1 - s2) + wyy * s5 - wxx * s6;
+      sigma[4] = s5 + wxx * (s2 - s3) + wzz * s6 - wyy * s4;
+      sigma[5] = s6 + wyy * (s3 - s1) + wxx * s4 - wzz * s5;
+    }
+    // JCVT=1: CSMALL3 — stresses already in co-rot frame; no objective rate.
 
     j2Update(mat, state, d, dt, vol, amuElem);
   }
@@ -597,6 +770,12 @@ export function hexInternalForces(args: {
       fOut[b * 3 + 1]! -= sy;
       fOut[b * 3 + 2]! -= sz;
     }
+  }
+
+  // JCVT=1: SRROTA3 — F_global = R F_local
+  if (R) {
+    const fLoc = Float64Array.from(fOut);
+    rotateNodes8(R, fLoc, fOut, false);
   }
 
   return dU;

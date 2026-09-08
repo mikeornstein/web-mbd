@@ -20,6 +20,7 @@ let nativeLib: {
     vol0: Float64Array,
     dt: number,
     fOut: Float64Array,
+    jcvt: number,
   ) => number;
 } | null = null;
 
@@ -60,9 +61,10 @@ export function loadNativeForceKernel(): boolean {
       "double *",
       "double",
       "double *",
+      "int",
     ]);
     nativeLib = {
-      wmbd_hex_internal_forces: (x0, v0, matArr, stress, eqps, vol0, dt, fOut) => {
+      wmbd_hex_internal_forces: (x0, v0, matArr, stress, eqps, vol0, dt, fOut, jcvt) => {
         const mat = {
           density: matArr[0]!,
           young: matArr[1]!,
@@ -70,7 +72,7 @@ export function loadNativeForceKernel(): boolean {
           yield_stress: matArr[3]!,
           hardening: matArr[4]!,
         };
-        return fn(x0, v0, mat, stress, eqps, vol0, dt, fOut) as number;
+        return fn(x0, v0, mat, stress, eqps, vol0, dt, fOut, jcvt) as number;
       },
     };
     return true;
@@ -95,6 +97,7 @@ export function hexInternalForcesNative(args: {
   mat: MaterialJ2Linear;
   dt: number;
   fOut: Float64Array;
+  options?: { jcvt?: 0 | 1 };
 }): number {
   if (!loadNativeForceKernel() || !nativeLib) {
     throw new Error("native force kernel not loaded (build native/force-kernel)");
@@ -116,6 +119,7 @@ export function hexInternalForcesNative(args: {
     args.mat.hardeningModulus,
   ]);
   args.fOut.fill(0);
+  const jcvt = args.options?.jcvt ?? 1;
   const dU = nativeLib.wmbd_hex_internal_forces(
     args.x,
     args.v,
@@ -125,6 +129,7 @@ export function hexInternalForcesNative(args: {
     vol0,
     args.dt,
     args.fOut,
+    jcvt,
   );
   for (let gp = 0; gp < 8; gp++) {
     const s = args.states[gp]!;

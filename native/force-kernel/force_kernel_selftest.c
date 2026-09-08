@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   mat.yield_stress = 3.5e8;
   mat.hardening = 1.0e9;
 
-  dU = wmbd_hex_internal_forces(x0, v0, &mat, stress, eqps, vol0, 1e-6, f_out);
+  dU = wmbd_hex_internal_forces(x0, v0, &mat, stress, eqps, vol0, 1e-6, f_out, 1);
 
   printf("dU = %.17g\n", dU);
   printf("forces:\n");
