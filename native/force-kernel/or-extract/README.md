@@ -48,20 +48,27 @@ shared rebuild is required.
 
 ```c
 /* or_bridge.c — packs web-mbd one-hex state into OR MVSIZ element buffers */
-double wmbd_hex_internal_forces_or(
-    const double x0[24], const double v0[24], const WmbdMat *mat,
-    double stress_io[48], double eqps_io[8], double vol0_io[8],
-    double dt, double f_out[24]);
+int wmbd_hex_internal_forces_or(...);  /* returns 0 on success; -1 until packed */
 ```
 
-Required packing (see `s8eforc3.F` / `forint.F`):
+`S8EFORC3` (from `s8eforc3.F`) is **not** a one-hex pure function — first args are:
 
-- Nodal `X`, `V`, `A` for 8 nodes → MVSIZ-strided OR arrays
-- `ELBUF_TAB` LBUF: `SIG(6,NPG)`, `PLA`, `VOL0` / `VOL`
-- `MAT_PARAM` / `PM` LAW2 constants (ρ, E, ν, a, b, n=1)
-- `GEO` / `IGEO` solid props: Isolid=17, Icpre=1, Iframe=1, Ismstr=4
-- `DT1` constitutive step (= web-mbd `dt`)
-- Accumulate `FINT` → `f_out`
+```
+S8EFORC3(TIMERS, OUTPUT, ELBUF_TAB, NG, PM, GEO, … IXS, X, A, V, … IPARG, …)
+```
+
+Packing checklist for one Taylor hex group (`NEL=1`, `NPG=8`, LAW2, Isolid=17):
+
+1. Allocate / zero `ELBUF_TAB(NG)` LBUF: `SIG(6,8)`, `PLA(8)`, volumes
+2. Fill `PM` / `MAT_PARAM` LAW2 (ρ, E, ν, a, b, n=1)
+3. Fill `GEO` / `IGEO` solid props (Icpre=1, Iframe=1, Ismstr=4)
+4. Pack nodal `X`,`V` (and zero `A`) into OR node arrays for 8 ITAB ids
+5. Set `DT1` / group `IPARG` flags matching the exported deck
+6. Call `S8EFORC3` (or a thin Fortran wrapper that sets commons first)
+7. Scatter `FINT` / updated `SIG`/`PLA` back to `f_out` / `stress_io` / `eqps_io`
+
+Stub: `or_bridge.c` currently returns `-1`. Symbols in `libor_h8c.so` are verified
+by `smoke_symbols` / `tests/or-h8c-symbols.test.ts`.
 
 ## Dependency inventory
 

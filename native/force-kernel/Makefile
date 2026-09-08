@@ -1,12 +1,19 @@
 libforce_kernel.so: force_kernel.c force_kernel.h
 	cc -O2 -fPIC -shared -o $@ force_kernel.c -lm
 
+or_bridge.o: or-extract/or_bridge.c or-extract/or_bridge.h force_kernel.h
+	cc -O2 -fPIC -c -o $@ or-extract/or_bridge.c -I. -Ior-extract
+
 selftest: force_kernel_selftest.c libforce_kernel.so
 	cc -O2 -o force_kernel_selftest force_kernel_selftest.c -L. -lforce_kernel -lm -Wl,-rpath,'$$ORIGIN'
 
 golden-test: force_kernel_golden.c libforce_kernel.so
 	cc -O2 -o force_kernel_golden force_kernel_golden.c -L. -lforce_kernel -lm -Wl,-rpath,'$$ORIGIN'
 
-.PHONY: selftest golden-test clean
+.PHONY: selftest golden-test clean smoke-or
+smoke-or: or-extract/smoke_symbols.c
+	cc -O2 -o or-extract/smoke_symbols or-extract/smoke_symbols.c -ldl
+	./or-extract/smoke_symbols or-extract/build/libor_h8c.so
+
 clean:
-	rm -f libforce_kernel.so force_kernel_selftest force_kernel_golden
+	rm -f libforce_kernel.so force_kernel_selftest force_kernel_golden or_bridge.o or-extract/smoke_symbols
