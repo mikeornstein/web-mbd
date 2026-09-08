@@ -13,7 +13,7 @@ typedef struct {
 } WmbdMat;
 
 typedef int (*or_fn)(const double *, const double *, const WmbdMat *, double *, double *, double *,
-                     double *, double *, double, double *);
+                     double *, double *, double *, double, double *);
 
 typedef struct {
   or_fn fn;
@@ -25,6 +25,7 @@ typedef struct {
   double *vol0;
   double *smstr;
   double *offg;
+  double *hist;
   double dt;
   double *f_out;
   int rc;
@@ -32,7 +33,7 @@ typedef struct {
 
 static void *or_call_thread(void *arg) {
   OrCallArgs *a = (OrCallArgs *)arg;
-  a->rc = a->fn(a->x0, a->v0, a->mat, a->stress, a->eqps, a->vol0, a->smstr, a->offg, a->dt,
+  a->rc = a->fn(a->x0, a->v0, a->mat, a->stress, a->eqps, a->vol0, a->smstr, a->offg, a->hist, a->dt,
                 a->f_out);
   return NULL;
 }
@@ -46,6 +47,7 @@ int wmbd_hex_internal_forces_or_pthread(
     double vol0_io[8],
     double smstr_io[21],
     double *offg_io,
+    double hist_io[32],
     double dt,
     double f_out[24]) {
   or_fn fn = (or_fn)dlsym(RTLD_DEFAULT, "wmbd_hex_internal_forces_or");
@@ -61,6 +63,7 @@ int wmbd_hex_internal_forces_or_pthread(
       .vol0 = vol0_io,
       .smstr = smstr_io,
       .offg = offg_io,
+      .hist = hist_io,
       .dt = dt,
       .f_out = f_out,
       .rc = -97,

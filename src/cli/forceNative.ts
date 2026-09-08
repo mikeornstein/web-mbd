@@ -40,14 +40,17 @@ let orLib: {
     vol0: Float64Array,
     smstr: Float64Array,
     offg: Float64Array,
+    hist: Float64Array,
     dt: number,
     fOut: Float64Array,
   ) => number;
 } | null = null;
 
-/** Per-element ISMSTR=4 persistence for the OR backend. */
+/** Per-element ISMSTR=4 + ELBUF history for the OR backend. */
 const orSmstrByElem = new Map<number, Float64Array>();
 const orOffgByElem = new Map<number, number>();
+/** eint[8] + epsd[8] + qvis[8] + rho[8] */
+const orHistByElem = new Map<number, Float64Array>();
 
 function resolveKernelPath(): string | null {
   const candidates = [
@@ -149,12 +152,13 @@ export function loadOrForceKernel(): boolean {
       "double *",
       "double *",
       "double *",
+      "double *",
       "double",
       "double *",
     ]);
     orLib = {
-      wmbd_hex_internal_forces_or: (x0, v0, mat, stress, eqps, vol0, smstr, offg, dt, fOut) =>
-        fn(x0, v0, mat, stress, eqps, vol0, smstr, offg, dt, fOut) as number,
+      wmbd_hex_internal_forces_or: (x0, v0, mat, stress, eqps, vol0, smstr, offg, hist, dt, fOut) =>
+        fn(x0, v0, mat, stress, eqps, vol0, smstr, offg, hist, dt, fOut) as number,
     };
     return true;
   } catch {
@@ -174,6 +178,7 @@ export function orForceKernelAvailable(): boolean {
 export function resetOrElementState(): void {
   orSmstrByElem.clear();
   orOffgByElem.clear();
+  orHistByElem.clear();
 }
 
 /**
@@ -259,6 +264,12 @@ export function hexInternalForcesOr(args: {
     orOffgByElem.set(e, offg);
   }
   const offgArr = Float64Array.from([offg]);
+  let hist = orHistByElem.get(e);
+  if (!hist) {
+    hist = new Float64Array(32);
+    for (let i = 0; i < 8; i++) hist[24 + i] = args.mat.density;
+    orHistByElem.set(e, hist);
+  }
 
   const stress = new Float64Array(48);
   const eqps = new Float64Array(8);
@@ -286,6 +297,7 @@ export function hexInternalForcesOr(args: {
     vol0,
     smstr,
     offgArr,
+    hist,
     args.dt,
     args.fOut,
   );

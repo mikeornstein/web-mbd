@@ -17,7 +17,7 @@ typedef struct {
 } WmbdMat;
 
 typedef int (*or_force_fn)(const double *, const double *, const WmbdMat *, double *, double *,
-                           double *, double *, double *, double, double *);
+                           double *, double *, double *, double *, double, double *);
 typedef double (*get_dt1_fn)(void);
 
 static int env_truthy(const char *name) {
@@ -66,11 +66,13 @@ int main(int argc, char **argv) {
   for (int i = 0; i < 8; ++i) vol0[i] = 0.125;
   double smstr[21] = {0};
   double offg = 1.0;
-  double f_out[24] = {0};
   WmbdMat mat = {8930, 117e9, 0.35, 400e6, 100e6};
+  double hist[32] = {0};
+  for (int i = 0; i < 8; ++i) hist[24 + i] = mat.density;
+  double f_out[24] = {0};
   const double dt = 7.815479988515705e-8;
 
-  int rc = force(x0, v0, &mat, stress, eqps, vol0, smstr, &offg, dt, f_out);
+  int rc = force(x0, v0, &mat, stress, eqps, vol0, smstr, &offg, hist, dt, f_out);
   double dt1 = get_dt1();
 
   printf("wmbd_hex_internal_forces_or rc=%d DT1=%.17e (expect %.17e) call_s8e=%d\n", rc, dt1, dt,

@@ -21,7 +21,7 @@ module wmbd_or_hex_force_mod
   use dt_mod
   use glob_therm_mod
   use table_mod
-  use constant_mod, only: zero, one, two, three
+  use constant_mod, only: zero, one, two, three, five, six, four_over_3
   use element_mod, only: nixs
   implicit none
 
@@ -141,15 +141,30 @@ contains
     mat_param_arr(1)%nfail = 0
     allocate(mat_param_arr(1)%iparam(4), mat_param_arr(1)%uparam(12), stat=istat)
     if (istat /= 0) return
+    ! Match starter hm_read_mat02_jc for /MAT/PLAS_JOHNS with CC=0:
+    ! IFORM=0 (JC), ICC=1, VP=2 (total strain rate), ISRATE=0.
     mat_param_arr(1)%iparam = 0
-    mat_param_arr(1)%iparam(1) = 1
+    mat_param_arr(1)%iparam(1) = 0
+    mat_param_arr(1)%iparam(2) = 1
+    mat_param_arr(1)%iparam(3) = 2
+    mat_param_arr(1)%iparam(4) = 0
     mat_param_arr(1)%uparam = zero
     mat_param_arr(1)%uparam(1) = mat%yield_stress
     mat_param_arr(1)%uparam(2) = mat%hardening
     mat_param_arr(1)%uparam(3) = one
     mat_param_arr(1)%uparam(4) = 1.0d30
     mat_param_arr(1)%uparam(5) = 1.0d30
-    mat_param_arr(1)%therm%tini = zero
+    mat_param_arr(1)%uparam(6) = zero
+    mat_param_arr(1)%uparam(7) = one
+    mat_param_arr(1)%uparam(8) = zero
+    mat_param_arr(1)%uparam(9) = zero
+    mat_param_arr(1)%uparam(10) = one
+    mat_param_arr(1)%uparam(11) = 1.0d30
+    mat_param_arr(1)%uparam(12) = -1.0d30
+    mat_param_arr(1)%therm%tref = 300.0d0
+    mat_param_arr(1)%therm%tini = 300.0d0
+    mat_param_arr(1)%therm%tmelt = 1.0d30
+    mat_param_arr(1)%therm%rhocp = zero
 
     mat_elem%ngroup = 1
     mat_elem%nummat = 1
@@ -415,17 +430,35 @@ contains
     pm(20, 1) = young
     pm(21, 1) = anu
     pm(22, 1) = g
+    pm(24, 1) = young / (one - anu * anu)
+    pm(25, 1) = anu * pm(24, 1)
+    pm(26, 1) = five / six
+    pm(27, 1) = sqrt(young / max(rho0, 1.0d-20))
     pm(28, 1) = one / young
+    pm(29, 1) = -anu * pm(28, 1)
+    pm(30, 1) = one / g
     pm(32, 1) = bulk
+    pm(37, 1) = -1.0d30
     pm(38, 1) = mat%yield_stress
     pm(39, 1) = mat%hardening
     pm(40, 1) = one
     pm(41, 1) = 1.0d30
     pm(42, 1) = 1.0d30
+    pm(43, 1) = zero
+    pm(44, 1) = one
+    pm(47, 1) = 1.0d30
+    pm(49, 1) = one
+    pm(50, 1) = zero
+    pm(51, 1) = one
+    pm(55, 1) = zero
+    pm(79, 1) = 300.0d0
+    pm(80, 1) = 1.0d30
+    pm(105, 1) = two * g / (bulk + four_over_3 * g)
     pm(89, 1) = rho0
     pm(1, 1) = rho0
     ipm(1, 1) = 1
     ipm(2, 1) = 2
+    ipm(255, 1) = 2
 
     igeo(1, 1) = 1
     igeo(4, 1) = 8
@@ -442,14 +475,17 @@ contains
     ok = .true.
   end function alloc_taylor_elbuf
 
-  subroutine pack_state(x0, v0, stress_io, eqps_io, vol0_io, smstr_io, offg_io, mat)
+  subroutine pack_state(x0, v0, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, mat)
     real(c_double), intent(in) :: x0(24), v0(24)
     real(c_double), intent(in) :: stress_io(48), eqps_io(8), vol0_io(8)
     real(c_double), intent(in) :: smstr_io(21)
     real(c_double), intent(in), value :: offg_io
+    ! hist_io: eint[8], epsd[8], qvis[8], rho[8] — per-GP ELBUF history for the shared one-hex buffer
+    real(c_double), intent(in) :: hist_io(32)
     type(wmbd_mat_c), intent(in) :: mat
     integer :: n, ir, is, it, ip, k
     type(l_bufel_), pointer :: lbuf
+    real(kind=8) :: eint_sum, rho_sum
 
     do n = 1, 8
       xnod(1, n) = x0(3 * (n - 1) + 1)
@@ -467,7 +503,11 @@ contains
     do k = 1, 21
       elbuf_tab(1)%gbuf%smstr(k) = smstr_io(k)
     end do
+    if (associated(elbuf_tab(1)%gbuf%pla)) elbuf_tab(1)%gbuf%pla(1) = zero
+    if (associated(elbuf_tab(1)%gbuf%sig)) elbuf_tab(1)%gbuf%sig = zero
 
+    eint_sum = zero
+    rho_sum = zero
     ! Match S8EFORC3: IP = IR + ((IS-1)+(IT-1)*NPTS)*NPTR with NPTR=NPTS=NPTT=2
     ! (ξ / IR fastest — same as web-mbd RADIOSS_GAUSS / s8eprst_ini KSI).
     do it = 1, 2
@@ -481,19 +521,31 @@ contains
           lbuf%pla(1) = eqps_io(ip)
           lbuf%vol(1) = vol0_io(ip)
           lbuf%vol0dp(1) = vol0_io(ip)
-          lbuf%rho(1) = mat%density
+          lbuf%eint(1) = hist_io(ip)
+          lbuf%epsd(1) = hist_io(8 + ip)
+          lbuf%qvis(1) = hist_io(16 + ip)
+          lbuf%rho(1) = hist_io(24 + ip)
           lbuf%off(1) = one
+          eint_sum = eint_sum + lbuf%eint(1)
+          rho_sum = rho_sum + lbuf%rho(1)
+          if (associated(lbuf%sigb)) lbuf%sigb = zero
+          if (associated(lbuf%stra)) lbuf%stra = zero
         end do
       end do
     end do
+    elbuf_tab(1)%gbuf%eint(1) = eint_sum * 0.125d0
+    elbuf_tab(1)%gbuf%rho(1) = rho_sum * 0.125d0
+    elbuf_tab(1)%gbuf%qvis(1) = zero
+    elbuf_tab(1)%gbuf%epsd(1) = zero
   end subroutine pack_state
 
-  subroutine scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, f11, f21, f31, f12, f22, f32, &
+  subroutine scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f11, f21, f31, f12, f22, f32, &
        f13, f23, f33, f14, f24, f34, f15, f25, f35, f16, f26, f36, f17, f27, f37, &
        f18, f28, f38, f_out)
     real(c_double), intent(inout) :: stress_io(48), eqps_io(8), vol0_io(8)
     real(c_double), intent(inout) :: smstr_io(21)
     real(c_double), intent(out) :: offg_io
+    real(c_double), intent(inout) :: hist_io(32)
     real(kind=8), intent(in) :: f11(:), f21(:), f31(:), f12(:), f22(:), f32(:)
     real(kind=8), intent(in) :: f13(:), f23(:), f33(:), f14(:), f24(:), f34(:)
     real(kind=8), intent(in) :: f15(:), f25(:), f35(:), f16(:), f26(:), f36(:)
@@ -512,6 +564,10 @@ contains
           end do
           eqps_io(ip) = lbuf%pla(1)
           vol0_io(ip) = lbuf%vol(1)
+          hist_io(ip) = lbuf%eint(1)
+          hist_io(8 + ip) = lbuf%epsd(1)
+          hist_io(16 + ip) = lbuf%qvis(1)
+          hist_io(24 + ip) = lbuf%rho(1)
         end do
       end do
     end do
@@ -544,7 +600,7 @@ contains
     end if
   end function env_call_s8e
 
-  function wmbd_hex_internal_forces_or(x0, v0, mat, stress_io, eqps_io, vol0_io, smstr_io, offg_io, dt, f_out) &
+  function wmbd_hex_internal_forces_or(x0, v0, mat, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, dt, f_out) &
        result(rc) bind(C, name='wmbd_hex_internal_forces_or')
     real(c_double), intent(in) :: x0(24)
     real(c_double), intent(in) :: v0(24)
@@ -554,6 +610,7 @@ contains
     real(c_double), intent(inout) :: vol0_io(8)
     real(c_double), intent(inout) :: smstr_io(21)
     real(c_double), intent(inout) :: offg_io
+    real(c_double), intent(inout) :: hist_io(32)
     real(c_double), intent(in), value :: dt
     real(c_double), intent(out) :: f_out(24)
     integer(c_int) :: rc
@@ -585,7 +642,7 @@ contains
       pack_ready = .true.
     end if
 
-    call pack_state(x0, v0, stress_io, eqps_io, vol0_io, smstr_io, offg_io, mat)
+    call pack_state(x0, v0, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, mat)
 
     if (.not. env_call_s8e()) then
       rc = -2_c_int
@@ -644,7 +701,7 @@ contains
          mat_elem, h3d_strain, dt_t, snpc, stf, sbufmat, svis, nsvois, idtmins, iresp, &
          maxfunc, userl_avail, glob_therm, impl_s, idyna)
 
-    call scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, f11, f21, f31, f12, f22, f32, &
+    call scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f11, f21, f31, f12, f22, f32, &
          f13, f23, f33, f14, f24, f34, f15, f25, f35, f16, f26, f36, f17, f27, f37, &
          f18, f28, f38, f_out)
     rc = 0_c_int

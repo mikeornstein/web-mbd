@@ -73,4 +73,7 @@ host float64).
 - Remaining for OR parity: drive the web-mbd CD loop through the OR extract ABI instead of the C mirror — see `native/force-kernel/or-extract/`
 - Stock `engine_linux64_gf` is ELF `EXEC` (not dlopenable) despite unstripped `s8eforc3_` / `m2law_`
 - PIC shared extract: `libwmbd_or_hex.so` packs one-hex ELBUF via starter `WMBD_ALLOCBUF_AUTO`, sets VECT01/IPARG for H8C/LAW2/JCVT=1, and with `WMBD_OR_CALL_S8E=1` calls `S8EFORC3`. Unit-cube forces match C-mirror (`jcvt=1`) after OR→ABI sign flip to ~1e-14 relative. CD loop can drive OR via `hexInternalForcesOr` (pthread wrapper for Node stack).
-- **GP pack bug fixed:** pack/scatter must use `IP = IR+((IS-1)+(IT-1)*NPTS)*NPTR` (ξ-fastest). Wrong nesting scrambled GP state → Rf ~0.33 / CFL collapse by 5 μs on coarse Taylor; after fix, OR-ABI vs TS `jcvt:1` is ~1e-5 Lf / ~1e-4 Rf at 80 μs with matched step counts. Full Taylor `Object.is` vs live OR still open.
+- **GP pack bug fixed:** pack/scatter must use `IP = IR+((IS-1)+(IT-1)*NPTS)*NPTR` (ξ-fastest). Wrong nesting scrambled GP state → Rf ~0.33 / CFL collapse by 5 μs on coarse Taylor; after fix, OR-ABI vs TS `jcvt:1` is ~1e-5 Lf / ~1e-4 Rf at 80 μs with matched step counts.
+- **MAT_PARAM:** IFORM=0 (Johnson–Cook), ICC=1, VP=2, EPS0=1, PMIN=−1e30 — matches `hm_read_mat02_jc` for the Taylor deck (was wrongly IFORM=1 Zerilli).
+- **Per-element hist ABI:** `hist_io[32]` = EINT/EPSD/QVIS/RHO×8 so the shared one-hex ELBUF does not leak across elements.
+- Coarse (2×2×4) OR-ABI vs **live** OR at 80 μs (`.sta`): ~3.7e-5 Lf / ~2.9e-4 Rf, aligned max ~6 μm, steps 208 vs 209 — not `Object.is`. Full production mesh still open.
