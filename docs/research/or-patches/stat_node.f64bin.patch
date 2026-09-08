@@ -1,0 +1,60 @@
+diff --git a/engine/source/output/sta/stat_node.F b/engine/source/output/sta/stat_node.F
+index bd0835d..e488994 100644
+--- a/engine/source/output/sta/stat_node.F
++++ b/engine/source/output/sta/stat_node.F
+@@ -60,10 +60,11 @@ C-----------------------------------------------
+ C-----------------------------------------------
+ C   L o c a l   V a r i a b l e s
+ C-----------------------------------------------
+-      INTEGER I
++      INTEGER I, LEN_STA
+       INTEGER,DIMENSION(:),ALLOCATABLE :: NODTAGLOB
+       my_real,DIMENSION(:,:),ALLOCATABLE :: VGLOB
+       my_real,DIMENSION(3) :: X_COPY
++      CHARACTER(len=2148) :: STA_NAME, F64_NAME
+ C-----------------------------------------------
+       call my_alloc(NODTAGLOB, LENG, "NODTAGLOB")
+       call my_alloc(VGLOB, 3, LENG, "VGLOB")
+@@ -79,6 +80,22 @@ C-----------------------------------------------
+       WRITE(IUGEO,'(2A)')'#    NODID               XCOOR',
+      .         '               YCOOR               ZCOOR'
+ 
++C     web-mbd: dump host float64 beside .sta (same stem, .f64bin).
++C     Layout per node: int32 ITAB + 3*float64 XYZ (raw X, not E20.13 X_COPY).
++C     Unit 777; name from INQUIRE(IUGEO) so each STATE dump matches.
++      IF (ISPMD == 0) THEN
++        INQUIRE(UNIT=IUGEO,NAME=STA_NAME)
++        LEN_STA = LEN_TRIM(STA_NAME)
++        IF (LEN_STA >= 4 .AND.
++     .      STA_NAME(LEN_STA-3:LEN_STA) == '.sta') THEN
++          F64_NAME = STA_NAME(1:LEN_STA-4)//'.f64bin'
++        ELSE
++          F64_NAME = 'nodes.f64bin'
++        ENDIF
++        OPEN(UNIT=777,FILE=TRIM(F64_NAME),
++     .       ACCESS='STREAM',FORM='UNFORMATTED',STATUS='REPLACE')
++      ENDIF
++
+       IF (NSPMD == 1) THEN
+         DO I=1,NUMNOD
+            IF(NODTAG(I) /= 0) THEN
+@@ -92,6 +109,7 @@ C-----------------------------------------------
+              endif
+              WRITE(IUGEO,'(I10,1P3E20.13)')
+      .             ITAB(I),X_COPY(1),X_COPY(2),X_COPY(3)
++             WRITE(777) ITAB(I),X(1,I),X(2,I),X(3,I)
+            END IF
+         END DO
+       ELSE
+@@ -104,9 +122,11 @@ C-----------------------------------------------
+               endif
+              WRITE(IUGEO,'(I10,1P3E20.13)')  
+      .             ITABG(I),VGLOB(1,I),VGLOB(2,I),VGLOB(3,I)
++             WRITE(777) ITABG(I),VGLOB(1,I),VGLOB(2,I),VGLOB(3,I)
+           ENDIF
+         END DO
+       ENDIF
++      IF (ISPMD == 0) CLOSE(777)
+ C-----------------------------------------------
+       call my_dealloc(NODTAGLOB)
+       call my_dealloc(VGLOB)

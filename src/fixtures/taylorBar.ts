@@ -1,5 +1,6 @@
 import type { ModelIR } from "../ir/types.js";
 import { createCylinderHexMesh } from "../mesh/cylinderHex.js";
+import { snapCoordsToRadiossF20 } from "../oracle/exportRadioss.js";
 
 /**
  * Classic copper Taylor impact specimen (OFHC-like linear hardening idealization).
@@ -12,6 +13,9 @@ import { createCylinderHexMesh } from "../mesh/cylinderHex.js";
  * (Radioss-like /DT scale) for stable full-integration hexes.
  * Acceptance bands are tightened against the OpenRadioss same-mesh oracle (see
  * `src/oracle/` and `docs/mvp-taylor-bar.md`).
+ *
+ * Nodal XYZ are snapped through Radioss F20 so web-mbd and the exported
+ * starter `/NODE` cards share identical float64 X0 (required for Object.is).
  */
 export interface TaylorFixtureOptions {
   /** Cross-section subdivisions (default 6). */
@@ -32,6 +36,7 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
     nSide: options.nSide ?? 6,
     nZ: options.nZ ?? 16,
   });
+  const coords = snapCoordsToRadiossF20(mesh.coords);
 
   return {
     meta: {
@@ -49,7 +54,7 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
       hardeningModulus: 100e6,
     },
     mesh: {
-      coords: mesh.coords,
+      coords: Array.from(coords),
       hexes: mesh.hexes,
     },
     wall: {

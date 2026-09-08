@@ -62,9 +62,27 @@ Fixed-DT divergence probe (`scripts/probe-sta-divergence.ts`):
 So **ID-aligned coord `Object.is` against `.sta` text is impossible**: E20.13
 round-trip alone is ~10⁻¹⁴ m. Restart `.rst` uses Radioss portable IEEE via
 `double_to_IEEE_ASCII` (not raw host `double`), so it is also a non-trivial
-reader — not a drop-in bit dump. True nodal `Object.is` still requires a
-**shared in-process force kernel** (or an instrumented OR binary that writes
-host float64).
+reader — not a drop-in bit dump.
+
+### Host `.f64bin` dump (patched engine)
+
+Patched `stat_node.F` writes `ROOT_NNNN.f64bin` beside each `.sta`
+(int32 ITAB + 3×float64 raw X). See `docs/research/or-f64bin-host-dump.md`
+and `docs/research/or-patches/stat_node.f64bin.patch`.
+
+**Also required for Object.is:** snap web-mbd `/NODE` coords through
+`formatRadiossF20` (old E20.10 truncated cylinder corners by ~3×10⁻¹⁵ m) and
+scrub |x|≤1e-18 on both sides before `alignedCoordGap`.
+
+| Setup (coarse 2×2×4, fixed Δt=2.5e-8, OR-ABI JCVT=0, snapped X0, scrub) | metrics `Object.is` | coords `Object.is` |
+| --- | --- | --- |
+| 1×Δt vs live `.f64bin` | **true** | **true** |
+| 10×Δt | true | false (~1e-18) |
+| 100×Δt / 10 μs | false (~1e-16) | false |
+| 80 μs adaptive CFL | false (~9e-6) | false (~0.16 μm) |
+
+Host float64 removes the E20.13 wall. Remaining production residual is adaptive
+CFL phase (+ OR cycle bookkeeping off-by-one on short fixed-Δt runs).
 
 ## Shared kernel status (web-mbd)
 

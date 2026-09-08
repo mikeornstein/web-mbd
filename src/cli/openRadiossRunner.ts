@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ModelIR } from "../ir/types.js";
 import { exportTaylorRadiossDecks } from "../oracle/exportRadioss.js";
+import { shapeFromF64bin } from "../oracle/shapeFromF64bin.js";
 import { shapeFromSta } from "../oracle/shapeFromSta.js";
 import { parseVtkPoints, shapeFromVtk } from "../oracle/shapeFromVtk.js";
 
@@ -20,18 +21,22 @@ export interface OracleShapeMetrics {
   finalMaxRadius: number;
   source: "openradioss";
   root: string;
-  /** float64 `.sta` preferred; anim VTK is float32 fallback. */
-  coordSource: "sta" | "vtk";
+  /**
+   * Prefer host `.f64bin` (patched engine, Object.is-capable) over E20.13
+   * `.sta`; anim VTK is float32 fallback.
+   */
+  coordSource: "f64bin" | "sta" | "vtk";
 }
 
 export interface OracleRunResult {
   metrics: OracleShapeMetrics;
-  /** Final nodal XYZ (ID-sorted when from `.sta`). */
+  /** Final nodal XYZ (ID-sorted when from `.sta` / `.f64bin`). */
   coords: Float64Array;
   workDir: string;
   starterLog: string;
   engineLog: string;
   staFile?: string;
+  f64binFile?: string;
   vtkFile?: string;
 }
 
@@ -54,6 +59,7 @@ function clearOracleArtifacts(workDir: string, root: string): void {
     if (
       f.startsWith(root) ||
       f.endsWith(".sta") ||
+      f.endsWith(".f64bin") ||
       f.endsWith(".vtk") ||
       f.endsWith(".rst") ||
       /A\d{3}$/.test(f)
@@ -132,7 +138,8 @@ function convertLastAnim(
 
 /**
  * Run OpenRadioss starter+engine on the exported Taylor deck.
- * Prefer float64 `.sta` (`/STATE/DT/ALL`); fall back to anim→VTK (float32).
+ * Prefer host `.f64bin` (patched engine) when present beside the selected
+ * `.sta`; else float64 `.sta` (`/STATE/DT/ALL`); else anim→VTK (float32).
  */
 export function runOpenRadiossTaylorOracle(
   model: ModelIR,
@@ -201,6 +208,33 @@ export function runOpenRadiossTaylorOracle(
       anim?.vtkText,
     );
     const staPath = join(workDir, picked.name);
+    const f64Path = join(workDir, picked.name.replace(/\.sta$/i, ".f64bin"));
+    if (existsSync(f64Path)) {
+      const shape = shapeFromF64bin(
+        readFileSync(f64Path),
+        model.reference.length0,
+        model.reference.radius0,
+        { expectedNodes },
+      );
+      return {
+        metrics: {
+          finalLength: shape.finalLength,
+          finalMaxRadius: shape.finalMaxRadius,
+          lengthRatio: shape.lengthRatio,
+          radiusRatio: shape.radiusRatio,
+          source: "openradioss",
+          root: decks.root,
+          coordSource: "f64bin",
+        },
+        coords: shape.coords,
+        workDir,
+        starterLog: starter.stdout,
+        engineLog: engine.stdout,
+        staFile: staPath,
+        f64binFile: f64Path,
+        ...(anim?.vtkPath ? { vtkFile: anim.vtkPath } : {}),
+      };
+    }
     return {
       metrics: {
         finalLength: picked.shape.finalLength,

@@ -1,9 +1,34 @@
 import type { ModelIR } from "../ir/types.js";
 
-/** Format a Radioss 20-column float field. */
+/**
+ * Radioss 20-column float field.
+ * Fit max digits with ≥1 leading space so free-format engine cards (`/DT`,
+ * `/DTIX`, `/STATE/DT`) do not abut into one token, while round-tripping
+ * cylinder corners far closer than E20.10 (~3e-15 m residual).
+ */
+export function formatRadiossF20(v: number): string {
+  for (let digits = 15; digits >= 1; digits--) {
+    const s = v.toExponential(digits);
+    if (s.length <= 19) return s.padStart(20, " ");
+  }
+  return v.toExponential(6).padStart(20, " ");
+}
+
+/** Value OR will recover after writing `formatRadiossF20(v)` into a deck. */
+export function snapToRadiossF20(v: number): number {
+  return Number(formatRadiossF20(v).trim());
+}
+
+/** Snap packed XYZ so web-mbd and the Radioss starter share identical X0. */
+export function snapCoordsToRadiossF20(coords: ArrayLike<number>): Float64Array {
+  const out = new Float64Array(coords.length);
+  for (let i = 0; i < coords.length; i++) out[i] = snapToRadiossF20(coords[i]!);
+  return out;
+}
+
+/** @deprecated Use formatRadiossF20. */
 function f20(v: number): string {
-  const s = v.toExponential(10);
-  return s.padStart(20, " ");
+  return formatRadiossF20(v);
 }
 
 /** Format a Radioss 10-column integer field. */
@@ -14,6 +39,7 @@ function i10(v: number): string {
 /**
  * Emit OpenRadioss block-format starter + engine decks for the Taylor IR.
  * Same nodes/hexes as web-mbd; LAW2 / PLAS_JOHNS with n=1 ≈ linear hardening.
+ * Node coords are snapped through `formatRadiossF20` before emit.
  */
 export function exportTaylorRadiossDecks(model: ModelIR): {
   root: string;
@@ -21,7 +47,8 @@ export function exportTaylorRadiossDecks(model: ModelIR): {
   engine: string;
 } {
   const root = "TAYLOR";
-  const nNodes = model.mesh.coords.length / 3;
+  const snapped = snapCoordsToRadiossF20(model.mesh.coords);
+  const nNodes = snapped.length / 3;
   const nHex = model.mesh.hexes.length / 8;
   const { material: mat, wall, initialVelocity, controls } = model;
 
@@ -29,7 +56,7 @@ export function exportTaylorRadiossDecks(model: ModelIR): {
   for (let a = 0; a < nNodes; a++) {
     const id = a + 1;
     nodes.push(
-      `${i10(id)}${f20(model.mesh.coords[a * 3]!)}${f20(model.mesh.coords[a * 3 + 1]!)}${f20(model.mesh.coords[a * 3 + 2]!)}`,
+      `${i10(id)}${f20(snapped[a * 3]!)}${f20(snapped[a * 3 + 1]!)}${f20(snapped[a * 3 + 2]!)}`,
     );
   }
 

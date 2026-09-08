@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { createTaylorBarModel, TAYLOR_ACCEPTANCE } from "../fixtures/taylorBar.js";
 import { solveExplicit } from "../fe/solver.js";
 import { alignedCoordGap, compareToOracle, nearestNeighborGap } from "../oracle/compare.js";
+import { scrubNearZeros } from "../oracle/shapeFromF64bin.js";
 import { metricsPassAcceptance } from "../research/catalog.js";
 import { openRadiossAvailable, runOpenRadiossTaylorOracle } from "./openRadiossRunner.js";
 
@@ -37,9 +38,11 @@ function main(): void {
 
   const cmp = compareToOracle(ours.metrics, oracle.metrics);
   const nn = nearestNeighborGap(ours.coords, oracle.coords);
+  const oursCoords =
+    oracle.metrics.coordSource === "f64bin" ? scrubNearZeros(ours.coords) : ours.coords;
   const aligned =
-    oracle.metrics.coordSource === "sta"
-      ? alignedCoordGap(ours.coords, oracle.coords)
+    oracle.metrics.coordSource === "sta" || oracle.metrics.coordSource === "f64bin"
+      ? alignedCoordGap(oursCoords, oracle.coords)
       : { max: nn.max, mean: nn.mean, bitwiseEqual: false };
   const gate = metricsPassAcceptance(ours.metrics, TAYLOR_ACCEPTANCE);
   const report = {
