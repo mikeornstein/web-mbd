@@ -126,13 +126,21 @@ ${formatRadiossF20(wall.point[0] + wall.normal[0])}${formatRadiossF20(wall.point
   // TSTOP, which must not be used for parity (see openRadiossRunner pick).
   const tEnd = controls.endTime;
   const dtScale = controls.cfl > 0 ? controls.cfl : 0.9;
+  const fixedDt = controls.fixedDt;
   // Float64 nodal dump for Object.is gates (stat_node.F E20.13). Anim VTK is float32.
   // /STATE/DT/ALL tags every node (NSTATALL); dump at fixture endTime.
+  const dtCards =
+    fixedDt !== undefined && fixedDt > 0
+      ? `/DTIX
+${formatRadiossF20(fixedDt)}${formatRadiossF20(fixedDt)}
+/DT
+${formatRadiossF20(1)}${formatRadiossF20(0)}`
+      : `/DT
+${formatRadiossF20(dtScale)}${formatRadiossF20(0)}`;
   const engine = `#RADIOSS ENGINE
 /RUN/${root}/1
 ${formatRadiossF20(tEnd)}
-/DT
-${formatRadiossF20(dtScale)}${formatRadiossF20(0)}
+${dtCards}
 /ANIM/DT
 ${formatRadiossF20(0)}${formatRadiossF20(controls.endTime)}
 /ANIM/NODA/DT

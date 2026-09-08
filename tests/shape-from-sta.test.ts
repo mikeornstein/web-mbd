@@ -62,17 +62,18 @@ describe("shapeFromSta", () => {
     expect(gap.max).toBe(0);
   });
 
-  it("selectEndTimeSta picks the dump matching anim shape, not TSTOP overshoot", () => {
+  it("selectEndTimeSta prefers earliest dump over TSTOP overshoot", () => {
     const dir = join(tmpdir(), `sta-pick-${process.pid}`);
     mkdirSync(dir, { recursive: true });
     try {
-      const animVtk = `# vtk DataFile Version 3.0
+      // Last-anim VTK would match the overshoot; selection must ignore it.
+      const overshootVtk = `# vtk DataFile Version 3.0
 vtk output
 ASCII
 DATASET UNSTRUCTURED_GRID
 POINTS 3 float
 0 0 0
-0.0032 0 0.0216
+0.0032 0 0.0215
 0 0.0032 0.0108
 `;
       const endTime3 = staBlock([
@@ -93,7 +94,7 @@ POINTS 3 float
         0.0324,
         0.0032,
         3,
-        animVtk,
+        overshootVtk,
       );
       expect(picked.name).toBe("TAYLOR_0001.sta");
       expect(picked.shape.finalLength).toBeCloseTo(0.0216, 12);

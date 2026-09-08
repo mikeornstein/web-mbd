@@ -43,8 +43,9 @@ now emits `/STATE/DT/ALL` at `endTime`; OpenRadioss writes `ROOT_NNNN.sta` with
 `/NODE` rows as `I10,1P3E20.13` (`stat_node.F`).
 
 - Parser: `src/oracle/shapeFromSta.ts` (ID-sort → packed XYZ)
-- Runner: `src/cli/openRadiossRunner.ts` prefers `.sta` (endTime dump vs TSTOP
-  overshoot), falls back to VTK
+- Runner: `src/cli/openRadiossRunner.ts` prefers host `.f64bin` beside the
+  earliest `.sta` (endTime dump; ignores TSTOP overshoot / last-anim VTK),
+  then `.sta`, then VTK. Engine export emits `/DTIX` when `controls.fixedDt` is set.
 - Compare: `alignedCoordGap` for ID-aligned `Object.is` on coords; pin records
   `coordSource`, `alignedMax`, `coordsBitwiseEqual`
 

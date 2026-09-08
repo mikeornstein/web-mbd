@@ -74,9 +74,15 @@ function clearOracleArtifacts(workDir: string, root: string): void {
 }
 
 /**
- * Prefer the `.sta` written at fixture endTime (same dump as the last anim).
- * OpenRadioss may also force-write a final `.sta` after TSTOP; that later dump
- * must not be used for parity.
+ * Prefer the `.sta` written at fixture endTime.
+ *
+ * Decks use `/STATE/DT/ALL` with Tstart=endTime, so the first numbered dump
+ * (`_0001.sta`) is the endTime state. OpenRadioss also force-writes a final
+ * `.sta` after TSTOP; with `/DTIX` equal to TSTOP it may take one extra cycle
+ * past endTime, so matching the *last* anim VTK selects that overshoot and
+ * breaks short-horizon Object.is. Always take the earliest sorted dump.
+ *
+ * `animVtkText` is retained for call-site compatibility; it is not used.
  */
 export function selectEndTimeSta(
   staNames: string[],
@@ -84,34 +90,17 @@ export function selectEndTimeSta(
   length0: number,
   radius0: number,
   expectedNodes: number,
-  animVtkText: string | undefined,
+  _animVtkText?: string,
 ): { name: string; shape: ReturnType<typeof shapeFromSta> } {
   if (staNames.length === 0) throw new Error("no .sta files to select");
-  const parsed = staNames.map((name) => ({
+  const sorted = [...staNames].sort();
+  const name = sorted[0]!;
+  return {
     name,
     shape: shapeFromSta(readFileSync(join(workDir, name), "utf8"), length0, radius0, {
       expectedNodes,
     }),
-  }));
-  if (parsed.length === 1) return parsed[0]!;
-  if (animVtkText) {
-    const vtk = shapeFromVtk(animVtkText, length0, radius0, { expectedNodes });
-    let best = parsed[0]!;
-    let bestScore = Infinity;
-    for (const p of parsed) {
-      const score =
-        Math.abs(p.shape.lengthRatio - vtk.lengthRatio) +
-        Math.abs(p.shape.radiusRatio - vtk.radiusRatio);
-      if (score < bestScore) {
-        bestScore = score;
-        best = p;
-      }
-    }
-    return best;
-  }
-  // Without VTK: earliest numbered dump at endTime is `_0001.sta` when STATE
-  // Tstart=endTime (t=0 is not dumped). Prefer the first sorted name.
-  return parsed[0]!;
+  };
 }
 
 function convertLastAnim(
