@@ -63,7 +63,7 @@ Taylor bar OFHC-like J2 linear hardening
 /SPMD
          0         1                   0                   1
 /DEF_SOLID
-        17         4                   0         1                   0         0         0         1
+        17         4         1                   0         0         0         1         0
 /MAT/PLAS_JOHNS/1
 taylor_copper
 ${f20(mat.density)}${f20(0)}
