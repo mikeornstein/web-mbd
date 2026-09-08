@@ -135,3 +135,23 @@ the need for a live dump on the adaptive path. Rf/coords still miss full
 | OR-ABI ↔ TS `jcvt:0` | 80 μs CFL=0.9 | ~1e-15 | ~3e-15 | ~2e-16 | same step count (pre-ONEP333 evidence) |
 
 Gates require ≤1×10⁻¹³ relative. `bitwiseEqual` / `coordsBitwiseEqual` remain false by a few ulps — last force/DT micro-drift, not the old ~1e-5 CFL phase.
+
+### Short-horizon Object.is (gated) + MVSIZ floor
+
+With `/DTIX` export + `selectEndTimeSta` preferring the earliest STATE dump
+(not last-anim / TSTOP overshoot), coarse 2×2×4 fixed Δt=2.5e-8:
+
+| Steps | TS ↔ live `.f64bin` | OR-ABI (NEL=1) ↔ live | TS ↔ C-mirror |
+| --- | --- | --- | --- |
+| 1–2 | **Object.is** (vitest) | **Object.is** | Object.is |
+| ≥3 | false (~1 ulp, 2 dofs) | false (~1 ulp, more dofs) | Object.is |
+
+First TS↔live break is a degree-2 cylinder-corner node. SCUMU3 vs
+element-major assemble cannot explain it (IEEE `a+b==b+a` for two terms).
+Live engine packs **NEL=min(128,NUMELS)** into one `S8EFORC3` (`forint.F` /
+`mvsiz_p.inc`); one-hex OR-ABI and TS share a **scalar** contraction order.
+**Production adaptive Object.is needs a FORINT-style multi-element force path**,
+not further SSP/DELTAX tweaks.
+
+Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
+endTime and force-write a second `.sta` — always use `_0001` for parity.
