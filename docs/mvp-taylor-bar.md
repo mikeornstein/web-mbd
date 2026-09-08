@@ -49,19 +49,19 @@ Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
 | | web-mbd | OpenRadioss | rel. error |
 | --- | --- | --- | --- |
-| L_f / L₀ | ~0.6667 | ~0.6666 | ~0.02% |
-| R_f / R₀ | ~2.246 | ~2.232 | ~0.6% |
+| L_f / L₀ | ~0.6667 | ~0.6666 | ~0.015% |
+| R_f / R₀ | ~2.231 | ~2.232 | ~0.04% |
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
-- \|Δ(L_f/L₀)\| / oracle ≤ 0.5%
-- \|Δ(R_f/R₀)\| / oracle ≤ 2%
+- \|Δ(L_f/L₀)\| / oracle ≤ 0.1%
+- \|Δ(R_f/R₀)\| / oracle ≤ 0.2%
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.6% foot radius after H8C PXC Icpre force path + SMAX `/DT` length (initial dt matches OR to ~0.01%; ~2559 vs ~2606 cycles). Remaining work: strain-side mean-dilatation volume correction (`s8edefo3` DSV) and finer RWALL/foot timing.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.04% Rf / ~0.015% Lf after H8C PXC Icpre forces, SMAX `/DT`, and `s8edefo3` DSV `vol0` correction. Remaining work: finer RWALL/foot timing and machine-eps floor across JS vs Fortran.
 
 ## Element / mesh notes
 
-- **Element:** 8-node hex, trilinear, **2×2×2 Gauss**, updated Lagrangian, Radioss SROTA3 Jaumann, LAW2-style hypoelastic J2 + bulk EOS pressure, Icpre via ZEP3 strip + PXC mid-face pressure forces, kinematic rigid wall.
+- **Element:** 8-node hex, trilinear, **2×2×2 Gauss**, updated Lagrangian, Radioss SROTA3 Jaumann, LAW2-style hypoelastic J2 + bulk EOS pressure, Icpre via DSV vol0 + ZEP3 strip + PXC mid-face pressure forces, kinematic rigid wall.
 - **CFL:** Radioss `128·V·SMAX` DELTAX (not ∛V / min-edge), scale 0.9, adaptive.
 - **Mesh:** `src/mesh/cylinderHex.ts` structured generator (square mapped to disk, extruded in Z). Gmsh is still future work.
 

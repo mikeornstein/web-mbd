@@ -13,10 +13,10 @@ export interface OracleCompareTolerances {
 }
 
 export const DEFAULT_ORACLE_TOLERANCES: OracleCompareTolerances = {
-  // After H8C/LAW2 alignment: Lf within ~0.05%, Rf within ~1.2% on the default mesh.
-  // Bitwise Object.is on nodal coords is the remaining parity target.
-  lengthRatioRel: 0.005,
-  radiusRatioRel: 0.02,
+  // After PXC Icpre + DSV vol0 + SMAX /DT: Lf ~0.015%, Rf ~0.04% on default mesh.
+  // Bitwise Object.is on nodal coords remains the parity target.
+  lengthRatioRel: 0.001,
+  radiusRatioRel: 0.002,
 };
 
 export interface OracleCompareResult {

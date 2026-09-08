@@ -380,9 +380,13 @@ export interface HexForceOptions {
   /** Mean-dilatation / constant-pressure (Radioss Icpre=1). Default true. */
   constantPressure?: boolean;
   /**
-   * Element-mean AMU for LAW2 pressure (V0_sum/V_sum − 1). Default true when
-   * `constantPressure` is on. Radioss instead corrects VOLO via DSV; mean AMU is
-   * a close stand-in once PXC handles the force path.
+   * Radioss `s8edefo3` DSV correction: adjust each GP `vol0` toward mean
+   * dilatation before LAW2 AMU. Default true when `constantPressure` is on.
+   */
+  dsvVol0?: boolean;
+  /**
+   * Element-mean AMU for LAW2 pressure (V0_sum/V_sum − 1). Default false —
+   * prefer `dsvVol0` (Radioss path). Enable only for experiments.
    */
   meanAmu?: boolean;
   /** Quadratic bulk viscosity qa (Radioss). Default 0. */
@@ -403,7 +407,8 @@ export function hexInternalForces(args: {
 }): number {
   const { x, v, states, mat, dt, fOut } = args;
   const constantPressure = args.options?.constantPressure !== false;
-  const meanAmu = args.options?.meanAmu ?? constantPressure;
+  const dsvVol0 = args.options?.dsvVol0 ?? constantPressure;
+  const meanAmu = args.options?.meanAmu === true;
   const qa = args.options?.bulkViscQuad ?? 0;
   const qb = args.options?.bulkViscLin ?? 0;
   fOut.fill(0);
@@ -420,7 +425,11 @@ export function hexInternalForces(args: {
   const cache: GpCache[] = [];
   let volSum = 0;
 
-  const pxcOps = constantPressure ? meanDilatationOperators(x) : null;
+  const pxcOps = constantPressure || dsvVol0 ? meanDilatationOperators(x) : null;
+  const dsv =
+    dsvVol0 && pxcOps
+      ? meanDilatationRate(pxcOps.pxc, pxcOps.pyc, pxcOps.pzc, v)
+      : 0;
 
   for (let gp = 0; gp < 8; gp++) {
     const { dN } = SHAPES[gp]!;
@@ -464,9 +473,12 @@ export function hexInternalForces(args: {
   const cd = dilatationalWaveSpeed(mat);
   let vol0Sum = 0;
   for (let gp = 0; gp < 8; gp++) vol0Sum += states[gp]!.vol0;
-  // Element-mean AMU mirrors Radioss constant-pressure EOS; force path uses PXC.
+  // Optional element-mean AMU; Radioss path uses DSV vol0 correction instead.
   const amuElem =
     meanAmu && vol0Sum > 0 ? vol0Sum / Math.max(volSum, 1e-30) - 1 : undefined;
+
+  // Radioss TOL = 1 - EM20: reject only catastrophic positive DV.
+  const dsvTol = 1 - 1e-20;
 
   for (let gp = 0; gp < 8; gp++) {
     const gpCache = cache[gp]!;
@@ -479,12 +491,21 @@ export function hexInternalForces(args: {
     gpCache.q =
       trD < 0 ? mat.density * ((qa * h * trD) ** 2 + qb * cd * h * -trD) : 0;
 
+    const state = states[gp]!;
+    if (dsvVol0 && state.vol0 > 0) {
+      // s8edefo3 ICP=1: DV = (DSV - trD)*dt; VOLO *= (1-DV) when DV <= TOL.
+      // Makes DIVDE ≡ dt*DSV for density / AMU while leaving Dxx,Dyy,Dzz local.
+      let dv = (dsv - trD) * dt;
+      if (dv > dsvTol) dv = 0;
+      const dv1 = 1 - dv;
+      if (dv1 > 1e-12) state.vol0 *= dv1;
+    }
+
     // Radioss SROTA3 Jaumann (Iframe=1 / JCVT=0): Wα = (dt/2)*(∂vβ/∂xγ − ∂vγ/∂xβ)
     // matches ω_α * dt, applied to Voigt stress with engineering shear convention.
     const wzz = 0.5 * dt * (L[3]! - L[1]!); // DT1D2*(DYX-DXY)
     const wyy = 0.5 * dt * (L[2]! - L[6]!); // DT1D2*(DXZ-DZX)
     const wxx = 0.5 * dt * (L[7]! - L[5]!); // DT1D2*(DZY-DYZ)
-    const state = states[gp]!;
     const sigma = state.stress;
     const s1 = sigma[0]!,
       s2 = sigma[1]!,
