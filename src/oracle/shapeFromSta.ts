@@ -31,17 +31,29 @@ export function parseStaNodes(sta: string): StaNodeBlock {
     if (!t) continue;
     if (t.startsWith("#")) continue;
     if (t.startsWith("/")) break;
-    // Fixed-ish: I10 + 3×E20.13, but tolerate free-form whitespace splits.
-    const parts = t.split(/\s+/).filter(Boolean);
-    if (parts.length < 4) {
-      throw new Error(`bad /NODE row at line ${i + 1}: ${t}`);
+
+    // Fixed Fortran: WRITE(IUGEO,'(I10,1P3E20.13)') — fields may abut when signed.
+    let id: number;
+    let x: number;
+    let y: number;
+    let z: number;
+    if (raw.length >= 70) {
+      id = Number(raw.slice(0, 10));
+      x = Number(raw.slice(10, 30));
+      y = Number(raw.slice(30, 50));
+      z = Number(raw.slice(50, 70));
+    } else {
+      const parts = t.split(/\s+/).filter(Boolean);
+      if (parts.length < 4) {
+        throw new Error(`bad /NODE row at line ${i + 1}: ${t}`);
+      }
+      id = Number(parts[0]);
+      x = Number(parts[1]);
+      y = Number(parts[2]);
+      z = Number(parts[3]);
     }
-    const id = Number(parts[0]);
-    const x = Number(parts[1]);
-    const y = Number(parts[2]);
-    const z = Number(parts[3]);
     if (![id, x, y, z].every(Number.isFinite)) {
-      throw new Error(`non-finite /NODE values at line ${i + 1}: ${t}`);
+      throw new Error(`non-finite /NODE values at line ${i + 1}: ${JSON.stringify(raw)}`);
     }
     ids.push(id | 0);
     coords.push(x, y, z);
