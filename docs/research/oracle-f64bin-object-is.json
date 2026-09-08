@@ -10,7 +10,24 @@
       "alignedMax": 0
     }
   },
-  "adaptive80usCoarse": {
+  "adaptive80usCoarseWithLiveDtSchedule": {
+    "mesh": "2x2x4",
+    "dtSource": "TAYLOR_dt.f64bin from patched ecrit.F",
+    "orAbi": {
+      "relLf": 0,
+      "relRf": 4e-15,
+      "LfObjectIs": true,
+      "RfObjectIs": false,
+      "alignedMax": 9e-17,
+      "coordsBitwiseEqual": false
+    },
+    "tsJcvt0": {
+      "relLf": 1.3e-15,
+      "relRf": 3.7e-15,
+      "alignedMax": 5.5e-17
+    }
+  },
+  "adaptive80usCoarseNativeCfl": {
     "mesh": "2x2x4",
     "relLf": 8.9e-6,
     "relRf": 6.0e-6,
