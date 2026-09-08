@@ -40,12 +40,28 @@
   "productionNativeCfl": {
     "mesh": "6x6x16",
     "coordSource": "f64bin",
-    "relLf": 3.3e-15,
-    "relRf": 6.2e-15,
-    "alignedMax_m": 2.9e-16,
+    "tsJcvt0": {
+      "relLf": 3.3e-15,
+      "relRf": 6.2e-15,
+      "alignedMax_m": 2.9e-16
+    },
+    "orAbi": {
+      "relLf": 7.2e-15,
+      "relRf": 9.9e-16,
+      "alignedMax_m": 3.3e-16,
+      "elapsedMs": 48000
+    },
+    "orAbiPlusLiveDtSchedule": {
+      "relLf": 1.7e-16,
+      "relRf": 8.4e-15,
+      "LfObjectIs": false,
+      "LfUlpDiff": 1,
+      "alignedMax_m": 3.2e-16
+    },
     "nSteps": 2573,
     "bitwiseEqual": false,
     "coordsBitwiseEqual": false,
-    "note": "Re-pinned after ONEP333 + hier DELTAX; gates ≤1e-13"
+    "gates": 1e-13,
+    "note": "DT₀ Object.is; remaining few-ulp floor vs live MVSIZ engine"
   }
 }
