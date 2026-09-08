@@ -30,7 +30,15 @@ export default defineConfig(
   },
   {
     // Dense numerical kernels index fixed-size buffers; assertions and template metrics are intentional.
-    files: ["src/fe/**/*.ts", "src/mesh/**/*.ts", "src/fixtures/**/*.ts", "src/ir/**/*.ts"],
+    files: [
+      "src/fe/**/*.ts",
+      "src/mesh/**/*.ts",
+      "src/fixtures/**/*.ts",
+      "src/ir/**/*.ts",
+      "src/viz/**/*.ts",
+      "src/research/**/*.ts",
+      "src/ui/**/*.ts",
+    ],
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "off",

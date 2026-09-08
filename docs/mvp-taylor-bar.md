@@ -44,9 +44,17 @@ src/ir/           Model IR + validation
 src/fe/           hex, J2, rigid wall, explicit solver
 src/mesh/         cylinder hex generator
 src/fixtures/     Taylor bar model
+src/research/     stock models from research notes
+src/ui/           browser workbench (pre / solve / post)
+src/viz/          canvas mesh + energy plots
 src/cli/          headless runner
 tests/            vitest golden + determinism
+e2e/              Playwright workbench proof
 ```
+
+## Browser workbench
+
+The Vite app loads this fixture from the research catalog (`src/research/catalog.ts`), shows undeformed mesh + model tree in **Pre**, runs `solveExplicit` in **Solve**, and plots deformed mesh + energy history in **Post**. Prove with `pnpm test:e2e`.
 
 ## Out of scope (still)
 

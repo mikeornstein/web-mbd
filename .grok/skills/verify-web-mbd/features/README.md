@@ -13,7 +13,7 @@ Index of user-facing behavior. Read this first, then the matching feature file.
 
 - Prefer ARIA roles and accessible names.
 - Treat Playwright locators as literal.
-- Restore nothing: the landing page is read-only.
+- Restore nothing between cases unless a feature file says otherwise.
 
 ## Proof and skip reporting
 
@@ -23,4 +23,4 @@ Index of user-facing behavior. Read this first, then the matching feature file.
 
 ## Features
 
-- [Home](./home.md) covers the public landing page.
+- [Home / workbench](./home.md) covers research → pre → solve → post.
