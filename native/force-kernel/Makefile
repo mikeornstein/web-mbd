@@ -16,8 +16,9 @@ smoke-or: or-extract/smoke_symbols.c
 	./or-extract/smoke_symbols or-extract/build/libor_h8c.so
 
 smoke-or-hex: or-extract/smoke_or_hex.c
-	cc -O2 -o or-extract/build/smoke_or_hex or-extract/smoke_or_hex.c -ldl
+	cc -O2 -o or-extract/build/smoke_or_hex or-extract/smoke_or_hex.c -ldl -lm
 	./or-extract/build/smoke_or_hex or-extract/build/libwmbd_or_hex.so
+	WMBD_OR_CALL_S8E=1 ./or-extract/build/smoke_or_hex or-extract/build/libwmbd_or_hex.so
 
 clean:
 	rm -f libforce_kernel.so force_kernel_selftest force_kernel_golden or_bridge.o \

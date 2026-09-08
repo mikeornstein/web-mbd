@@ -2,8 +2,8 @@
  * OpenRadioss-backed hex force stub (C fallback).
  *
  * Prefer the BIND(C) symbol in libwmbd_or_hex.so (or_hex_force.F90), which
- * shares /COM08/ with s8eforc3_. Both return -1 until ELBUF/IPARG/PM packing
- * lands; callers must use the C mirror (wmbd_hex_internal_forces).
+ * shares /COM08/ with s8eforc3_ and packs ELBUF (rc=-2; WMBD_OR_CALL_S8E=1 →
+ * S8EFORC3). This C stub remains for builds without the extract .so.
  */
 #include "or_bridge.h"
 

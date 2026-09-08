@@ -18,11 +18,20 @@ mkdir -p "$OUT_DIR"
 FFLAGS='-nostdinc -w -O2 -fdec-math -DWITHOUT_LINALG -DCOMP_GFORTRAN=1 -ffp-contract=off -frounding-math -fopenmp -DMYREAL8 -DCPP_mach=CPP_p4linux964 -DCPP_rel=80 -DCPP_comp=f90 -ffixed-line-length-none -fallow-argument-mismatch -fallow-invalid-boz -std=legacy -fPIC'
 FINCS="-I$OR_SRC/common_source/includes -I$OR_SRC/common_source/modules -I$OR_SRC/engine/share/includes -I$OR_SRC/engine/share/r8 -I$OR_SRC/engine/share/spe_inc -I$CBDIR/CMakeFiles/includes_engine_linux64_gf -J$MODDIR"
 
-echo "compiling wmbd_or_com08.c + or_hex_force.F90"
+FINCS_STARTER="$FINCS -I$OR_SRC/starter/share/includes -I$OR_SRC/starter/share/spe_inc"
+
+echo "compiling wmbd_or_com08.c + commons + starter allocbuf + or_hex_force.F90"
 cc -O2 -fPIC -c -o "$OUT_DIR/wmbd_or_com08.o" "$ROOT/wmbd_or_com08.c"
+gfortran $FFLAGS $FINCS -c -o "$OUT_DIR/or_hex_commons.o" "$ROOT/or_hex_commons.F"
+
+# Starter ALLOCBUF_AUTO renamed to avoid clash with engine restart unpacker.
+sed 's/SUBROUTINE ALLOCBUF_AUTO/SUBROUTINE WMBD_ALLOCBUF_AUTO/g; s/allocbuf_auto/wmbd_allocbuf_auto/g' \
+  "$OR_SRC/starter/source/elements/elbuf_init/allocbuf_auto.F" > "$OUT_DIR/wmbd_allocbuf_auto.F"
+gfortran $FFLAGS $FINCS_STARTER -c -o "$OUT_DIR/wmbd_allocbuf_auto.o" "$OUT_DIR/wmbd_allocbuf_auto.F"
+
 gfortran $FFLAGS $FINCS -c -o "$OUT_DIR/or_hex_force.o" "$ROOT/or_hex_force.F90"
 
-echo "relinking libwmbd_or_hex.so (OR objects + wrapper)"
+echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack)"
 (
   cd "$CBDIR"
   # shellcheck disable=SC2086
@@ -31,6 +40,8 @@ echo "relinking libwmbd_or_hex.so (OR objects + wrapper)"
     @CMakeFiles/libor_h8c.dir/objects1.rsp \
     @CMakeFiles/libor_h8c.dir/objects2.rsp \
     "$OUT_DIR/wmbd_or_com08.o" \
+    "$OUT_DIR/or_hex_commons.o" \
+    "$OUT_DIR/wmbd_allocbuf_auto.o" \
     "$OUT_DIR/or_hex_force.o" \
     -lrt \
     "$OR_SRC/extlib/zlib/linux64/lib/libz.a" \

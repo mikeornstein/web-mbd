@@ -70,6 +70,6 @@ host float64).
 
 - C mirror of H8C/LAW2: `native/force-kernel/` (ABI in `force_kernel.h`)
 - Proven **TypeScript ↔ C `Object.is`** on one-hex forces and on coarse full solves via `SolveOptions.hexForce` + `src/cli/forceNative.ts` (koffi)
-- Remaining for OR parity: replace the C mirror body with OpenRadioss `s8eforc3` / `m2law` (same ABI), keeping the web-mbd CD loop — see `native/force-kernel/or-extract/`
+- Remaining for OR parity: drive the web-mbd CD loop through the OR extract ABI instead of the C mirror — see `native/force-kernel/or-extract/`
 - Stock `engine_linux64_gf` is ELF `EXEC` (not dlopenable) despite unstripped `s8eforc3_` / `m2law_`
-- PIC shared extract: `libor_h8c.so` + relinked `libwmbd_or_hex.so` export BIND(C) `wmbd_hex_internal_forces_or` with shared `/COM08/` `DT1` (smoke `Object.is` on DT1). Entry still returns `-1` until ELBUF/IPARG/PM/GEO packing calls `S8EFORC3`
+- PIC shared extract: `libwmbd_or_hex.so` packs one-hex ELBUF via starter `WMBD_ALLOCBUF_AUTO`, sets VECT01/IPARG for H8C/LAW2/JCVT=1, and with `WMBD_OR_CALL_S8E=1` calls `S8EFORC3`. Unit-cube forces match C-mirror (`jcvt=1`) after OR→ABI sign flip to ~1e-14 relative. Full Taylor `Object.is` still open.
