@@ -60,7 +60,7 @@ console.log("nHex", m.mesh.hexes.length / 8, "nCoord", m.mesh.coords.length / 3)
       mat: m.material,
       dt,
       fOut: fTs,
-      options: { jcvt: 1 },
+      options: { jcvt: 0 },
     });
     hexInternalForcesOr({
       x: xHex,
@@ -94,7 +94,7 @@ for (const endTime of [1e-6, 5e-6, 20e-6, 80e-6]) {
   });
   const ts = solveExplicit(make(), {
     maxWallMs: 120_000,
-    hexForce: (a) => hexInternalForces({ ...a, options: { jcvt: 1 } }),
+    hexForce: (a) => hexInternalForces({ ...a, options: { jcvt: 0 } }),
   });
   const relLf =
     Math.abs(or.metrics.lengthRatio - ts.metrics.lengthRatio) / ts.metrics.lengthRatio;
@@ -103,6 +103,7 @@ for (const endTime of [1e-6, 5e-6, 20e-6, 80e-6]) {
   const cd = maxAbsDiff(or.coords, ts.coords);
   console.log(
     `t=${endTime} steps=${or.metrics.nSteps}/${ts.metrics.nSteps} ` +
-      `relLf=${relLf.toExponential(2)} relRf=${relRf.toExponential(2)} max|dx|=${cd.max.toExponential(2)}`,
+      `relLf=${relLf.toExponential(2)} relRf=${relRf.toExponential(2)} max|dx|=${cd.max.toExponential(2)} ` +
+      `coordsObjectIs=${cd.max === 0}`,
   );
 }

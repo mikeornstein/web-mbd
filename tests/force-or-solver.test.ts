@@ -26,13 +26,15 @@ describe("OpenRadioss S8EFORC3 force backend", () => {
         return m;
       };
 
+      // OR extract defaults to JCVT=0 (Jaumann), matching live OR for Taylor
+      // (co-rot extract pack still drifts). Compare like-for-like.
       const or = solveExplicit(make(), {
         maxWallMs: 120_000,
         hexForce: (a) => hexInternalForcesOr(a),
       });
       const ts = solveExplicit(make(), {
         maxWallMs: 120_000,
-        hexForce: (a) => hexInternalForces({ ...a, options: { jcvt: 1 } }),
+        hexForce: (a) => hexInternalForces({ ...a, options: { jcvt: 0 } }),
       });
 
       expect(or.metrics.nSteps).toBe(ts.metrics.nSteps);
@@ -40,14 +42,13 @@ describe("OpenRadioss S8EFORC3 force backend", () => {
       expect(Number.isFinite(or.metrics.radiusRatio)).toBe(true);
       expect(or.metrics.lengthRatio).toBeLessThan(1);
       expect(or.metrics.radiusRatio).toBeGreaterThan(1);
-      // After GP pack order fix (OR IP = IR+(…)*NPTR, ξ-fastest), short
-      // coarse OR-ABI vs TS jcvt:1 is ~1e-5 relative — not Object.is yet.
+      // OR S8EFORC3 (JCVT=0) vs TS Jaumann: near Object.is on short horizon.
       const relLf =
         Math.abs(or.metrics.lengthRatio - ts.metrics.lengthRatio) / ts.metrics.lengthRatio;
       const relRf =
         Math.abs(or.metrics.radiusRatio - ts.metrics.radiusRatio) / ts.metrics.radiusRatio;
-      expect(relLf).toBeLessThan(1e-4);
-      expect(relRf).toBeLessThan(1e-4);
+      expect(relLf).toBeLessThan(1e-12);
+      expect(relRf).toBeLessThan(1e-12);
     },
     180_000,
   );

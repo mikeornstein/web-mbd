@@ -76,4 +76,4 @@ host float64).
 - **GP pack bug fixed:** pack/scatter must use `IP = IR+((IS-1)+(IT-1)*NPTS)*NPTR` (ξ-fastest). Wrong nesting scrambled GP state → Rf ~0.33 / CFL collapse by 5 μs on coarse Taylor; after fix, OR-ABI vs TS `jcvt:1` is ~1e-5 Lf / ~1e-4 Rf at 80 μs with matched step counts.
 - **MAT_PARAM:** IFORM=0 (Johnson–Cook), ICC=1, VP=2, EPS0=1, PMIN=−1e30 — matches `hm_read_mat02_jc` for the Taylor deck (was wrongly IFORM=1 Zerilli).
 - **Per-element hist ABI:** `hist_io[32]` = EINT/EPSD/QVIS/RHO×8 so the shared one-hex ELBUF does not leak across elements.
-- Coarse (2×2×4) OR-ABI vs **live** OR at 80 μs (`.sta`): ~3.7e-5 Lf / ~2.9e-4 Rf, aligned max ~6 μm, steps 208 vs 209 — not `Object.is`. Full production mesh still open.
+- **Extract JCVT=0 (Jaumann):** despite deck IFRAME=1, OR-ABI with `JCVT=0` matches live OR on coarse fixed-Δt to ~1e-14 Lf / ~1e-12 Rf (E20.13 floor). Extract `JCVT=1` still drifts (~3e-4 Rf). Adaptive coarse 80 μs: ~9e-6 / ~6e-6 vs live — inside production gates. Full-mesh `Object.is` still open (CFL phase / `.sta` floor).

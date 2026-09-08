@@ -9,7 +9,6 @@ import {
   loadOrForceKernel,
   resetOrElementState,
 } from "../src/cli/forceNative.js";
-import { hexInternalForces } from "../src/fe/hex.js";
 import {
   openRadiossAvailable,
   runOpenRadiossTaylorOracle,
@@ -51,25 +50,24 @@ for (const endTime of horizons) {
     maxWallMs: 300_000,
     hexForce: (a) => hexInternalForcesOr(a),
   });
-  const tsJcvt1 = solveExplicit(make(), {
+  const tsJcvt0 = solveExplicit(make(), {
     maxWallMs: 300_000,
-    hexForce: (a) => hexInternalForces({ ...a, options: { jcvt: 1 } }),
   });
   const live = runOpenRadiossTaylorOracle(make(), `/tmp/or-vs-live-${endTime}`);
 
   const vsLive = compareToOracle(orAbi.metrics, live.metrics);
   const al = alignedCoordGap(orAbi.coords, live.coords);
   const vsTsLf =
-    Math.abs(orAbi.metrics.lengthRatio - tsJcvt1.metrics.lengthRatio) /
-    tsJcvt1.metrics.lengthRatio;
+    Math.abs(orAbi.metrics.lengthRatio - tsJcvt0.metrics.lengthRatio) /
+    tsJcvt0.metrics.lengthRatio;
   const vsTsRf =
-    Math.abs(orAbi.metrics.radiusRatio - tsJcvt1.metrics.radiusRatio) /
-    tsJcvt1.metrics.radiusRatio;
+    Math.abs(orAbi.metrics.radiusRatio - tsJcvt0.metrics.radiusRatio) /
+    tsJcvt0.metrics.radiusRatio;
 
   console.log(
     JSON.stringify({
       endTime,
-      steps: { orAbi: orAbi.metrics.nSteps, ts: tsJcvt1.metrics.nSteps },
+      steps: { orAbi: orAbi.metrics.nSteps, ts0: tsJcvt0.metrics.nSteps },
       orAbi: {
         Lf: orAbi.metrics.lengthRatio,
         Rf: orAbi.metrics.radiusRatio,
@@ -86,7 +84,7 @@ for (const endTime of horizons) {
         coordsBitwiseEqual: al.bitwiseEqual,
         metricsBitwiseEqual: vsLive.bitwiseEqual,
       },
-      vsTsJcvt1: { relLf: vsTsLf, relRf: vsTsRf, maxDx: maxAbsDiff(orAbi.coords, tsJcvt1.coords) },
+      vsTs0: { relLf: vsTsLf, relRf: vsTsRf, maxDx: maxAbsDiff(orAbi.coords, tsJcvt0.coords) },
     }),
   );
 }

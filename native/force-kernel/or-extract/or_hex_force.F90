@@ -411,7 +411,7 @@ contains
     iparg(28, 1) = 8
     iparg(29, 1) = 1
     iparg(36, 1) = 1
-    iparg(37, 1) = 1
+    iparg(37, 1) = 0
     iparg(38, 1) = 14
     iparg(56, 1) = 2
     iparg(57, 1) = 2

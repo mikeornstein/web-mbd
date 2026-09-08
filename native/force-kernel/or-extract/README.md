@@ -70,7 +70,7 @@ Packing for one Taylor hex (`NEL=1`, `NPG=8`, LAW2, Isolid=17) — **implemented
 | ISOLID / JHBE | 17 | H8C → `S8EFORC3` |
 | ISMSTR | 4 | `GBUF%SMSTR` |
 | ICPRE | 1 | PXC mean pressure |
-| **IFRAME / JCVT** | **1** | co-rotational (`SRCOOR3` + `SRROTA3`) |
+| **IFRAME / JCVT** | **0** (extract default) | Live deck sets IFRAME=1, but Jaumann (JCVT=0) matches live OR Taylor to ~1e-14 at fixed DT; extract co-rot pack still drifts. Set `JCVT=1` in commons only when co-rot packing is fixed. |
 | NPT / NPG | 8 | `NPTR=NPTS=NPTT=2` |
 
 Done in `or_hex_force.F90` / `or_hex_commons.F`:
@@ -85,21 +85,21 @@ Done in `or_hex_force.F90` / `or_hex_commons.F`:
 8. **MAT_PARAM / PM** match `hm_read_mat02_jc` (IFORM=0 JC, ICC=1, VP=2, EPS0=1, PMIN=−EP20).
 9. **`hist_io[32]`** persists LBUF EINT/EPSD/QVIS/RHO per element through koffi (shared ELBUF otherwise leaks across hexes).
 
-Coarse Taylor (2×2×4) OR-ABI vs TS `jcvt:1` after the GP fix (`scripts/or-residual-probe.ts`):
+Coarse Taylor (2×2×4) after GP fix + **extract JCVT=0**:
 
-| t | relLf | relRf | notes |
-| --- | --- | --- | --- |
-| 1 μs | ~0 | ~2e-6 | stable |
-| 5 μs | ~1e-5 | ~1e-5 | was ~0.33 Rf before fix |
-| 80 μs | ~2e-5 | ~1e-4 | same step count; no dt collapse |
+| Compare | t | relLf | relRf | notes |
+| --- | --- | --- | --- | --- |
+| OR-ABI vs TS `jcvt:0` | 80 μs fixed Δt | ~1e-15 | ~1e-15 | near `Object.is` |
+| OR-ABI vs live `.sta` | 80 μs fixed Δt | ~2e-14 | ~1e-12 | E20.13 floor |
+| OR-ABI vs live `.sta` | 80 μs CFL=0.9 | ~9e-6 | ~6e-6 | within production gates |
 
-OR-ABI vs live OpenRadioss (`.sta`, `scripts/or-vs-live-probe.ts`) at 80 μs: ~3.7e-5 Lf / ~2.9e-4 Rf (steps 208 vs 209).
+Extract `JCVT=1` (deck IFRAME) still drifts vs live (~3e-4 Rf) — co-rot packing/frame residual; default extract stays Jaumann until that is fixed.
 
 Remaining for production `Object.is` on full Taylor:
 
-- Close residual vs live OR at CFL=0.9 (CFL step mismatch, wall, group vs one-hex)
+- Same-mesh adaptive CFL: share DT schedule or drive production mesh through OR-ABI JCVT=0 and re-pin
 - Prefer in-process float64 compare (not `.sta` E20.13)
-- Keep production default on TS/C mirror until OR residual matches gates
+- Optional: fix extract co-rot (`JCVT=1`) to match deck IFRAME literally
 
 Smokes: `smoke_or_hex` / `tests/or-h8c-symbols.test.ts` / `tests/force-or-solver.test.ts`.
 

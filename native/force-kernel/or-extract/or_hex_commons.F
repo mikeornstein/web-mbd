@@ -61,7 +61,7 @@ C-----------------------------------------------
       IMONM   = 0
       IMON_MAT= 0
 C-----------------------------------------------
-C   VECT01 — INITBUF-equivalent for H8C / LAW2 / JCVT=1
+C   VECT01 — INITBUF-equivalent for H8C / LAW2 / JCVT=0 (Jaumann; matches live OR for Taylor; co-rot pack still drifts)
 C-----------------------------------------------
       LFT     = 1
       LLT     = 1
@@ -81,7 +81,7 @@ C-----------------------------------------------
       JIVF    = 0
       NVAUX   = 0
       JPOR    = 0
-      JCVT    = 1
+      JCVT    = 0
       JSPH    = 0
       JCLOSE  = 0
       JPLASOL = 1
