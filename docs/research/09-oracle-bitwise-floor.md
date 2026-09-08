@@ -124,14 +124,13 @@ the need for a live dump on the adaptive path. Rf/coords still miss full
 - **GP pack bug fixed:** pack/scatter must use `IP = IR+((IS-1)+(IT-1)*NPTS)*NPTR` (ξ-fastest). Wrong nesting scrambled GP state → Rf ~0.33 / CFL collapse by 5 μs on coarse Taylor; after fix, OR-ABI vs TS `jcvt:1` is ~1e-5 Lf / ~1e-4 Rf at 80 μs with matched step counts.
 - **MAT_PARAM:** IFORM=0 (Johnson–Cook), ICC=1, VP=2, EPS0=1, PMIN=−1e30 — matches `hm_read_mat02_jc` for the Taylor deck (was wrongly IFORM=1 Zerilli).
 - **Per-element hist ABI:** `hist_io[32]` = EINT/EPSD/QVIS/RHO×8 so the shared one-hex ELBUF does not leak across elements.
-- **Extract JCVT=0 (Jaumann):** despite deck IFRAME=1, OR-ABI with `JCVT=0` matches live OR on coarse fixed-Δt to ~1e-14 Lf / ~1e-12 Rf (E20.13 floor). Extract `JCVT=1` still drifts (~3e-4 Rf). Adaptive coarse 80 μs: ~9e-6 / ~6e-6 vs live — inside production gates.
+- **Extract JCVT=0 (Jaumann):** despite deck IFRAME=1, OR-ABI with `JCVT=0` matches live OR on coarse fixed-Δt to ~1e-14 Lf / ~1e-12 Rf (E20.13 floor). Extract `JCVT=1` still drifts (~3e-4 Rf). Native adaptive coarse 80 μs after ONEP333/hier DELTAX: ~ulp vs live `.f64bin`.
 
-### Full production mesh (6×6×16, 576 hexes) — OR-ABI `JCVT=0`
+### Full production mesh (6×6×16, 576 hexes) — TS `jcvt:0` + native CFL
 
 | Compare | Horizon | relLf | relRf | aligned max | notes |
 | --- | --- | --- | --- | --- | --- |
-| OR-ABI ↔ TS `jcvt:0` | 80 μs CFL=0.9 | ~1e-15 | ~3e-15 | ~2e-16 | same 2573 steps; not `Object.is` (1 ulp) |
-| OR-ABI ↔ live `.sta` | 80 μs CFL=0.9 | ~4.5e-6 | ~5.1e-6 | ~0.10 μm | **same residual as TS↔live pin** |
-| OR-ABI ↔ live `.sta` | 10 μs fixed Δt=2.5e-8 | ~2e-14 | ~5e-12 | ~7e-14 | E20.13 floor; `coordsBitwiseEqual` impossible vs `.sta` |
+| TS ↔ live `.f64bin` | 80 μs CFL=0.9 | ~3.3e-15 | ~6.2e-15 | ~2.9e-16 | DT₀ Object.is; 2573 steps; few-ulp floor |
+| OR-ABI ↔ TS `jcvt:0` | 80 μs CFL=0.9 | ~1e-15 | ~3e-15 | ~2e-16 | same step count (pre-ONEP333 evidence) |
 
-Shared `S8EFORC3` kernel (Jaumann) therefore closes the force-formulation gap to the TS production path. Remaining `Object.is` vs live OR is blocked by (1) adaptive CFL phase (~5e-6) and (2) `.sta` E20.13 text (~1e-14 m). In-process float64 from OR (or a shared DT schedule + host dump) is still required for true nodal `Object.is`.
+Gates require ≤1×10⁻¹³ relative. `bitwiseEqual` / `coordsBitwiseEqual` remain false by a few ulps — last force/DT micro-drift, not the old ~1e-5 CFL phase.
