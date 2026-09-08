@@ -41,6 +41,8 @@ export function metricsPassAcceptance(
     metrics.lengthRatio <= acceptance.lengthRatio.max &&
     metrics.radiusRatio >= acceptance.radiusRatio.min &&
     metrics.radiusRatio <= acceptance.radiusRatio.max &&
-    Math.abs(metrics.energyErrorPct) <= acceptance.energyErrorPctAbsMax
+    Math.abs(metrics.energyErrorPct) <= acceptance.energyErrorPctAbsMax &&
+    metrics.maxEqPlasticStrain >= acceptance.maxEqPlasticStrain.min &&
+    metrics.maxEqPlasticStrain <= acceptance.maxEqPlasticStrain.max
   );
 }

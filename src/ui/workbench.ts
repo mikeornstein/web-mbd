@@ -319,6 +319,9 @@ function fillMetrics(
   const rows: [string, string][] = [
     ["Lf / L₀", m.lengthRatio.toFixed(4)],
     ["Rf / R₀", m.radiusRatio.toFixed(4)],
+    ["Axial shortening", `${(m.axialShortening * 1e3).toFixed(2)} mm`],
+    ["Max |u|", `${(m.maxDisplacement * 1e3).toFixed(2)} mm`],
+    ["Max eq. plastic strain", m.maxEqPlasticStrain.toFixed(4)],
     ["Energy error %", m.energyErrorPct.toFixed(4)],
     ["Steps", String(m.nSteps)],
     ["Wall clock", `${m.elapsedMs.toFixed(1)} ms`],

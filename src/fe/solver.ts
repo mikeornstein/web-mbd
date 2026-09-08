@@ -185,7 +185,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
   return {
     coords: x,
     history,
-    metrics: makeMetrics(model, x, history, step, performance.now() - wallClock0),
+    metrics: makeMetrics(model, x, history, hexStates, step, performance.now() - wallClock0),
   };
 }
 
@@ -193,13 +193,16 @@ function makeMetrics(
   model: ModelIR,
   x: Float64Array,
   history: EnergySample[],
+  hexStates: J2State[][],
   nSteps: number,
   elapsedMs: number,
 ): TaylorMetrics {
   let zMin = Infinity;
   let zMax = -Infinity;
   let rMax = 0;
+  let maxDisplacement = 0;
   const nNodes = x.length / 3;
+  const x0 = model.mesh.coords;
   for (let a = 0; a < nNodes; a++) {
     const xx = x[a * 3]!;
     const yy = x[a * 3 + 1]!;
@@ -207,6 +210,16 @@ function makeMetrics(
     zMin = Math.min(zMin, zz);
     zMax = Math.max(zMax, zz);
     rMax = Math.max(rMax, Math.hypot(xx, yy));
+    const dx = xx - x0[a * 3]!;
+    const dy = yy - x0[a * 3 + 1]!;
+    const dz = zz - x0[a * 3 + 2]!;
+    maxDisplacement = Math.max(maxDisplacement, Math.hypot(dx, dy, dz));
+  }
+  let maxEqPlasticStrain = 0;
+  for (const gps of hexStates) {
+    for (const gp of gps) {
+      maxEqPlasticStrain = Math.max(maxEqPlasticStrain, gp.eqPlasticStrain);
+    }
   }
   const finalLength = zMax - zMin;
   const last = history[history.length - 1]!;
@@ -215,6 +228,9 @@ function makeMetrics(
     finalMaxRadius: rMax,
     lengthRatio: finalLength / model.reference.length0,
     radiusRatio: rMax / model.reference.radius0,
+    axialShortening: model.reference.length0 - finalLength,
+    maxDisplacement,
+    maxEqPlasticStrain,
     energyErrorPct: last.errorPct,
     nSteps,
     elapsedMs,

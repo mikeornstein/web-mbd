@@ -61,6 +61,12 @@ export interface TaylorMetrics {
   finalMaxRadius: number;
   lengthRatio: number;
   radiusRatio: number;
+  /** L0 - Lf (axial shortening). */
+  axialShortening: number;
+  /** Max nodal |u| from the undeformed mesh. */
+  maxDisplacement: number;
+  /** Max equivalent plastic strain over all Gauss points. */
+  maxEqPlasticStrain: number;
   energyErrorPct: number;
   nSteps: number;
   elapsedMs: number;

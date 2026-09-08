@@ -13,6 +13,8 @@ export default defineConfig(
       "src/cli/**",
       // Vitest owns these; not in the tsc project graph used by the ESLint project service.
       "tests/**",
+      "src/oracle/**/*.json",
+      "artifacts/**",
     ],
   },
   eslint.configs.recommended,
@@ -38,6 +40,7 @@ export default defineConfig(
       "src/viz/**/*.ts",
       "src/research/**/*.ts",
       "src/ui/**/*.ts",
+      "src/oracle/**/*.ts",
     ],
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",

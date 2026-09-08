@@ -1,5 +1,10 @@
 import type { MaterialJ2Linear } from "../ir/types.js";
-import { createJ2State, j2Update, stressPower, type J2State } from "./materialJ2.js";
+import {
+  createJ2State,
+  dilatationalWaveSpeed,
+  j2Update,
+  type J2State,
+} from "./materialJ2.js";
 import { mat3Det, mat3Inverse, mat3Mul, mat3Transpose } from "./math3.js";
 
 const G = 1 / Math.sqrt(3);
@@ -139,6 +144,15 @@ export function hexInternalForces(args: {
     d[4] = 0.5 * (L[5]! + L[7]!);
     d[5] = 0.5 * (L[2]! + L[6]!);
 
+    // Wilkins-style artificial bulk viscosity (stabilize shocks / prevent inversion).
+    const trD = d[0]! + d[1]! + d[2]!;
+    const h = Math.cbrt(Math.abs(detJ));
+    const cd = dilatationalWaveSpeed(mat);
+    const q =
+      trD < 0
+        ? mat.density * (1.5 * h * trD) ** 2 + 0.06 * mat.density * cd * h * -trD
+        : 0;
+
     const W = [
       0,
       0.5 * (L[1]! - L[3]!),
@@ -175,16 +189,24 @@ export function hexInternalForces(args: {
 
     j2Update(mat, state, d, dt);
 
+    // Bulk viscosity contributes to this step's force only — do not bake into history.
+    const s0 = sigma[0]! - q;
+    const s1 = sigma[1]! - q;
+    const s2 = sigma[2]! - q;
+    const s3 = sigma[3]!;
+    const s4 = sigma[4]!;
+    const s5 = sigma[5]!;
+
     const vol = detJ * W1 * W1 * W1;
-    dU += stressPower(sigma, d) * vol * dt;
+    dU += (s0 * d[0]! + s1 * d[1]! + s2 * d[2]! + 2 * (s3 * d[3]! + s4 * d[4]! + s5 * d[5]!)) * vol * dt;
 
     for (let a = 0; a < 8; a++) {
       const gx = gN[a]![0]!,
         gy = gN[a]![1]!,
         gz = gN[a]![2]!;
-      fOut[a * 3]! += (sigma[0]! * gx + sigma[3]! * gy + sigma[5]! * gz) * vol;
-      fOut[a * 3 + 1]! += (sigma[3]! * gx + sigma[1]! * gy + sigma[4]! * gz) * vol;
-      fOut[a * 3 + 2]! += (sigma[5]! * gx + sigma[4]! * gy + sigma[2]! * gz) * vol;
+      fOut[a * 3]! += (s0 * gx + s3 * gy + s5 * gz) * vol;
+      fOut[a * 3 + 1]! += (s3 * gx + s1 * gy + s4 * gz) * vol;
+      fOut[a * 3 + 2]! += (s5 * gx + s4 * gy + s2 * gz) * vol;
     }
   }
   return dU;

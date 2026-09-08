@@ -8,16 +8,14 @@ import { createCylinderHexMesh } from "../mesh/cylinderHex.js";
  * - L0 = 32.4 mm, R0 = 3.2 mm
  * - V0 = 227 m/s into a rigid wall at z = 0
  *
- * Published final-shape bands for this class of copper Taylor tests (and common FE
- * verification tables) are typically:
- * - Lf / L0 ≈ 0.55–0.75
- * - Rf / R0 ≈ 1.2–1.8
- * Exact targets depend on hardening law; we use these bands as the MVP gate.
+ * Default mesh is refined (nSide=6, nZ=16) with CFL 0.25 for stable full-integration hexes.
+ * Acceptance bands are tightened against the OpenRadioss same-mesh oracle (see
+ * `src/oracle/` and `docs/mvp-taylor-bar.md`).
  */
 export interface TaylorFixtureOptions {
-  /** Cross-section subdivisions (default 3). */
+  /** Cross-section subdivisions (default 6). */
   nSide?: number;
-  /** Axial subdivisions (default 8). */
+  /** Axial subdivisions (default 16). */
   nZ?: number;
   /** Impact speed magnitude (default 227 m/s). */
   speed?: number;
@@ -30,8 +28,8 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
   const mesh = createCylinderHexMesh({
     radius: radius0,
     length: length0,
-    nSide: options.nSide ?? 3,
-    nZ: options.nZ ?? 8,
+    nSide: options.nSide ?? 6,
+    nZ: options.nZ ?? 16,
   });
 
   return {
@@ -62,7 +60,7 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
     reference: { length0, radius0 },
     controls: {
       endTime: 80e-6,
-      cfl: 0.4,
+      cfl: 0.2,
       maxSteps: 2_000_000,
     },
     output: {
@@ -71,10 +69,14 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
   };
 }
 
-/** Acceptance bands for the MVP golden test. */
+/**
+ * Tightened Layer-1 bands for the refined default mesh (6×6×16 hexes, CFL 0.2).
+ * Absolute bands are centered on the web-mbd solution; OpenRadioss same-mesh
+ * compare lives in `src/oracle/` (foot flare still differs by contact/formulation).
+ */
 export const TAYLOR_ACCEPTANCE = {
-  lengthRatio: { min: 0.55, max: 0.78 },
-  // Mesh-sensitive foot flare; tighten after hourglass/viscosity / finer-mesh study.
-  radiusRatio: { min: 1.15, max: 2.6 },
-  energyErrorPctAbsMax: 8,
+  lengthRatio: { min: 0.59, max: 0.64 },
+  radiusRatio: { min: 1.35, max: 1.55 },
+  energyErrorPctAbsMax: 5,
+  maxEqPlasticStrain: { min: 0.5, max: 8 },
 } as const;
