@@ -3,6 +3,7 @@ import {
   createJ2State,
   dilatationalWaveSpeed,
   j2Update,
+  lame,
   type J2State,
 } from "./materialJ2.js";
 import { mat3Det, mat3Inverse } from "./math3.js";
@@ -479,6 +480,9 @@ export function hexInternalForces(args: {
   }
 
   const cd = dilatationalWaveSpeed(mat);
+  const { mu, bulk } = lame(mat);
+  // Radioss mqviscb / m2law: SSP = sqrt((4/3 G + K)/ρ₀)
+  const ssp = Math.sqrt(((4 / 3) * mu + bulk) / mat.density);
   let vol0Sum = 0;
   for (let gp = 0; gp < 8; gp++) vol0Sum += states[gp]!.vol0;
   // Optional element-mean AMU; Radioss path uses DSV vol0 correction instead.
@@ -490,24 +494,24 @@ export function hexInternalForces(args: {
 
   for (let gp = 0; gp < 8; gp++) {
     const gpCache = cache[gp]!;
-    const { detJ, L, d, vol } = gpCache;
+    const { L, d, vol } = gpCache;
 
     // Radioss H8C (Icpre=1) keeps GP strain rates; mean pressure is selectively
     // re-assembled via s8efmoy3 (ZEP3) + s8zfintp3 (PXC).
     const trD = d[0]! + d[1]! + d[2]!;
-    const h = Math.cbrt(Math.abs(detJ));
-    gpCache.q =
-      trD < 0 ? mat.density * ((qa * h * trD) ** 2 + qb * cd * h * -trD) : 0;
-
     const state = states[gp]!;
     if (dsvVol0 && state.vol0 > 0) {
-      // s8edefo3 ICP=1: DV = (DSV - trD)*dt; VOLO *= (1-DV) when DV <= TOL.
-      // Makes DIVDE ≡ dt*DSV for density / AMU while leaving Dxx,Dyy,Dzz local.
+      // s8edefo3 ICP=1: DV = (DSV - trD)*dt; VOLO *= (1-DV) unless DV > TOL.
       let dv = (dsv - trD) * dt;
       if (dv > dsvTol) dv = 0;
-      const dv1 = 1 - dv;
-      if (dv1 > 1e-12) state.vol0 *= dv1;
+      state.vol0 *= 1 - dv;
     }
+
+    // mqviscb: QVIS = ρ·AD·AL·(QA²·AD·AL + QB·SSP), AL=VOL^{1/3}, AD=max(0,-trD)
+    const al = Math.cbrt(Math.max(vol, 0));
+    const ad = Math.max(0, -trD);
+    const rho = mat.density * (state.vol0 / Math.max(vol, 1e-30));
+    gpCache.q = rho * ad * al * (qa * qa * ad * al + qb * ssp);
 
     // Radioss SROTA3 Jaumann (Iframe=1 / JCVT=0): Wα = (dt/2)*(∂vβ/∂xγ − ∂vγ/∂xβ)
     // matches ω_α * dt, applied to Voigt stress with engineering shear convention.
@@ -540,23 +544,33 @@ export function hexInternalForces(args: {
   for (let gp = 0; gp < 8; gp++) {
     const { gN, d, vol, q } = cache[gp]!;
     const sigma = states[gp]!.stress;
-    let s0 = sigma[0]! - q;
-    let s1 = sigma[1]! - q;
-    let s2 = sigma[2]! - q;
+    // s8efint3 ICP=1: ZEP3 strip uses raw SIG (QVIS not folded in); QVIS
+    // enters mean PP only via s8efmoy3: PP += FAC*(ZEP3*tr(σ) - QVIS).
+    let s0 = sigma[0]!;
+    let s1 = sigma[1]!;
+    let s2 = sigma[2]!;
     const s3 = sigma[3]!;
     const s4 = sigma[4]!;
     const s5 = sigma[5]!;
 
-    dU += (s0 * d[0]! + s1 * d[1]! + s2 * d[2]! + 2 * (s3 * d[3]! + s4 * d[4]! + s5 * d[5]!)) * vol * dt;
+    dU +=
+      ((s0 - q) * d[0]! +
+        (s1 - q) * d[1]! +
+        (s2 - q) * d[2]! +
+        2 * (s3 * d[3]! + s4 * d[4]! + s5 * d[5]!)) *
+      vol *
+      dt;
 
     if (constantPressure && pxcOps) {
-      // s8efint3 ICP=1: strip ZEP3*tr(σ) at the GP, assemble with standard B;
-      // mean pressure returns through PXC (s8zfintp3) below.
       const pLoc = ZEP3 * (s0 + s1 + s2);
-      pp += (vol / Math.max(volSum, 1e-30)) * pLoc;
+      pp += (vol / Math.max(volSum, 1e-30)) * (pLoc - q);
       s0 -= pLoc;
       s1 -= pLoc;
       s2 -= pLoc;
+    } else {
+      s0 -= q;
+      s1 -= q;
+      s2 -= q;
     }
 
     for (let a = 0; a < 8; a++) {
