@@ -19,3 +19,6 @@ e2e/artifacts
 native/**/*.so
 native/**/*.dylib
 native/**/*.o
+native/force-kernel/force_kernel_selftest
+native/force-kernel/force_kernel_golden
+native/force-kernel/goldens/*.dbl

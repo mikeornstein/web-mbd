@@ -24,10 +24,14 @@ IEEE bits.
 5. **Compare** — float64 restart / TH probes, not anim float32 VTK, for the
    final `Object.is` gate.
 
-## Build (C smoke kernel)
+## Verify TS ↔ C Object.is
 
 ```bash
-cc -O2 -fPIC -shared -o libforce_kernel.so force_kernel.c -lm
+pnpm exec vitest run tests/force-kernel-golden.test.ts
+# or:
+make golden-test && ./force_kernel_golden goldens/hex0_step1.dbl
 ```
 
-See `force_kernel.h` for the ABI.
+The vitest dumps a little-endian double golden from TypeScript `hexInternalForces`
+and asserts the C kernel matches with bit-identical (`Object.is`) forces, `dU`,
+stress, eqps, and vol0.
