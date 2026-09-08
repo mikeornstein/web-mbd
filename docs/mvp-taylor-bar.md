@@ -57,7 +57,7 @@ Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 - \|Δ(L_f/L₀)\| / oracle ≤ 0.1%
 - \|Δ(R_f/R₀)\| / oracle ≤ 0.2%
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.017% Rf / ~0.006% Lf (~5 μm max nearest-neighbor nodal gap) after H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel; the remaining ~0.017% is that practical floor plus any unported H8C details.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.017% Rf / ~0.006% Lf (~2.6 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel; the remaining ~0.017% is that practical floor plus any unported H8C details.
 
 ## Element / mesh notes
 

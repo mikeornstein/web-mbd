@@ -153,18 +153,9 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
   };
 
-  // Initial force evaluation for the half-step kick; do not accumulate energy yet.
-  assembleInternal();
-  let contactEnergy = applyWallForces();
-  for (let i = 0; i < nNodes; i++) {
-    acc[i * 3] = f[i * 3]! / masses[i]!;
-    acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
-    acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
-  }
-  applyWallKinematics(dt, 0.5 * dt);
-  for (let i = 0; i < v.length; i++) v[i]! += 0.5 * dt * acc[i]!;
-  applyWallKinematics(dt, 0.5 * dt);
-
+  // Radioss resol: INIVEL is treated as V at the half-step; no separate half-kick.
+  // Cycle: FORINT(X) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2 → TT+=DT2.
+  let contactEnergy = 0;
   history.push(sample(contactEnergy));
   nextSample = model.output.historyInterval;
   let dtPrev = dt;
@@ -183,27 +174,25 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
     const contactBefore = contactEnergy;
 
-    // Radioss: advance positions with DT2 (= current dt).
-    for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
-    t += dt;
-    step += 1;
-
     assembleInternal();
     contactEnergy = applyWallForces();
-
     for (let i = 0; i < nNodes; i++) {
       acc[i * 3] = f[i * 3]! / masses[i]!;
       acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
       acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
     }
 
-    // Radioss variable-dt: DT1=dtPrev, compute DT2, DT12=½(DT1+DT2), V+=A·DT12.
+    // resol.F: DT1=DT2_old, recompute DT2, DT12=½(DT1+DT2); X uses new DT2.
     dtPrev = dt;
     recomputeDt();
     const dt12 = 0.5 * (dtPrev + dt);
+    // RGWAL once before VELOCITY (rgwall.F predicts with DT12/DT2).
     applyWallKinematics(dt, dt12);
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
-    applyWallKinematics(dt, dt12);
+
+    for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
+    t += dt;
+    step += 1;
 
     let keAfter = 0;
     for (let i = 0; i < nNodes; i++) {
@@ -213,6 +202,11 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
       keAfter += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
     }
     // Discrete work identity: ΔIE = -ΔKE - ΔPE_contact (no other external work).
+    // Contact energy is re-evaluated after the position update for the sample.
+    if (wallKind === "penalty") {
+      f.fill(0);
+      contactEnergy = applyWallForces();
+    }
     internalEnergy += keBefore - keAfter - (contactEnergy - contactBefore);
     if (t + 1e-18 >= nextSample || t >= model.controls.endTime - 1e-18) {
       history.push(sample(contactEnergy));
