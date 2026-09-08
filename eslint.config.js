@@ -13,8 +13,12 @@ export default defineConfig(
       "src/cli/**",
       // Vitest owns these; not in the tsc project graph used by the ESLint project service.
       "tests/**",
+      // Ad-hoc tsx probes under scripts/ — same treatment as tests/cli.
+      "scripts/**",
       "src/oracle/**/*.json",
       "artifacts/**",
+      // Local OpenRadioss PIC extract build tree (gitignore'd but may exist on disk).
+      "native/force-kernel/or-extract/build/**",
     ],
   },
   eslint.configs.recommended,

@@ -16,7 +16,7 @@ behind the existing `wmbd_hex_internal_forces` ABI so the web-mbd CD loop can
 | --- | --- |
 | TS ↔ C mirror `Object.is` | done (`force_kernel.c`, golden + solver FFI) |
 | Float64 OR state compare (`.sta`) | done (`shapeFromSta`, oracle runner) |
-| OR `s8eforc3`/`m2law` behind ABI | **not linked** — inventory below |
+| OR `s8eforc3`/`m2law` behind ABI | **libor_h8c.so built** (PIC SHARED); symbols resolve via smoke test; MVSIZ packing TODO |
 
 ## Build SHARED extract (in progress)
 
@@ -24,8 +24,12 @@ behind the existing `wmbd_hex_internal_forces` ABI so the web-mbd CD loop can
 # One-time: OpenRadioss_extlib v75 under /tmp/OpenRadioss-src/extlib
 ./build-shared-engine.sh   # → libor_h8c.so (PIC), log in build/build.log
 cc -O2 -o smoke_symbols smoke_symbols.c -ldl
-./smoke_symbols build/libor_h8c.so   # verifies s8eforc3_ / m2law_ resolve
+./smoke_symbols build/libor_h8c.so   # verifies s8eforc3_ / m2law_ (preloads libgomp)
 ```
+
+`libor_h8c.so` leaves OpenMP unresolved (`omp_init_lock_`); the smoke test
+`dlopen`s `libgomp.so.1` with `RTLD_GLOBAL` first. Relink with `-lgomp` is a
+follow-up if we want a self-contained shared object.
 
 Stock release `engine_linux64_gf` is ELF `EXEC` and cannot be `dlopen`ed; the
 shared rebuild is required.

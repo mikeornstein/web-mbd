@@ -25,4 +25,5 @@ native/force-kernel/goldens/*.dbl
 
 # OpenRadioss shared-engine extract build tree
 native/force-kernel/or-extract/build/
+native/force-kernel/or-extract/smoke_symbols
 
