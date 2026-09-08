@@ -217,7 +217,7 @@ function runTsSnaps(model: ModelIR): { postaccele: Snap[]; postwall: Snap[] } {
         v: vScratch,
         states: hexStates[e]!,
         mat: model.material,
-        dt,
+        dt: dt1,
         fOut: fHex,
         options: { jcvt: 0 },
         elementIndex: e,

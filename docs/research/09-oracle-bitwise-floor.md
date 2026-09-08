@@ -189,25 +189,33 @@ node `i32 ITAB` + `A[3],V[3],X[3],MS`.
 | --- | --- |
 | **Cold DT1=0** on NCYCLE=0 | Live `DT1=0`, `DT12=DT2/2=1.25e-8`. web-mbd had wrongly seeded `DT1=DT2` → `DT12=DT2`. **Fixed** in `solver.ts` (`dt1=0`). DT1/DT2/DT12 now Object.is for NCYCLE 0..2. |
 | Mid-cycle **X** Object.is through NCYCLE=2 | Break appears only after integrating cycle 2 (end STATE). |
-| NCYCLE=0 **A** | Live ~10⁻³⁰ (rigid translation cancels). TS max ‖A‖~1.5×10⁻⁹ from ‖F‖~3×10⁻¹³ residual under uniform V₀. |
+| NCYCLE=0 **A** | With constitutive **DT1** (below): TS A≈0; live ~10⁻³⁰. (Previously TS ‖A‖~1.5×10⁻⁹ from integrating G·DT2 on cycle 0.) |
 | NCYCLE=1 face **A** | ‖A‖~10⁷; TS↔live ~10⁻¹³ relative (~7×10⁻⁷ abs on Aₓ). Wall strips A_z / V_z on 9 impact nodes identically. |
 | NCYCLE=2 mid-bar **A** (nodes 18/26) | ‖A‖~4793; TS↔live ~10⁻¹⁰ relative (~10⁻⁶ abs) — enough to push end-of-step X across 1 ulp. |
 | V after cycle 0 | Still Object.is (A·DT12 underflows). V drifts from NCYCLE=1. |
 
-**Conclusion:** MVSIZ, IXS, free-flight CD, and (now) DT12 bookkeeping are not the floor.
-The first Object.is break is **FORINT/ACCELE residual under wall-activated nonuniform V**:
-TS/C-mirror leave a ~10⁻¹³ N rigid-motion force that live cancels; after RWALL creates a
-V gradient, mid-bar A diverges at ~10⁻¹⁰ relative by NCYCLE=2. `contactWall.ts` matches
-`rgwall.F` ITIED=0 (same 9 contact nodes; V_z strip Object.is).
+### Per-GP SIG / rate dumps (`scripts/gpsig-forint-probe.ts`)
 
-**Next patch (exact routine):** bisect the shared force path that feeds mid-bar A at
-NCYCLE=2 — compare live vs TS/C-mirror **element SIG / rate / hourglass / QVIS** on the
-impact-face hexes after NCYCLE=1 (same Object.is X, nearly Object.is face A). Likely
-candidates: shear-rate / Jaumann update under near-rigid spin, bulk viscosity (QVIS),
-or 1-ulp mass → A=F/m. OR-ABI remains noisier than TS (even no-wall). Engine A dumps
-are the oracle; keep `resol.av-dump.patch` applied on the local oracle binary.
+Patched `s8eforc3.F` (`docs/research/or-patches/s8eforc3.gpsig-dump.patch`) writes
+`wmbd_gpsig_{0,1,2}.f64bin` after each GP’s `S8EFMOY3`: `DXX..D6`, `SIG(6)`, PLA,
+QVIS, EPSD, VOL, RHO, AMU, EINT. Copies in `docs/research/gpsig-dumps/`.
 
-Production adaptive Object.is remains open.
+| Quantity @ NCYCLE | Result |
+| --- | --- |
+| **Constitutive DT** | Live `m2law.F:195` `G1=DT1*G`. Cycle 0 DT1=0 ⇒ **SIG stays 0**. web-mbd was passing **DT2** into `hexInternalForces` → ~1e-9 Pa SIG under rigid V₀. **Fixed**: FORINT now uses `dt1` (`solver.ts`). |
+| SIG @ NCYCLE=0 | **Object.is** (all GPs) after DT1 fix |
+| D @ NCYCLE=0 | ~1e-12 noise; live/TS signs can flip (GradN·v cancellation) |
+| SIG diagonals @ NCYCLE=1 impact GPs | **Object.is** (e.g. eid1 ip1); other GPs ~1e-12 relative (~3e-5 Pa hydrostatic) |
+| Shear D / SIG @ NCYCLE=1 | ~1e-12 / ~1e-9 residual — first post-fix divergence |
+| PLA | Object.is (still 0 through 3 cycles) |
+| QVIS | Deck QA=1e-20, QB=1e-21; live ~1e-12 vs TS 0 — negligible vs ‖σ‖~1e8 |
+| Hourglass | GEO QH=0 — not active |
+
+**Conclusion:** the formulation mismatch that seeded the cascade was **M2LAW time factor DT1 vs DT2 on cycle 0** (`m2law.F:195` vs old `solver.ts` passing `dt`). After that fix, step≥3 coord Object.is is still open (~1 ulp) from **IEEE GradN·v / shear-rate residuals** under wall-driven nonuniform V (~1e-12 on D, ~1e-13 relative on face A). Not MVSIZ, IXS, RGWALL kinematics, QA/QB, or hourglass.
+
+**Next:** match Radioss `s8edefo3` / `scoor3` B·v contraction order (or accept ulp floor and share the OR force kernel for production Object.is).
+
+Production adaptive Object.is remains open (re-pinned Lf ~2e-15 after DT1 constitutive fix).
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.
