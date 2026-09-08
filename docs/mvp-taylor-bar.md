@@ -57,7 +57,7 @@ Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 - \|Δ(L_f/L₀)\| / oracle ≤ 0.1%
 - \|Δ(R_f/R₀)\| / oracle ≤ 0.2%
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel; the remaining sub-ppm / sub-μm gap is that practical floor plus any unported H8C details.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Adaptive DT tracks OpenRadioss within ~0.01% mean (lockstep with printed OR DT2 does not close the residual). Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel; the remaining sub-ppm / sub-μm gap is that practical floor plus any unported H8C details.
 
 ## Element / mesh notes
 

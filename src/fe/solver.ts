@@ -12,6 +12,12 @@ import { dilatationalWaveSpeed, lame, type J2State } from "./materialJ2.js";
 
 export interface SolveOptions {
   maxWallMs?: number;
+  /**
+   * Optional Radioss-style DT2 schedule (one entry per cycle). When set,
+   * overrides adaptive/fixed CFL and uses `dtSchedule[step]` as DT2.
+   * Useful for lockstep parity experiments against an OpenRadioss `.out`.
+   */
+  dtSchedule?: ArrayLike<number>;
 }
 
 export function solveExplicit(model: ModelIR, options: SolveOptions = {}): SolveResult {
@@ -52,11 +58,23 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
 
   const cd = dilatationalWaveSpeed(model.material);
   const dtCrit0 = minH / cd;
-  let dt = model.controls.fixedDt ?? model.controls.cfl * dtCrit0;
-  if (!(dt > 0) || (!model.controls.fixedDt && dt > dtCrit0)) dt = model.controls.cfl * dtCrit0;
-  const adaptiveDt = model.controls.fixedDt === undefined && model.controls.adaptiveDt !== false;
+  const dtSchedule = options.dtSchedule;
+  let dt =
+    dtSchedule && dtSchedule.length > 0
+      ? Number(dtSchedule[0])
+      : (model.controls.fixedDt ?? model.controls.cfl * dtCrit0);
+  if (!(dt > 0) || (!dtSchedule && !model.controls.fixedDt && dt > dtCrit0)) {
+    dt = model.controls.cfl * dtCrit0;
+  }
+  const adaptiveDt =
+    !dtSchedule && model.controls.fixedDt === undefined && model.controls.adaptiveDt !== false;
 
   const recomputeDt = (): void => {
+    if (dtSchedule) {
+      const next = Number(dtSchedule[step] ?? dtSchedule[dtSchedule.length - 1]);
+      if (next > 0 && Number.isFinite(next)) dt = next;
+      return;
+    }
     if (!adaptiveDt) return;
     let h = Infinity;
     for (let e = 0; e < nHex; e++) {
