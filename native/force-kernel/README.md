@@ -19,6 +19,7 @@ IEEE bits.
    tests (TS↔C `Object.is` on one element proves the loader).
 3. **OR extract** — replace the C mirror with a thin wrapper around OpenRadioss
    `s8eforc3` + `m2law` + `rgwall` (or call a prebuilt OR object archive).
+   See `or-extract/README.md` + `or-extract/inventory-deps.sh`.
 4. **Wire** — optional `SolveOptions.forceBackend: "ts" | "native"`; default TS
    until the OR extract is validated.
 5. **Compare** — float64 `/STATE/DT/ALL` `.sta` (`stat_node.F` E20.13), not
@@ -33,10 +34,10 @@ no prebuilt `libs8e.a`. A bitwise OR force backend needs one of:
 1. **Thin engine object link** — build `engine_linux64_gf` from `/tmp/OpenRadioss-src`
    with `-fPIC`, archive `s8eforc3` + `m2law` + deps into `libor_h8c.so`, and adapt
    `wmbd_hex_internal_forces` to pack/unpack OR's MVSIZ element buffers (largest
-   effort: ELBUF / mat_param / common blocks).
+   effort: ELBUF / mat_param / common blocks). Details: `or-extract/`.
 2. **Restart-step probe** — instrument a debug OR build to dump per-cycle nodal
    `A` after FORINT for the Taylor deck; use as a regression oracle while (1) lands.
-3. **Keep C mirror** for TS↔native Object.is; treat OR float64 TH/restart compare
+3. **Keep C mirror** for TS↔native Object.is; treat OR float64 `.sta` compare
    under shared fixed Δt as the interim production gate until (1) is done.
 
 Preferred order: (2) for visibility → (1) for true `Object.is`.

@@ -51,4 +51,4 @@ now emits `/STATE/DT/ALL` at `endTime`; OpenRadioss writes `ROOT_NNNN.sta` with
 
 - C mirror of H8C/LAW2: `native/force-kernel/` (ABI in `force_kernel.h`)
 - Proven **TypeScript ↔ C `Object.is`** on one-hex forces and on coarse full solves via `SolveOptions.hexForce` + `src/cli/forceNative.ts` (koffi)
-- Remaining for OR parity: replace the C mirror body with OpenRadioss `s8eforc3` / `m2law` (same ABI), keeping the web-mbd CD loop
+- Remaining for OR parity: replace the C mirror body with OpenRadioss `s8eforc3` / `m2law` (same ABI), keeping the web-mbd CD loop — see `native/force-kernel/or-extract/`
