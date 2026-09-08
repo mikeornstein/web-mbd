@@ -58,7 +58,7 @@ Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 - \|Δ(R_f/R₀)\| / oracle ≤ 0.002% (2×10⁻⁵ rel)
 - Fine fixed-DT live probe (`tests/taylor-fine-dt-parity.test.ts`, needs `OPENRADIOSS_PATH`): ≤ 5×10⁻⁶ rel and NN < 0.1 μm (float64 `.sta`)
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and ID-aligned nodal coords). Prefer host `.f64bin` from a patched `stat_node.F` over E20.13 `.sta` (see `docs/research/or-f64bin-host-dump.md`). With F20-snapped X0, near-zero scrub (1e-18), fixed Δt, and OR-ABI `JCVT=0`, **1×Δt metrics+coords are `Object.is` vs live `.f64bin`**. Production CFL=0.9 adaptive residual remains ~0.0005% Rf / ~0.00045% Lf (~0.10 μm; `bitwiseEqual` / `coordsBitwiseEqual: false`) — CFL phase, not the E20.13 wall.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and ID-aligned nodal coords). Prefer host `.f64bin` from a patched `stat_node.F` over E20.13 `.sta` (see `docs/research/or-f64bin-host-dump.md`). With F20-snapped X0, near-zero scrub (1e-18), fixed Δt, and OR-ABI `JCVT=0`, **1×Δt metrics+coords are `Object.is` vs live `.f64bin`**. Matching Radioss `ONEP333=1.333` SSP and hierarchical DETDP DELTAX makes **native adaptive DT₀ `Object.is`**; coarse 80 μs CFL residual drops to ~ulp (~10⁻¹⁴ Rf / ~10⁻¹⁶ Lf) without DT-schedule replay. Production 6×6×16 pin still being re-cut (`bitwiseEqual` / `coordsBitwiseEqual` target remains true).
 
 **Residual diagnostics (same mesh):**
 - Mid-run anims (20/40/60/80 μs): relative Lf error peaks near **60 μs** (~0.007%) then shrinks by 80 μs; NN peaks ~1.8 μm at 60 μs → ~0.14 μm at end.

@@ -1,5 +1,11 @@
 import type { MaterialJ2Linear } from "../ir/types.js";
-import { createJ2State, j2Update, lame, type J2State } from "./materialJ2.js";
+import {
+  createJ2State,
+  j2Update,
+  lame,
+  RADIOSS_ONEP333,
+  type J2State,
+} from "./materialJ2.js";
 import { mat3Det, mat3Inverse } from "./math3.js";
 
 /** Radioss `s8eprst_ini` PG=.577350269189625D0 (not 1/√3, which is ~1 ulp larger). */
@@ -133,8 +139,12 @@ export function characteristicLength(x0: Float64Array, poisson = 0.35): number {
 }
 
 /**
- * Radioss `s8ederic3` SMAX (1 / √ max median-face metric) times GP volume:
+ * Radioss `s8ederic3` SMAX (1 / √ max median-face metric) times hierarchical GP
+ * volume from `s8ejacip3` + `s8ederipr3` (`DETDP = ONE_OVER_512 · det(AJ)`):
  * DELTAX = 128 * VOL_gp * SMAX  (`s8ederi_2`, WI=1 for 2×2×2).
+ *
+ * Isoparametric `det(J)` at GPs agrees to ~1 ulp on most hexes; the hierarchical
+ * path is required for Object.is on Taylor DT₀ vs live OpenRadioss.
  */
 export function characteristicLengthSmax(x: Float64Array): number {
   // Raw cofactors for SMAX (before 1/64 scaling) — Radioss s8ederic3.
@@ -215,12 +225,136 @@ export function characteristicLengthSmax(x: Float64Array): number {
   if (!(s2 > 0)) return 0;
   const smax = 1 / Math.sqrt(s2);
 
-  // Min over 2×2×2 Gauss volumes (WI=1).
+  // Hourglass modes HX/HY/HZ (s8ederic3) → GP AJ via s8ejacip3 → DETDP.
+  const hx1 = x1 + x2 - x3 - x4 - x5 - x6 + x7 + x8;
+  const hy1 = y1 + y2 - y3 - y4 - y5 - y6 + y7 + y8;
+  const hz1 = z1 + z2 - z3 - z4 - z5 - z6 + z7 + z8;
+  const hx2 = x1 - x2 - x3 + x4 - x5 + x6 + x7 - x8;
+  const hy2 = y1 - y2 - y3 + y4 - y5 + y6 + y7 - y8;
+  const hz2 = z1 - z2 - z3 + z4 - z5 + z6 + z7 - z8;
+  const hx3 = x1 - x2 + x3 - x4 + x5 - x6 + x7 - x8;
+  const hy3 = y1 - y2 + y3 - y4 + y5 - y6 + y7 - y8;
+  const hz3 = z1 - z2 + z3 - z4 + z5 - z6 + z7 - z8;
+  const hx4 = -x1 + x2 - x3 + x4 + x5 - x6 + x7 - x8;
+  const hy4 = -y1 + y2 - y3 + y4 + y5 - y6 + y7 - y8;
+  const hz4 = -z1 + z2 - z3 + z4 + z5 - z6 + z7 - z8;
+
+  const pg2 = G * G;
+  const hx1pg = hx1 * G,
+    hx2pg = hx2 * G,
+    hx3pg = hx3 * G,
+    hx4pg2 = hx4 * pg2;
+  const hy1pg = hy1 * G,
+    hy2pg = hy2 * G,
+    hy3pg = hy3 * G,
+    hy4pg2 = hy4 * pg2;
+  const hz1pg = hz1 * G,
+    hz2pg = hz2 * G,
+    hz3pg = hz3 * G,
+    hz4pg2 = hz4 * pg2;
+
+  // s8ejacip3 IP order (ξ fastest): signs for (ηζ, ξζ, ξη) hourglass terms.
+  const gpAj: [number, number, number, number, number, number, number, number, number][] = [
+    [
+      aj1 - hx3pg - hx2pg + hx4pg2,
+      aj2 - hy3pg - hy2pg + hy4pg2,
+      aj3 - hz3pg - hz2pg + hz4pg2,
+      aj4 - hx1pg - hx3pg + hx4pg2,
+      aj5 - hy1pg - hy3pg + hy4pg2,
+      aj6 - hz1pg - hz3pg + hz4pg2,
+      aj7 - hx2pg - hx1pg + hx4pg2,
+      aj8 - hy2pg - hy1pg + hy4pg2,
+      aj9 - hz2pg - hz1pg + hz4pg2,
+    ],
+    [
+      aj1 - hx3pg - hx2pg + hx4pg2,
+      aj2 - hy3pg - hy2pg + hy4pg2,
+      aj3 - hz3pg - hz2pg + hz4pg2,
+      aj4 - hx1pg + hx3pg - hx4pg2,
+      aj5 - hy1pg + hy3pg - hy4pg2,
+      aj6 - hz1pg + hz3pg - hz4pg2,
+      aj7 + hx2pg - hx1pg - hx4pg2,
+      aj8 + hy2pg - hy1pg - hy4pg2,
+      aj9 + hz2pg - hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg - hx2pg - hx4pg2,
+      aj2 + hy3pg - hy2pg - hy4pg2,
+      aj3 + hz3pg - hz2pg - hz4pg2,
+      aj4 - hx1pg - hx3pg + hx4pg2,
+      aj5 - hy1pg - hy3pg + hy4pg2,
+      aj6 - hz1pg - hz3pg + hz4pg2,
+      aj7 - hx2pg + hx1pg - hx4pg2,
+      aj8 - hy2pg + hy1pg - hy4pg2,
+      aj9 - hz2pg + hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg - hx2pg - hx4pg2,
+      aj2 + hy3pg - hy2pg - hy4pg2,
+      aj3 + hz3pg - hz2pg - hz4pg2,
+      aj4 - hx1pg + hx3pg - hx4pg2,
+      aj5 - hy1pg + hy3pg - hy4pg2,
+      aj6 - hz1pg + hz3pg - hz4pg2,
+      aj7 + hx2pg + hx1pg + hx4pg2,
+      aj8 + hy2pg + hy1pg + hy4pg2,
+      aj9 + hz2pg + hz1pg + hz4pg2,
+    ],
+    [
+      aj1 - hx3pg + hx2pg - hx4pg2,
+      aj2 - hy3pg + hy2pg - hy4pg2,
+      aj3 - hz3pg + hz2pg - hz4pg2,
+      aj4 + hx1pg - hx3pg - hx4pg2,
+      aj5 + hy1pg - hy3pg - hy4pg2,
+      aj6 + hz1pg - hz3pg - hz4pg2,
+      aj7 - hx2pg - hx1pg + hx4pg2,
+      aj8 - hy2pg - hy1pg + hy4pg2,
+      aj9 - hz2pg - hz1pg + hz4pg2,
+    ],
+    [
+      aj1 - hx3pg + hx2pg - hx4pg2,
+      aj2 - hy3pg + hy2pg - hy4pg2,
+      aj3 - hz3pg + hz2pg - hz4pg2,
+      aj4 + hx1pg + hx3pg + hx4pg2,
+      aj5 + hy1pg + hy3pg + hy4pg2,
+      aj6 + hz1pg + hz3pg + hz4pg2,
+      aj7 + hx2pg - hx1pg - hx4pg2,
+      aj8 + hy2pg - hy1pg - hy4pg2,
+      aj9 + hz2pg - hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg + hx2pg + hx4pg2,
+      aj2 + hy3pg + hy2pg + hy4pg2,
+      aj3 + hz3pg + hz2pg + hz4pg2,
+      aj4 + hx1pg - hx3pg - hx4pg2,
+      aj5 + hy1pg - hy3pg - hy4pg2,
+      aj6 + hz1pg - hz3pg - hz4pg2,
+      aj7 - hx2pg + hx1pg - hx4pg2,
+      aj8 - hy2pg + hy1pg - hy4pg2,
+      aj9 - hz2pg + hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg + hx2pg + hx4pg2,
+      aj2 + hy3pg + hy2pg + hy4pg2,
+      aj3 + hz3pg + hz2pg + hz4pg2,
+      aj4 + hx1pg + hx3pg + hx4pg2,
+      aj5 + hy1pg + hy3pg + hy4pg2,
+      aj6 + hz1pg + hz3pg + hz4pg2,
+      aj7 + hx2pg + hx1pg + hx4pg2,
+      aj8 + hy2pg + hy1pg + hy4pg2,
+      aj9 + hz2pg + hz1pg + hz4pg2,
+    ],
+  ];
+
+  const oneOver512 = 1 / 512;
   let minVol = Infinity;
-  for (const sh of SHAPES) {
-    const detJ = mat3Det(jacobian(sh.dN, x));
-    if (detJ <= 0) return 0;
-    minVol = Math.min(minVol, detJ * W1 * W1 * W1);
+  for (const aj of gpAj) {
+    const [a1, a2, a3, a4, a5, a6, a7, a8, a9] = aj;
+    const j5968 = a5! * a9! - a6! * a8!;
+    const j6749 = a6! * a7! - a4! * a9!;
+    const j4857 = a4! * a8! - a5! * a7!;
+    const detdp = oneOver512 * (a1! * j5968 + a2! * j6749 + a3! * j4857);
+    if (detdp <= 0) return 0;
+    minVol = Math.min(minVol, detdp * W1);
   }
   return 128 * minVol * smax;
 }
@@ -652,8 +786,8 @@ export function hexInternalForces(args: {
   }
 
   const { mu, bulk } = lame(mat.young, mat.poisson);
-  // Radioss mqviscb / m2law: SSP = sqrt((4/3 G + K)/ρ₀)
-  const ssp = Math.sqrt(((4 / 3) * mu + bulk) / mat.density);
+  // Radioss mqviscb / m2law: SSP = sqrt((ONEP333·G + K)/ρ₀) with ONEP333=1.333
+  const ssp = Math.sqrt((RADIOSS_ONEP333 * mu + bulk) / mat.density);
   let vol0Sum = 0;
   for (let gp = 0; gp < 8; gp++) vol0Sum += states[gp]!.vol0;
   // Optional element-mean AMU; Radioss path uses DSV vol0 correction instead.

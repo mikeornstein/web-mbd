@@ -35,7 +35,9 @@ describe("OpenRadioss libor_h8c extract", () => {
         { encoding: "utf8" },
       );
       expect(build.status, build.stderr).toBe(0);
-      const run = spawnSync(bin, [soHex], { encoding: "utf8", env: { ...process.env } });
+      const env = { ...process.env };
+      delete env.WMBD_OR_CALL_S8E;
+      const run = spawnSync(bin, [soHex], { encoding: "utf8", env });
       expect(run.status, run.stdout + run.stderr).toBe(0);
       expect(run.stdout).toContain("rc=-2");
       expect(run.stdout).toContain("PASS");

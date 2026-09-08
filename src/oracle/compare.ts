@@ -13,8 +13,9 @@ export interface OracleCompareTolerances {
 }
 
 export const DEFAULT_ORACLE_TOLERANCES: OracleCompareTolerances = {
-  // CFL=0.9 adaptive: Lf ~0.0004%, Rf ~0.0005% (~4–5e-6 rel). Fine fixed DT
-  // shrinks this to ~1e-6 (truncation floor). Object.is still needs a shared kernel.
+  // After RADIOSS_ONEP333 + hierarchical DETDP DELTAX, coarse native CFL lands at
+  // ~1e-14 vs live .f64bin. Production pin still being re-cut — keep 1e-5 until
+  // the 6×6×16 pin is refreshed; then tighten toward Object.is.
   lengthRatioRel: 1e-5,
   radiusRatioRel: 2e-5,
 };

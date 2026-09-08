@@ -107,11 +107,14 @@ static void grad_N(const double dN[8][3], const double Jinv[9], double gN[8][3])
   }
 }
 
-/* materialJ2.ts lame */
+/* OpenRadioss ONEP333 = 1.333 (not exact 4/3) — matches materialJ2.ts */
+#define RADIOSS_ONEP333 1.333
+
+/* materialJ2.ts lame — bulk = E/(3*(1-2ν)) like hm_read_mat02_jc */
 static void lame(double E, double nu, double *lam, double *mu, double *bulk) {
   *lam = (E * nu) / ((1.0 + nu) * (1.0 - 2.0 * nu));
   *mu = E / (2.0 * (1.0 + nu));
-  *bulk = *lam + (2.0 / 3.0) * (*mu);
+  *bulk = E / (3.0 * (1.0 - 2.0 * nu));
 }
 
 /* materialJ2.ts j2Update */
@@ -462,7 +465,7 @@ double wmbd_hex_internal_forces(
 
   lame(mat->young, mat->poisson, &lam, &mu, &bulk);
   (void)lam;
-  ssp = sqrt(((4.0 / 3.0) * mu + bulk) / mat->density);
+  ssp = sqrt((RADIOSS_ONEP333 * mu + bulk) / mat->density);
 
   for (gp = 0; gp < 8; gp++) vol0Sum += vol0_io[gp];
   if (MEAN_AMU && vol0Sum > 0.0) {

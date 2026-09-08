@@ -29,9 +29,11 @@
   },
   "adaptive80usCoarseNativeCfl": {
     "mesh": "2x2x4",
-    "relLf": 8.9e-6,
-    "relRf": 6.0e-6,
-    "alignedMax_m": 1.56e-7,
+    "note": "After RADIOSS_ONEP333=1.333 SSP + hierarchical DETDP DELTAX (s8ejacip3)",
+    "relLf": 6.4e-16,
+    "relRf": 1.1e-14,
+    "alignedMax_m": 8.7e-17,
+    "dt0ObjectIs": true,
     "metricsBitwiseEqual": false,
     "coordsBitwiseEqual": false
   },
@@ -40,6 +42,7 @@
     "coordSourceWas": "sta",
     "relLf": 4.5e-6,
     "relRf": 5e-6,
-    "bitwiseEqual": false
+    "bitwiseEqual": false,
+    "note": "Stale pin numbers pre-ONEP333/hier-DELTAX; re-pin pending"
   }
 }

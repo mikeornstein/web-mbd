@@ -20,15 +20,24 @@ export function createJ2State(vol0 = 0): J2State {
   };
 }
 
+/**
+ * OpenRadioss `ONEP333` from `constant_mod.F`:
+ * `ONEP33 + THREEEM3` = 1 + 0.3 + 0.03 + 0.003 = **1.333** (not exact 4/3).
+ * M2LAW SSP uses `sqrt((ONEP333*G + BULK)/ρ₀)` — exact 4/3 shifts DT₀ by ~0.004%.
+ */
+export const RADIOSS_ONEP333 = 1.333;
+
 export function lame(E: number, nu: number): { lam: number; mu: number; bulk: number } {
   const lam = (E * nu) / ((1 + nu) * (1 - 2 * nu));
   const mu = E / (2 * (1 + nu));
-  return { lam, mu, bulk: lam + (2 / 3) * mu };
+  // Match `hm_read_mat02_jc`: bulk = E / (3*(1-2ν)), not lam+(2/3)μ (1 ulp apart).
+  const bulk = E / (3 * (1 - 2 * nu));
+  return { lam, mu, bulk };
 }
 
 export function dilatationalWaveSpeed(mat: MaterialJ2Linear): number {
-  const { lam, mu } = lame(mat.young, mat.poisson);
-  return Math.sqrt((lam + 2 * mu) / mat.density);
+  const { mu, bulk } = lame(mat.young, mat.poisson);
+  return Math.sqrt((RADIOSS_ONEP333 * mu + bulk) / mat.density);
 }
 
 /**

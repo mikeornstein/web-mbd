@@ -79,25 +79,40 @@ scrub |x|≤1e-18 on both sides before `alignedCoordGap`.
 | 1×Δt vs live `.f64bin` | **true** | **true** |
 | 10×Δt | true | false (~1e-18) |
 | 100×Δt / 10 μs | false (~1e-16) | false |
-| 80 μs adaptive CFL | false (~9e-6) | false (~0.16 μm) |
+| 80 μs adaptive CFL (pre ONEP333 / hier DETDP) | false (~9e-6) | false (~0.16 μm) |
+| 80 μs adaptive CFL (native, ONEP333 + hier DETDP) | false (~6×10⁻¹⁶ Lf / ~1×10⁻¹⁴ Rf) | false (~9×10⁻¹⁷ m) |
 
-Host float64 removes the E20.13 wall. Remaining production residual without a
-shared DT schedule is adaptive CFL phase (~5e-6).
+Host float64 removes the E20.13 wall. The former adaptive ~5e-6 residual was
+**DT₀ phase** from two SSP/DELTAX mismatches (below), not force formulation.
+
+### Native CFL / DELTAX parity (DT₀ `Object.is`)
+
+OpenRadioss M2LAW sound speed uses `ONEP333 = 1.333` from `constant_mod.F`
+(**not** exact `4/3`). Combined with hierarchical GP volumes
+(`s8ejacip3` AJ + `ONE_OVER_512` DETDP in `s8ederipr3`), web-mbd now matches
+live OR DT₀ on coarse 2×2×4 with `Object.is`. Native adaptive CFL @ 80 μs then
+lands at ~ulp residual without replaying `TAYLOR_dt.f64bin`:
+
+| Driver (native CFL=0.9) | relLf | relRf | DT₀ `Object.is` | aligned max |
+| --- | --- | --- | --- | --- |
+| TS `jcvt:0` | ~6×10⁻¹⁶ | ~1×10⁻¹⁴ | **true** | ~9×10⁻¹⁷ |
+| OR-ABI `JCVT=0` | ~1×10⁻¹⁵ | ~1×10⁻¹⁴ | **true** | ~1×10⁻¹⁶ |
 
 ### Live DT schedule replay (patched `ecrit.F`)
 
 Patched engine also writes `TAYLOR_dt.f64bin` each print cycle
 (`int32 NCYCLE` + `float64 TT` + `float64 DT2`). Replaying that schedule in
-web-mbd (`SolveOptions.dtSchedule`) on coarse 2×2×4 @ 80 μs:
+web-mbd (`SolveOptions.dtSchedule`) on coarse 2×2×4 @ 80 μs (pre-native CFL fix):
 
 | Driver | relLf | relRf | Lf `Object.is` | Rf `Object.is` | aligned max |
 | --- | --- | --- | --- | --- | --- |
 | OR-ABI + live DT | **0** | ~4×10⁻¹⁵ | **true** | false (~2 ulp on R) | ~9×10⁻¹⁷ |
 | TS `jcvt:0` + live DT | ~1×10⁻¹⁵ | ~4×10⁻¹⁵ | false | false | ~6×10⁻¹⁷ |
 
-So the adaptive ~1e-5 gap is almost entirely **DT-phase**, not force formulation.
-Rf still misses `Object.is` by ~2 ulps on max radius; coords similarly.
-See `scripts/replay-or-dt-schedule.ts` and `docs/research/or-patches/ecrit.dt-f64bin.patch`.
+Schedule replay proved the gap was DT-phase; native ONEP333 + hier DELTAX removes
+the need for a live dump on the adaptive path. Rf/coords still miss full
+`Object.is` by a few ulps. See `scripts/replay-or-dt-schedule.ts` and
+`docs/research/or-patches/ecrit.dt-f64bin.patch`.
 
 ## Shared kernel status (web-mbd)
 
