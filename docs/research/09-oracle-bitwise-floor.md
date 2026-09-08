@@ -43,12 +43,32 @@ now emits `/STATE/DT/ALL` at `endTime`; OpenRadioss writes `ROOT_NNNN.sta` with
 `/NODE` rows as `I10,1P3E20.13` (`stat_node.F`).
 
 - Parser: `src/oracle/shapeFromSta.ts` (ID-sort → packed XYZ)
-- Runner: `src/cli/openRadiossRunner.ts` prefers `.sta`, falls back to VTK
+- Runner: `src/cli/openRadiossRunner.ts` prefers `.sta` (endTime dump vs TSTOP
+  overshoot), falls back to VTK
 - Compare: `alignedCoordGap` for ID-aligned `Object.is` on coords; pin records
   `coordSource`, `alignedMax`, `coordsBitwiseEqual`
+
+### E20.13 floor (important)
+
+Fixed-DT divergence probe (`scripts/probe-sta-divergence.ts`):
+
+| Horizon | web steps | OR cycles | ‖ΔLf‖/OR | aligned max | coords `Object.is` |
+| --- | --- | --- | --- | --- | --- |
+| 1×Δt | 1 | 3 | 0 (Lf bits match) | ~6×10⁻¹⁴ | false (~1892 doubles) |
+| 10×Δt | 10 | — | ~2×10⁻¹⁶ | ~6×10⁻¹⁴ | false |
+| 100×Δt | 100 | — | ~2×10⁻¹⁴ | ~6×10⁻¹⁴ | false |
+| 80 μs CFL | 2573 | ~2573 | ~4.5×10⁻⁶ | ~0.10 μm | false |
+
+So **ID-aligned coord `Object.is` against `.sta` text is impossible**: E20.13
+round-trip alone is ~10⁻¹⁴ m. Restart `.rst` uses Radioss portable IEEE via
+`double_to_IEEE_ASCII` (not raw host `double`), so it is also a non-trivial
+reader — not a drop-in bit dump. True nodal `Object.is` still requires a
+**shared in-process force kernel** (or an instrumented OR binary that writes
+host float64).
 
 ## Shared kernel status (web-mbd)
 
 - C mirror of H8C/LAW2: `native/force-kernel/` (ABI in `force_kernel.h`)
 - Proven **TypeScript ↔ C `Object.is`** on one-hex forces and on coarse full solves via `SolveOptions.hexForce` + `src/cli/forceNative.ts` (koffi)
 - Remaining for OR parity: replace the C mirror body with OpenRadioss `s8eforc3` / `m2law` (same ABI), keeping the web-mbd CD loop — see `native/force-kernel/or-extract/`
+- Stock `engine_linux64_gf` is ELF `EXEC` (not dlopenable) despite unstripped `s8eforc3_` / `m2law_`

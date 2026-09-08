@@ -22,3 +22,7 @@ native/**/*.o
 native/force-kernel/force_kernel_selftest
 native/force-kernel/force_kernel_golden
 native/force-kernel/goldens/*.dbl
+
+# OpenRadioss shared-engine extract build tree
+native/force-kernel/or-extract/build/
+
