@@ -220,13 +220,13 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
   };
 
-  // Radioss resol: INIVEL is treated as V at the half-step; starter seeds DT2 so
-  // first-cycle DT1=DT2 and DT12=DT2 (not a cold DT1=0).
-  // Cycle: FORINT(X) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2 → TT+=DT2.
+  // Radioss resol CD: FORINT(X) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2 → TT+=DT2.
+  // Live engine cold-starts DT1=0 (see patched resol A/V dumps): first-cycle
+  // DT12=½(0+DT2)=DT2/2. Do not seed DT1=DT2 — that doubled first-cycle DT12.
   let contactEnergy = 0;
   history.push(sample(contactEnergy));
   nextSample = model.output.historyInterval;
-  let dtPrev = dt;
+  let dt1 = 0;
 
   while (t < model.controls.endTime - 1e-18 && step < maxSteps) {
     if (performance.now() - wallClock0 > maxWallMs) {
@@ -250,10 +250,9 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
       acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
     }
 
-    // resol.F: DT1=DT2_old, recompute DT2, DT12=½(DT1+DT2); X uses new DT2.
-    dtPrev = dt;
+    // resol.F: DT1 carries prior DT2 (0 on cycle 0); recompute DT2; DT12=½(DT1+DT2).
     recomputeDt();
-    const dt12 = 0.5 * (dtPrev + dt);
+    const dt12 = 0.5 * (dt1 + dt);
     // RGWAL once before VELOCITY (rgwall.F predicts with DT12/DT2).
     applyWallKinematics(dt, dt12);
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
@@ -261,6 +260,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
     t += dt;
     step += 1;
+    dt1 = dt;
 
     let keAfter = 0;
     for (let i = 0; i < nNodes; i++) {

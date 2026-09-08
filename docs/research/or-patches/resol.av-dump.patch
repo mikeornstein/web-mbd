@@ -1,0 +1,48 @@
+--- engine/source/engine/resol.F.pre-av-dump.bak	2026-09-08 17:10:08.449953258 +0000
++++ engine/source/engine/resol.F	2026-09-08 23:33:50.710126380 +0000
+@@ -6967,6 +6967,22 @@
+                 call spmd_profile_end(PROF_ACCELE)
+                 CALL PYTHON_END_OPENMP(PYTHON)
+ 
++C     web-mbd: host float64 A,V,X after ACCELE (pre-RGWALL) for NCYCLE<=2
++              IF (ISPMD==0 .AND. NCYCLE<=2) THEN
++                WRITE(FILNAM,'(A,I1,A)') 'wmbd_postaccele_',NCYCLE,'.f64bin'
++                OPEN(UNIT=779,FILE=TRIM(FILNAM),
++     .               ACCESS='STREAM',FORM='UNFORMATTED',STATUS='REPLACE')
++                WRITE(779) NCYCLE,NUMNOD,DT1,DT2,DT12
++                DO I=1,NUMNOD
++                  WRITE(779) NODES%ITAB(I),
++     .              NODES%A(1,I),NODES%A(2,I),NODES%A(3,I),
++     .              NODES%V(1,I),NODES%V(2,I),NODES%V(3,I),
++     .              NODES%X(1,I),NODES%X(2,I),NODES%X(3,I),
++     .              NODES%MS(I)
++                ENDDO
++                CLOSE(779)
++              ENDIF
++
+ C------------------------------------------
+ C       DT_DC for thick-shell
+ C-----------------------------------------------
+@@ -7703,6 +7719,22 @@
+               end if
+               CALL PYTHON_END_OPENMP(PYTHON)
+ 
++C     web-mbd: host float64 A,V,X after RGWALL for NCYCLE<=2
++              IF (ISPMD==0 .AND. NCYCLE<=2) THEN
++                WRITE(FILNAM,'(A,I1,A)') 'wmbd_postwall_',NCYCLE,'.f64bin'
++                OPEN(UNIT=780,FILE=TRIM(FILNAM),
++     .               ACCESS='STREAM',FORM='UNFORMATTED',STATUS='REPLACE')
++                WRITE(780) NCYCLE,NUMNOD,DT1,DT2,DT12
++                DO I=1,NUMNOD
++                  WRITE(780) NODES%ITAB(I),
++     .              NODES%A(1,I),NODES%A(2,I),NODES%A(3,I),
++     .              NODES%V(1,I),NODES%V(2,I),NODES%V(3,I),
++     .              NODES%X(1,I),NODES%X(2,I),NODES%X(3,I),
++     .              NODES%MS(I)
++                ENDDO
++                CLOSE(780)
++              ENDIF
++
+               IF (IMON>0) CALL STOPTIME(TIMERS,TIMER_KIN)
+               IF (IMONM > 0) CALL STOPTIME(TIMERS,43)
+ 

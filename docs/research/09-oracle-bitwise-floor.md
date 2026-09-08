@@ -173,17 +173,39 @@ Evidence in `docs/research/step23-divergence-probe.json`:
 | First-diff nodes (18/20/24/26) | Mid-bar **z=0.0162**, **not** impact face (z=0) |
 | IXS `/BRICK` vs web-mbd hexes | **Exact match** (16 elems) |
 | Lumped mass vs starter TOTAL MASS | **Object.is** (`8.3799498430164e-3`) |
+| Per-node mass vs live `NODES%MS` | **All 45 nodes 1 ulp** (max ‖Δm‖≈3.3×10⁻¹⁹) |
 | **No RWALL** (live starter stripped; web-mbd wall → z=−1e6) @ 3 steps | **TS ↔ live Object.is**; free-flight `X0+V0·t` exact |
 | With RWALL @ 3 steps | TS: 2 dofs / 1 ulp (node 26 x,y); OR: 8 dofs |
 | TS vs OR nodal F @ step 2 (coords still Object.is) | All 135 dofs differ (~1e-9 N) — force noise under wall-driven V |
 
-**Conclusion:** the few-ulp floor is **RWALL-activated FORINT cascade**, not
-MVSIZ, mass, IXS, or CD bookkeeping in free flight. `contactWall.ts` matches
-`rgwall.F` ITIED=0 strip (`V/A −= (·n)n` after UX=X+(V+A·DT12)·DT2 test).
-Next: dump live nodal **A after FORINT** at cycle 3 (engine patch) on the
-shared Object.is (X,V) state from end of cycle 2, and diff against TS/C-mirror —
-that isolates the mismatched force routine under wall-induced nonuniform V.
-OR-ABI remains noisier than TS even with no wall (9×~1e-20 on z).
+### Live A/V dumps after ACCELE / RGWALL (`scripts/av-dump-forint-probe.ts`)
+
+Patched `resol.F` (`docs/research/or-patches/resol.av-dump.patch`) writes host float64
+`wmbd_postaccele_{0,1,2}.f64bin` and `wmbd_postwall_{0,1,2}.f64bin` (copies under
+`docs/research/av-dumps/`). Layout: `i32 NCYCLE, NUMNOD` + `f64 DT1,DT2,DT12` + per
+node `i32 ITAB` + `A[3],V[3],X[3],MS`.
+
+| Finding | Evidence |
+| --- | --- |
+| **Cold DT1=0** on NCYCLE=0 | Live `DT1=0`, `DT12=DT2/2=1.25e-8`. web-mbd had wrongly seeded `DT1=DT2` → `DT12=DT2`. **Fixed** in `solver.ts` (`dt1=0`). DT1/DT2/DT12 now Object.is for NCYCLE 0..2. |
+| Mid-cycle **X** Object.is through NCYCLE=2 | Break appears only after integrating cycle 2 (end STATE). |
+| NCYCLE=0 **A** | Live ~10⁻³⁰ (rigid translation cancels). TS max ‖A‖~1.5×10⁻⁹ from ‖F‖~3×10⁻¹³ residual under uniform V₀. |
+| NCYCLE=1 face **A** | ‖A‖~10⁷; TS↔live ~10⁻¹³ relative (~7×10⁻⁷ abs on Aₓ). Wall strips A_z / V_z on 9 impact nodes identically. |
+| NCYCLE=2 mid-bar **A** (nodes 18/26) | ‖A‖~4793; TS↔live ~10⁻¹⁰ relative (~10⁻⁶ abs) — enough to push end-of-step X across 1 ulp. |
+| V after cycle 0 | Still Object.is (A·DT12 underflows). V drifts from NCYCLE=1. |
+
+**Conclusion:** MVSIZ, IXS, free-flight CD, and (now) DT12 bookkeeping are not the floor.
+The first Object.is break is **FORINT/ACCELE residual under wall-activated nonuniform V**:
+TS/C-mirror leave a ~10⁻¹³ N rigid-motion force that live cancels; after RWALL creates a
+V gradient, mid-bar A diverges at ~10⁻¹⁰ relative by NCYCLE=2. `contactWall.ts` matches
+`rgwall.F` ITIED=0 (same 9 contact nodes; V_z strip Object.is).
+
+**Next patch (exact routine):** bisect the shared force path that feeds mid-bar A at
+NCYCLE=2 — compare live vs TS/C-mirror **element SIG / rate / hourglass / QVIS** on the
+impact-face hexes after NCYCLE=1 (same Object.is X, nearly Object.is face A). Likely
+candidates: shear-rate / Jaumann update under near-rigid spin, bulk viscosity (QVIS),
+or 1-ulp mass → A=F/m. OR-ABI remains noisier than TS (even no-wall). Engine A dumps
+are the oracle; keep `resol.av-dump.patch` applied on the local oracle binary.
 
 Production adaptive Object.is remains open.
 
