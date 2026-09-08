@@ -18,10 +18,17 @@ behind the existing `wmbd_hex_internal_forces` ABI so the web-mbd CD loop can
 | Float64 OR state compare (`.sta`) | done (`shapeFromSta`, oracle runner) |
 | OR `s8eforc3`/`m2law` behind ABI | **not linked** — inventory below |
 
-**Note:** stock `engine_linux64_gf` is an ELF `EXEC` (not PIE) and cannot be
-`dlopen`ed (`cannot dynamically load executable`), even though `s8eforc3_` /
-`m2law_` are present unstripped. A shared extract must be **rebuilt** with
-`-fPIC` (option 1 below).
+## Build SHARED extract (in progress)
+
+```bash
+# One-time: OpenRadioss_extlib v75 under /tmp/OpenRadioss-src/extlib
+./build-shared-engine.sh   # → libor_h8c.so (PIC), log in build/build.log
+cc -O2 -o smoke_symbols smoke_symbols.c -ldl
+./smoke_symbols build/libor_h8c.so   # verifies s8eforc3_ / m2law_ resolve
+```
+
+Stock release `engine_linux64_gf` is ELF `EXEC` and cannot be `dlopen`ed; the
+shared rebuild is required.
 
 ## Extract options (preferred order)
 
