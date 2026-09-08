@@ -1,12 +1,12 @@
 {
   "webmbd": {
-    "lengthRatio": 0.6665239193357144,
-    "radiusRatio": 2.2315147256087484,
-    "axialShortening": 0.010804625013522851,
-    "maxDisplacement": 0.010806573371677859,
-    "maxEqPlasticStrain": 2.8281726373294007,
-    "energyErrorPct": 9.912659719658173e-14,
-    "nSteps": 2568
+    "lengthRatio": 0.6665590353645692,
+    "radiusRatio": 2.231901165617751,
+    "axialShortening": 0.01080348725418796,
+    "maxDisplacement": 0.010805432419230666,
+    "maxEqPlasticStrain": 2.826032167310104,
+    "energyErrorPct": -4.201263982745748e-13,
+    "nSteps": 2573
   },
   "oracle": {
     "finalLength": 0.021596599910763,
@@ -18,15 +18,15 @@
   },
   "compare": {
     "ok": true,
-    "lengthRelError": 0.00005671838580682409,
-    "radiusRelError": 0.0001680286591458892,
+    "lengthRelError": 0.00000403604971710483,
+    "radiusRelError": 0.000005116098346505013,
     "tolerances": {
       "lengthRatioRel": 0.001,
       "radiusRatioRel": 0.002
     },
     "bitwiseEqual": false,
-    "nearestNeighborMax": 0.000002551607062593381,
-    "nearestNeighborMean": 8.959506325770882e-7
+    "nearestNeighborMax": 1.420036553266977e-7,
+    "nearestNeighborMean": 3.758253670729142e-8
   },
   "acceptancePass": true,
   "acceptance": {

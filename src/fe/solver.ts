@@ -153,7 +153,8 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
   };
 
-  // Radioss resol: INIVEL is treated as V at the half-step; no separate half-kick.
+  // Radioss resol: INIVEL is treated as V at the half-step; starter seeds DT2 so
+  // first-cycle DT1=DT2 and DT12=DT2 (not a cold DT1=0).
   // Cycle: FORINT(X) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2 → TT+=DT2.
   let contactEnergy = 0;
   history.push(sample(contactEnergy));

@@ -49,20 +49,20 @@ Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
 | | web-mbd | OpenRadioss | rel. error |
 | --- | --- | --- | --- |
-| L_f / L₀ | ~0.66652 | ~0.66656 | ~0.006% |
-| R_f / R₀ | ~2.2315 | ~2.2319 | ~0.017% |
+| L_f / L₀ | ~0.666559 | ~0.666562 | ~0.0004% |
+| R_f / R₀ | ~2.231901 | ~2.231890 | ~0.0005% |
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
 - \|Δ(L_f/L₀)\| / oracle ≤ 0.1%
 - \|Δ(R_f/R₀)\| / oracle ≤ 0.2%
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.017% Rf / ~0.006% Lf (~2.6 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel; the remaining ~0.017% is that practical floor plus any unported H8C details.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Independent TypeScript vs gfortran kernels will not `Object.is`-match IEEE bits without sharing a compiled force kernel; the remaining sub-ppm / sub-μm gap is that practical floor plus any unported H8C details.
 
 ## Element / mesh notes
 
 - **Element:** 8-node hex, trilinear, **2×2×2 Gauss**, updated Lagrangian, Radioss SROTA3 Jaumann, LAW2-style hypoelastic J2 + bulk EOS pressure, Icpre via DSV vol0 + ZEP3 strip + PXC mid-face pressure forces, kinematic rigid wall.
-- **CFL / time:** Radioss `128·V·SMAX` DELTAX, scale 0.9, adaptive with `DT12=½(DT1+DT2)` velocity update and `DT2 ≤ 1.1·DT2OLD`.
+- **CFL / time:** Radioss `128·V·SMAX` DELTAX, scale 0.9, adaptive with Radioss `resol` order and `DT12=½(DT1+DT2)` velocity update and `DT2 ≤ 1.1·DT2OLD`.
 - **Quadrature:** Radioss H8C 2×2×2 order and `PG = 0.577350269189625`.
 - **Mesh:** `src/mesh/cylinderHex.ts` structured generator (square mapped to disk, extruded in Z). Gmsh is still future work.
 
