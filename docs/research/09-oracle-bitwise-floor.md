@@ -172,8 +172,8 @@ Evidence in `docs/research/step23-divergence-probe.json`:
 | --- | --- |
 | First-diff nodes (18/20/24/26) | Mid-bar **z=0.0162**, **not** impact face (z=0) |
 | IXS `/BRICK` vs web-mbd hexes | **Exact match** (16 elems) |
-| Lumped mass vs starter TOTAL MASS | **Object.is** (`8.3799498430164e-3`) |
-| Per-node mass vs live `NODES%MS` | **All 45 nodes 1 ulp** (max ‖Δm‖≈3.3×10⁻¹⁹) |
+| Lumped mass vs starter TOTAL MASS | **Object.is** (`8.379949843016425e-3`) |
+| Per-node mass vs live `NODES%MS` | **Object.is** after `hexVolumeRadiossCenter` (`S8ZDERIC3` `ONE_OVER_64·det(AJ)`); prior iso-GP sum was 1 ulp/node |
 | **No RWALL** (live starter stripped; web-mbd wall → z=−1e6) @ 3 steps | **TS ↔ live Object.is**; free-flight `X0+V0·t` exact |
 | With RWALL @ 3 steps | TS: 2 dofs / 1 ulp (node 26 x,y); OR: 8 dofs |
 | TS vs OR nodal F @ step 2 (coords still Object.is) | All 135 dofs differ (~1e-9 N) — force noise under wall-driven V |

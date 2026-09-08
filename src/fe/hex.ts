@@ -92,8 +92,75 @@ export function hexVolume(x: Float64Array): number {
   return vol;
 }
 
+/**
+ * Radioss starter H8C / `S8ZDERIC3` element volume used for lumped mass:
+ * `VOL = ONE_OVER_64 * det(AJ)` at the element center (not the 8-GP iso sum).
+ * Matches `smass3` `RHO*VOLU*ONE_OVER_8` to Object.is vs live `NODES%MS`.
+ */
+export function hexVolumeRadiossCenter(x: Float64Array): number {
+  const x1 = x[0]!,
+    y1 = x[1]!,
+    z1 = x[2]!;
+  const x2 = x[3]!,
+    y2 = x[4]!,
+    z2 = x[5]!;
+  const x3 = x[6]!,
+    y3 = x[7]!,
+    z3 = x[8]!;
+  const x4 = x[9]!,
+    y4 = x[10]!,
+    z4 = x[11]!;
+  const x5 = x[12]!,
+    y5 = x[13]!,
+    z5 = x[14]!;
+  const x6 = x[15]!,
+    y6 = x[16]!,
+    z6 = x[17]!;
+  const x7 = x[18]!,
+    y7 = x[19]!,
+    z7 = x[20]!;
+  const x8 = x[21]!,
+    y8 = x[22]!,
+    z8 = x[23]!;
+
+  const x17 = x7 - x1,
+    x28 = x8 - x2,
+    x35 = x5 - x3,
+    x46 = x6 - x4;
+  const y17 = y7 - y1,
+    y28 = y8 - y2,
+    y35 = y5 - y3,
+    y46 = y6 - y4;
+  const z17 = z7 - z1,
+    z28 = z8 - z2,
+    z35 = z5 - z3,
+    z46 = z6 - z4;
+
+  const jac4 = x17 + x28 - x35 - x46;
+  const jac5 = y17 + y28 - y35 - y46;
+  const jac6 = z17 + z28 - z35 - z46;
+  const x_17_46 = x17 + x46,
+    x_28_35 = x28 + x35;
+  const y_17_46 = y17 + y46,
+    y_28_35 = y28 + y35;
+  const z_17_46 = z17 + z46,
+    z_28_35 = z28 + z35;
+  const jac7 = x_17_46 + x_28_35,
+    jac8 = y_17_46 + y_28_35,
+    jac9 = z_17_46 + z_28_35;
+  const jac1 = x_17_46 - x_28_35,
+    jac2 = y_17_46 - y_28_35,
+    jac3 = z_17_46 - z_28_35;
+
+  const jac_59_68 = jac5 * jac9 - jac6 * jac8;
+  const jac_67_49 = jac6 * jac7 - jac4 * jac9;
+  const jac_48_57 = jac4 * jac8 - jac5 * jac7;
+  return (1 / 64) * (jac1 * jac_59_68 + jac2 * jac_67_49 + jac3 * jac_48_57);
+}
+
 export function hexLumpedNodalMass(x0: Float64Array, density: number): Float64Array {
-  const share = (density * hexVolume(x0)) / 8;
+  // ONE_OVER_8 = 1/8 exact; VOLU from S8ZDERIC3 center Jacobian.
+  const share = density * hexVolumeRadiossCenter(x0) * (1 / 8);
   return Float64Array.from({ length: 8 }, () => share);
 }
 
