@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>web-mbd · flexible multibody dynamics in the browser</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="masthead">
+        <h1>web&#8288;-&#8288;mbd</h1>
+        <p class="tagline">Flexible multibody dynamics in the browser.</p>
+      </header>
+
+      <main class="layout">
+        <section class="panel viewport-panel">
+          <div class="panel-head">
+            <h2>Explicit dynamics preview</h2>
+            <span class="pill" id="sim-status">initializing</span>
+          </div>
+          <canvas id="scene"></canvas>
+          <p class="caption">
+            A pinned spring-mass chain integrated with semi-implicit (symplectic)
+            Euler on the CPU. A stand-in for the production solver while the
+            WASM / WebGPU kernels are built out.
+          </p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Runtime capabilities</h2>
+          </div>
+          <ul id="capabilities" class="caps"></ul>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
