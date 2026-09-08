@@ -8,9 +8,11 @@ extern "C" {
 #endif
 
 /**
- * OpenRadioss-backed hex force evaluation (same ABI as wmbd_hex_internal_forces).
- * Returns 0 on success. Until libor_h8c is linked, this symbol is absent —
- * loaders should dlsym and fall back to the C mirror.
+ * OpenRadioss-backed hex force evaluation.
+ * Returns 0 on success (S8E ran), -2 when packed only, -4 on alloc failure.
+ *
+ * smstr_io[21] / offg_io persist ISMSTR=4 reference state per element across
+ * CD steps (Radioss GBUF%SMSTR / GBUF%OFF).
  *
  * Packing contract: see or-extract/README.md.
  */
@@ -21,6 +23,8 @@ int wmbd_hex_internal_forces_or(
     double stress_io[48],
     double eqps_io[8],
     double vol0_io[8],
+    double smstr_io[21],
+    double *offg_io,
     double dt,
     double f_out[24]);
 

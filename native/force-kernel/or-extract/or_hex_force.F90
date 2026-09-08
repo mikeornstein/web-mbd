@@ -59,6 +59,32 @@ module wmbd_or_hex_force_mod
   real(kind=8), allocatable, save :: ms(:)
   real(kind=8), allocatable, save :: stifn(:)
 
+  ! Heap/module storage — OUTPUT_/TIMER_ and MVSIZ collectors are too large for
+  ! Node's default JS-thread stack when calling through koffi.
+  type(timer_), save :: timers
+  type(output_), save :: output
+  type(t_ale_connectivity), save :: ale_connect
+  type(nlocal_str_), save :: nloc_dmg
+  type(sensors_), save :: sensors
+  type(dt_), save :: dt_t
+  type(glob_therm_), save :: glob_therm
+  type(ttable), save :: table(1)
+  real(kind=8), save :: f11(mvsiz_c), f21(mvsiz_c), f31(mvsiz_c)
+  real(kind=8), save :: f12(mvsiz_c), f22(mvsiz_c), f32(mvsiz_c)
+  real(kind=8), save :: f13(mvsiz_c), f23(mvsiz_c), f33(mvsiz_c)
+  real(kind=8), save :: f14(mvsiz_c), f24(mvsiz_c), f34(mvsiz_c)
+  real(kind=8), save :: f15(mvsiz_c), f25(mvsiz_c), f35(mvsiz_c)
+  real(kind=8), save :: f16(mvsiz_c), f26(mvsiz_c), f36(mvsiz_c)
+  real(kind=8), save :: f17(mvsiz_c), f27(mvsiz_c), f37(mvsiz_c)
+  real(kind=8), save :: f18(mvsiz_c), f28(mvsiz_c), f38(mvsiz_c)
+  real(kind=8), save :: voln(mvsiz_c), svis(mvsiz_c, 6)
+  real(kind=8), save :: veul(1), fv(1), tf(1), bufmat(1), partsav(1)
+  real(kind=8), save :: fsky(1), eani(1), temp(1), fthe(1), fthesky(1)
+  real(kind=8), save :: gresav(1), mssa(1), dmels(1), condn(1), condnsky(1)
+  real(kind=8), save :: flu1(1)
+  integer, save :: npf(1), iads(8, 1), iparts(1), grth(1), igrth(1)
+  double precision, save :: xdp(3, 8)
+
   interface
     subroutine wmbd_or_init_commons()
     end subroutine wmbd_or_init_commons
@@ -416,9 +442,11 @@ contains
     ok = .true.
   end function alloc_taylor_elbuf
 
-  subroutine pack_state(x0, v0, stress_io, eqps_io, vol0_io, mat)
+  subroutine pack_state(x0, v0, stress_io, eqps_io, vol0_io, smstr_io, offg_io, mat)
     real(c_double), intent(in) :: x0(24), v0(24)
     real(c_double), intent(in) :: stress_io(48), eqps_io(8), vol0_io(8)
+    real(c_double), intent(in) :: smstr_io(21)
+    real(c_double), intent(in), value :: offg_io
     type(wmbd_mat_c), intent(in) :: mat
     integer :: n, ir, is, it, ip, k
     type(l_bufel_), pointer :: lbuf
@@ -434,6 +462,11 @@ contains
     anod = zero
     dnod = zero
     wnod = zero
+
+    elbuf_tab(1)%gbuf%off(1) = offg_io
+    do k = 1, 21
+      elbuf_tab(1)%gbuf%smstr(k) = smstr_io(k)
+    end do
 
     ip = 0
     do ir = 1, 2
@@ -454,10 +487,12 @@ contains
     end do
   end subroutine pack_state
 
-  subroutine scatter_state(stress_io, eqps_io, vol0_io, f11, f21, f31, f12, f22, f32, &
+  subroutine scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, f11, f21, f31, f12, f22, f32, &
        f13, f23, f33, f14, f24, f34, f15, f25, f35, f16, f26, f36, f17, f27, f37, &
        f18, f28, f38, f_out)
     real(c_double), intent(inout) :: stress_io(48), eqps_io(8), vol0_io(8)
+    real(c_double), intent(inout) :: smstr_io(21)
+    real(c_double), intent(out) :: offg_io
     real(kind=8), intent(in) :: f11(:), f21(:), f31(:), f12(:), f22(:), f32(:)
     real(kind=8), intent(in) :: f13(:), f23(:), f33(:), f14(:), f24(:), f34(:)
     real(kind=8), intent(in) :: f15(:), f25(:), f35(:), f16(:), f26(:), f36(:)
@@ -479,6 +514,11 @@ contains
           vol0_io(ip) = lbuf%vol(1)
         end do
       end do
+    end do
+
+    offg_io = elbuf_tab(1)%gbuf%off(1)
+    do k = 1, 21
+      smstr_io(k) = elbuf_tab(1)%gbuf%smstr(k)
     end do
 
     ! OpenRadioss F11..F38 are the FORINT collectors that later enter A as
@@ -504,7 +544,7 @@ contains
     end if
   end function env_call_s8e
 
-  function wmbd_hex_internal_forces_or(x0, v0, mat, stress_io, eqps_io, vol0_io, dt, f_out) &
+  function wmbd_hex_internal_forces_or(x0, v0, mat, stress_io, eqps_io, vol0_io, smstr_io, offg_io, dt, f_out) &
        result(rc) bind(C, name='wmbd_hex_internal_forces_or')
     real(c_double), intent(in) :: x0(24)
     real(c_double), intent(in) :: v0(24)
@@ -512,6 +552,8 @@ contains
     real(c_double), intent(inout) :: stress_io(48)
     real(c_double), intent(inout) :: eqps_io(8)
     real(c_double), intent(inout) :: vol0_io(8)
+    real(c_double), intent(inout) :: smstr_io(21)
+    real(c_double), intent(inout) :: offg_io
     real(c_double), intent(in), value :: dt
     real(c_double), intent(out) :: f_out(24)
     integer(c_int) :: rc
@@ -523,34 +565,11 @@ contains
       end subroutine
     end interface
 
-    type(timer_) :: timers
-    type(output_) :: output
-    type(t_ale_connectivity) :: ale_connect
-    type(nlocal_str_) :: nloc_dmg
-    type(sensors_) :: sensors
-    type(dt_) :: dt_t
-    type(glob_therm_) :: glob_therm
-    type(ttable) :: table(1)
-
-    real(kind=8) :: f11(mvsiz_c), f21(mvsiz_c), f31(mvsiz_c)
-    real(kind=8) :: f12(mvsiz_c), f22(mvsiz_c), f32(mvsiz_c)
-    real(kind=8) :: f13(mvsiz_c), f23(mvsiz_c), f33(mvsiz_c)
-    real(kind=8) :: f14(mvsiz_c), f24(mvsiz_c), f34(mvsiz_c)
-    real(kind=8) :: f15(mvsiz_c), f25(mvsiz_c), f35(mvsiz_c)
-    real(kind=8) :: f16(mvsiz_c), f26(mvsiz_c), f36(mvsiz_c)
-    real(kind=8) :: f17(mvsiz_c), f27(mvsiz_c), f37(mvsiz_c)
-    real(kind=8) :: f18(mvsiz_c), f28(mvsiz_c), f38(mvsiz_c)
-    real(kind=8) :: voln(mvsiz_c), svis(mvsiz_c, 6)
-    real(kind=8) :: dt2t, veul(1), fv(1), tf(1), bufmat(1), partsav(1)
-    real(kind=8) :: fsky(1), eani(1), temp(1), fthe(1), fthesky(1)
-    real(kind=8) :: gresav(1), mssa(1), dmels(1), condn(1), condnsky(1)
-    real(kind=8) :: flu1(1)
-    integer :: npf(1), iads(8, 1), iparts(1), grth(1), igrth(1)
+    real(kind=8) :: dt2t
     integer :: ng, nel, icp, offset, nvc, itask, istrain, iexpan, h3d_strain
     integer :: neltst, ityptst, ioutprt
     integer :: snpc, stf, sbufmat, nsvois, idtmins, iresp, maxfunc
     integer :: userl_avail, impl_s, idyna
-    double precision :: xdp(3, 8)
 
     external s8eforc3
 
@@ -566,7 +585,7 @@ contains
       pack_ready = .true.
     end if
 
-    call pack_state(x0, v0, stress_io, eqps_io, vol0_io, mat)
+    call pack_state(x0, v0, stress_io, eqps_io, vol0_io, smstr_io, offg_io, mat)
 
     if (.not. env_call_s8e()) then
       rc = -2_c_int
@@ -625,7 +644,7 @@ contains
          mat_elem, h3d_strain, dt_t, snpc, stf, sbufmat, svis, nsvois, idtmins, iresp, &
          maxfunc, userl_avail, glob_therm, impl_s, idyna)
 
-    call scatter_state(stress_io, eqps_io, vol0_io, f11, f21, f31, f12, f22, f32, &
+    call scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, f11, f21, f31, f12, f22, f32, &
          f13, f23, f33, f14, f24, f34, f15, f25, f35, f16, f26, f36, f17, f27, f37, &
          f18, f28, f38, f_out)
     rc = 0_c_int

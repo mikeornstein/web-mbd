@@ -8,7 +8,7 @@ import type { J2State } from "../fe/materialJ2.js";
 const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export type ForceBackend = "ts" | "native";
+export type ForceBackend = "ts" | "native" | "or";
 
 let nativeLib: {
   wmbd_hex_internal_forces: (
@@ -24,11 +24,48 @@ let nativeLib: {
   ) => number;
 } | null = null;
 
+let orLib: {
+  wmbd_hex_internal_forces_or: (
+    x0: Float64Array,
+    v0: Float64Array,
+    mat: {
+      density: number;
+      young: number;
+      poisson: number;
+      yield_stress: number;
+      hardening: number;
+    },
+    stress: Float64Array,
+    eqps: Float64Array,
+    vol0: Float64Array,
+    smstr: Float64Array,
+    offg: Float64Array,
+    dt: number,
+    fOut: Float64Array,
+  ) => number;
+} | null = null;
+
+/** Per-element ISMSTR=4 persistence for the OR backend. */
+const orSmstrByElem = new Map<number, Float64Array>();
+const orOffgByElem = new Map<number, number>();
+
 function resolveKernelPath(): string | null {
   const candidates = [
     process.env["WEB_MBD_FORCE_KERNEL"],
     join(process.cwd(), "native/force-kernel/libforce_kernel.so"),
     join(__dirname, "../../native/force-kernel/libforce_kernel.so"),
+  ];
+  for (const p of candidates) {
+    if (p && existsSync(p)) return p;
+  }
+  return null;
+}
+
+function resolveOrHexPath(): string | null {
+  const candidates = [
+    process.env["WEB_MBD_OR_HEX"],
+    join(process.cwd(), "native/force-kernel/or-extract/build/libwmbd_or_hex.so"),
+    join(__dirname, "../../native/force-kernel/or-extract/build/libwmbd_or_hex.so"),
   ];
   for (const p of candidates) {
     if (p && existsSync(p)) return p;
@@ -82,8 +119,61 @@ export function loadNativeForceKernel(): boolean {
   }
 }
 
+/**
+ * Load OpenRadioss `libwmbd_or_hex.so` (needs `libgomp` RTLD_GLOBAL first).
+ * Sets `WMBD_OR_CALL_S8E=1` so the BIND(C) entry invokes S8EFORC3.
+ */
+export function loadOrForceKernel(): boolean {
+  if (orLib) return true;
+  const path = resolveOrHexPath();
+  if (!path) return false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const koffi = require("koffi") as typeof import("koffi");
+    process.env["WMBD_OR_CALL_S8E"] = "1";
+    koffi.load("libgomp.so.1", { global: true });
+    const lib = koffi.load(path, { global: true });
+    const WmbdMat = koffi.struct("WmbdMatOr", {
+      density: "double",
+      young: "double",
+      poisson: "double",
+      yield_stress: "double",
+      hardening: "double",
+    });
+    const fn = lib.func("wmbd_hex_internal_forces_or_pthread", "int", [
+      "double *",
+      "double *",
+      koffi.pointer(WmbdMat),
+      "double *",
+      "double *",
+      "double *",
+      "double *",
+      "double *",
+      "double",
+      "double *",
+    ]);
+    orLib = {
+      wmbd_hex_internal_forces_or: (x0, v0, mat, stress, eqps, vol0, smstr, offg, dt, fOut) =>
+        fn(x0, v0, mat, stress, eqps, vol0, smstr, offg, dt, fOut) as number,
+    };
+    return true;
+  } catch {
+    orLib = null;
+    return false;
+  }
+}
+
 export function nativeForceKernelAvailable(): boolean {
   return loadNativeForceKernel();
+}
+
+export function orForceKernelAvailable(): boolean {
+  return loadOrForceKernel();
+}
+
+export function resetOrElementState(): void {
+  orSmstrByElem.clear();
+  orOffgByElem.clear();
 }
 
 /**
@@ -138,4 +228,76 @@ export function hexInternalForcesNative(args: {
     s.vol0 = vol0[gp]!;
   }
   return dU;
+}
+
+/**
+ * Call OpenRadioss S8EFORC3 via the packed extract ABI.
+ * Persists GBUF%SMSTR / OFF per `elementIndex` across CD steps.
+ * Returns 0 (energy not yet exported from OR path).
+ */
+export function hexInternalForcesOr(args: {
+  x: Float64Array;
+  v: Float64Array;
+  states: J2State[];
+  mat: MaterialJ2Linear;
+  dt: number;
+  fOut: Float64Array;
+  elementIndex?: number;
+}): number {
+  if (!loadOrForceKernel() || !orLib) {
+    throw new Error("OR force kernel not loaded (build native/force-kernel/or-extract)");
+  }
+  const e = args.elementIndex ?? 0;
+  let smstr = orSmstrByElem.get(e);
+  if (!smstr) {
+    smstr = new Float64Array(21);
+    orSmstrByElem.set(e, smstr);
+  }
+  let offg = orOffgByElem.get(e);
+  if (offg === undefined) {
+    offg = 1;
+    orOffgByElem.set(e, offg);
+  }
+  const offgArr = Float64Array.from([offg]);
+
+  const stress = new Float64Array(48);
+  const eqps = new Float64Array(8);
+  const vol0 = new Float64Array(8);
+  for (let gp = 0; gp < 8; gp++) {
+    const s = args.states[gp]!;
+    stress.set(s.stress, gp * 6);
+    eqps[gp] = s.eqPlasticStrain;
+    vol0[gp] = s.vol0;
+  }
+  const mat = {
+    density: args.mat.density,
+    young: args.mat.young,
+    poisson: args.mat.poisson,
+    yield_stress: args.mat.yieldStress,
+    hardening: args.mat.hardeningModulus,
+  };
+  args.fOut.fill(0);
+  const rc = orLib.wmbd_hex_internal_forces_or(
+    args.x,
+    args.v,
+    mat,
+    stress,
+    eqps,
+    vol0,
+    smstr,
+    offgArr,
+    args.dt,
+    args.fOut,
+  );
+  if (rc !== 0) {
+    throw new Error(`wmbd_hex_internal_forces_or rc=${rc}`);
+  }
+  orOffgByElem.set(e, offgArr[0]!);
+  for (let gp = 0; gp < 8; gp++) {
+    const s = args.states[gp]!;
+    s.stress.set(stress.subarray(gp * 6, gp * 6 + 6));
+    s.eqPlasticStrain = eqps[gp]!;
+    s.vol0 = vol0[gp]!;
+  }
+  return 0;
 }

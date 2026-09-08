@@ -30,6 +30,7 @@ sed 's/SUBROUTINE ALLOCBUF_AUTO/SUBROUTINE WMBD_ALLOCBUF_AUTO/g; s/allocbuf_auto
 gfortran $FFLAGS $FINCS_STARTER -c -o "$OUT_DIR/wmbd_allocbuf_auto.o" "$OUT_DIR/wmbd_allocbuf_auto.F"
 
 gfortran $FFLAGS $FINCS -c -o "$OUT_DIR/or_hex_force.o" "$ROOT/or_hex_force.F90"
+cc -O2 -fPIC -c -o "$OUT_DIR/or_hex_pthread.o" "$ROOT/or_hex_pthread.c"
 
 echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack)"
 (
@@ -43,7 +44,8 @@ echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack)"
     "$OUT_DIR/or_hex_commons.o" \
     "$OUT_DIR/wmbd_allocbuf_auto.o" \
     "$OUT_DIR/or_hex_force.o" \
-    -lrt \
+    "$OUT_DIR/or_hex_pthread.o" \
+    -lrt -lpthread \
     "$OR_SRC/extlib/zlib/linux64/lib/libz.a" \
     "$OR_SRC/extlib/md5/linux64/libmd5.a" \
     -ldl -lstdc++ -lgomp

@@ -80,14 +80,15 @@ Done in `or_hex_force.F90` / `or_hex_commons.F`:
 3. Pack `PM`/`MAT_PARAM` LAW2, `GEO`/`IGEO`, `IXS`, `X`/`V`, LBUF `SIG`/`PLA`/`VOL`
 4. Opt-in `WMBD_OR_CALL_S8E=1` → `S8EFORC3`; scatter `-(F11..F38)` into `f_out` (OR FORINT sign)
 5. Unit-cube smoke: `||F||` matches C-mirror `jcvt=1` to ~1e-14 relative after sign flip
+6. CD via koffi: `hexInternalForcesOr` → `wmbd_hex_internal_forces_or_pthread` (64 MiB stack; Node JS thread is too small for S8E MVSIZ locals) with per-element SMSTR/OFF cache
 
 Remaining for production `Object.is` on full Taylor:
 
-- Drive CD loop through this ABI (koffi) instead of C mirror
-- Close residual vs live OR at CFL=0.9 (MAT_PARAM/PM fidelity, wall still in TS)
+- Close residual vs live OR at CFL=0.9 (MAT_PARAM fidelity, wall still in TS)
 - Prefer in-process float64 compare (not `.sta` E20.13)
+- Keep production default on TS/C mirror until OR residual matches gates
 
-Smokes: `smoke_or_hex` / `tests/or-h8c-symbols.test.ts`.
+Smokes: `smoke_or_hex` / `tests/or-h8c-symbols.test.ts` / `tests/force-or-solver.test.ts`.
 
 ## Dependency inventory
 

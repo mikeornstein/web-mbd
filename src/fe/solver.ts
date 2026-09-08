@@ -21,6 +21,8 @@ export type HexForceFn = (args: {
   dt: number;
   fOut: Float64Array;
   options?: HexForceOptions;
+  /** Element index in the model hex list (0..nHex-1). Used by OR SMSTR cache. */
+  elementIndex?: number;
 }) => number;
 
 export interface SolveOptions {
@@ -160,6 +162,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
         mat: model.material,
         dt,
         fOut: fHex,
+        elementIndex: e,
       });
       for (let ai = 0; ai < 8; ai++) {
         const n = conn[ai]!;

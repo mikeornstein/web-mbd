@@ -17,7 +17,7 @@ typedef struct {
 } WmbdMat;
 
 typedef int (*or_force_fn)(const double *, const double *, const WmbdMat *, double *, double *,
-                           double *, double, double *);
+                           double *, double *, double *, double, double *);
 typedef double (*get_dt1_fn)(void);
 
 static int env_truthy(const char *name) {
@@ -55,21 +55,22 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  /* Unit cube hex, nodes 1..8, small compressive Vz on top face. */
   double x0[24] = {
       0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
   };
   double v0[24] = {0};
-  v0[14] = v0[17] = v0[20] = v0[23] = -1.0; /* nodes 5-8 Vz */
+  v0[14] = v0[17] = v0[20] = v0[23] = -1.0;
   double stress[48] = {0};
   double eqps[8] = {0};
   double vol0[8];
   for (int i = 0; i < 8; ++i) vol0[i] = 0.125;
+  double smstr[21] = {0};
+  double offg = 1.0;
   double f_out[24] = {0};
   WmbdMat mat = {8930, 117e9, 0.35, 400e6, 100e6};
   const double dt = 7.815479988515705e-8;
 
-  int rc = force(x0, v0, &mat, stress, eqps, vol0, dt, f_out);
+  int rc = force(x0, v0, &mat, stress, eqps, vol0, smstr, &offg, dt, f_out);
   double dt1 = get_dt1();
 
   printf("wmbd_hex_internal_forces_or rc=%d DT1=%.17e (expect %.17e) call_s8e=%d\n", rc, dt1, dt,
@@ -87,7 +88,7 @@ int main(int argc, char **argv) {
     double fnorm = 0;
     for (int i = 0; i < 24; ++i) fnorm += f_out[i] * f_out[i];
     fnorm = sqrt(fnorm);
-    printf("force L2=%.6e\n", fnorm);
+    printf("force L2=%.6e offg=%.6e\n", fnorm, offg);
     if (!isfinite(fnorm)) {
       fprintf(stderr, "FAIL: non-finite forces\n");
       return 1;

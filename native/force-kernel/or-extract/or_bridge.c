@@ -7,8 +7,6 @@
  */
 #include "or_bridge.h"
 
-#include <stdio.h>
-
 int wmbd_hex_internal_forces_or(
     const double x0[24],
     const double v0[24],
@@ -16,6 +14,8 @@ int wmbd_hex_internal_forces_or(
     double stress_io[48],
     double eqps_io[8],
     double vol0_io[8],
+    double smstr_io[21],
+    double *offg_io,
     double dt,
     double f_out[24]) {
   (void)x0;
@@ -24,8 +24,9 @@ int wmbd_hex_internal_forces_or(
   (void)stress_io;
   (void)eqps_io;
   (void)vol0_io;
+  (void)smstr_io;
+  (void)offg_io;
   (void)dt;
   (void)f_out;
-  /* Keep stderr quiet in hot paths; one-shot loaders can check the return. */
-  return -1; /* ENOSYS: MVSIZ/ELBUF packing not implemented */
+  return -1; /* ENOSYS: extract .so not linked */
 }
