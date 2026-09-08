@@ -68,9 +68,13 @@ Engineers who already know what an hourglass mode is, and who are tired of waiti
 
 Also: researchers who want a programmable, inspectable FMBD stack they can extend without a vendor SDK.
 
+## Research
+
+Prior-art research (OpenRadioss Confluence + broader solver landscape) lives in [`docs/`](docs/README.md). Short version: **start fresh** for the WebGPU/WASM runtime; treat OpenRadioss as an external validation oracle and LS-DYNA/Radioss deck import target — do not fork the Fortran/MPI stack into the browser.
+
 ## Status
 
-Greenfield. The README is the first commit; the solver is next.
+Greenfield. Research docs are in-tree; the solver implementation is next.
 
 If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.
 
