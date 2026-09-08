@@ -47,24 +47,22 @@ Acceptance (refined mesh, H8C/LAW2-aligned):
 
 Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
-| | web-mbd | OpenRadioss (float64 `.sta`) | rel. error |
+| | web-mbd | OpenRadioss (host `.f64bin`) | rel. error |
 | --- | --- | --- | --- |
-| L_f / L₀ | ~0.666559 | ~0.666562 | ~0.00045% |
-| R_f / R₀ | ~2.231901 | ~2.231890 | ~0.00051% |
+| L_f / L₀ | ~0.666562024028488 | ~0.666562024028490 | ~3×10⁻¹⁵ |
+| R_f / R₀ | ~2.231889693506488 | ~2.231889693506474 | ~6×10⁻¹⁵ |
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
-- \|Δ(L_f/L₀)\| / oracle ≤ 0.001% (1×10⁻⁵ rel)
-- \|Δ(R_f/R₀)\| / oracle ≤ 0.002% (2×10⁻⁵ rel)
+- \|Δ(L_f/L₀)\| / oracle ≤ 1×10⁻¹³ rel
+- \|Δ(R_f/R₀)\| / oracle ≤ 1×10⁻¹³ rel
 - Fine fixed-DT live probe (`tests/taylor-fine-dt-parity.test.ts`, needs `OPENRADIOSS_PATH`): ≤ 5×10⁻⁶ rel and NN < 0.1 μm (float64 `.sta`)
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and ID-aligned nodal coords). Prefer host `.f64bin` from a patched `stat_node.F` over E20.13 `.sta` (see `docs/research/or-f64bin-host-dump.md`). With F20-snapped X0, near-zero scrub (1e-18), fixed Δt, and OR-ABI `JCVT=0`, **1×Δt metrics+coords are `Object.is` vs live `.f64bin`**. Matching Radioss `ONEP333=1.333` SSP and hierarchical DETDP DELTAX makes **native adaptive DT₀ `Object.is`**; coarse 80 μs CFL residual drops to ~ulp (~10⁻¹⁴ Rf / ~10⁻¹⁶ Lf) without DT-schedule replay. Production 6×6×16 pin still being re-cut (`bitwiseEqual` / `coordsBitwiseEqual` target remains true).
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and ID-aligned nodal coords). Prefer host `.f64bin` from a patched `stat_node.F` over E20.13 `.sta` (see `docs/research/or-f64bin-host-dump.md`). With F20-snapped X0, near-zero scrub (1e-18), fixed Δt, and OR-ABI `JCVT=0`, **1×Δt metrics+coords are `Object.is` vs live `.f64bin`**. Matching Radioss `ONEP333=1.333` SSP and hierarchical DETDP DELTAX makes **native adaptive DT₀ `Object.is`**. Production 6×6×16 @ 80 μs native CFL vs live `.f64bin` is now ~few ulps (`bitwiseEqual` / `coordsBitwiseEqual` still false; gates require ≤1×10⁻¹³).
 
 **Residual diagnostics (same mesh):**
-- Mid-run anims (20/40/60/80 μs): relative Lf error peaks near **60 μs** (~0.007%) then shrinks by 80 μs; NN peaks ~1.8 μm at 60 μs → ~0.14 μm at end.
-- Elastic-only + shared fixed DT already sits near the anim float32 floor.
-- Plastic **fixed-DT refinement** (both codes): at Δt=5×10⁻⁸ residual ~3×10⁻⁵; at Δt=2.5×10⁻⁸ → ~1×10⁻⁶ Lf / ~3×10⁻⁷ Rf / ~0.05 μm NN. So the CFL=0.9 gap is primarily **independent truncation / FP contraction** between TypeScript and gfortran, not a missing constitutive or contact term (Grad N hierarchical vs isoparametric agree to ~1e-15).
-- Same-algorithm element-order FP noise alone is ~1e-15. True `Object.is` at production CFL still requires a **shared compiled force kernel** (OR H8C/LAW2 path callable from the web-mbd CD loop). See `docs/research/09-oracle-bitwise-floor.md`.
+- Pre-ONEP333 adaptive residual was ~4.5×10⁻⁶ (DT-phase). After SSP/DELTAX alignment, production lands at ~3×10⁻¹⁵ Lf / ~6×10⁻¹⁵ Rf / ~3×10⁻¹⁶ m aligned.
+- Plastic **fixed-DT refinement** still useful for formulation checks; true `Object.is` at production CFL needs closing the last ulps (force FP contraction and/or mid-run DT micro-drift). See `docs/research/09-oracle-bitwise-floor.md`.
 
 ## Element / mesh notes
 

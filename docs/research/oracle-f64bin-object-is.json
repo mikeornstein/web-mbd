@@ -37,12 +37,15 @@
     "metricsBitwiseEqual": false,
     "coordsBitwiseEqual": false
   },
-  "productionPinStill": {
+  "productionNativeCfl": {
     "mesh": "6x6x16",
-    "coordSourceWas": "sta",
-    "relLf": 4.5e-6,
-    "relRf": 5e-6,
+    "coordSource": "f64bin",
+    "relLf": 3.3e-15,
+    "relRf": 6.2e-15,
+    "alignedMax_m": 2.9e-16,
+    "nSteps": 2573,
     "bitwiseEqual": false,
-    "note": "Stale pin numbers pre-ONEP333/hier-DELTAX; re-pin pending"
+    "coordsBitwiseEqual": false,
+    "note": "Re-pinned after ONEP333 + hier DELTAX; gates ≤1e-13"
   }
 }

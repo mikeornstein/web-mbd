@@ -13,11 +13,11 @@ export interface OracleCompareTolerances {
 }
 
 export const DEFAULT_ORACLE_TOLERANCES: OracleCompareTolerances = {
-  // After RADIOSS_ONEP333 + hierarchical DETDP DELTAX, coarse native CFL lands at
-  // ~1e-14 vs live .f64bin. Production pin still being re-cut — keep 1e-5 until
-  // the 6×6×16 pin is refreshed; then tighten toward Object.is.
-  lengthRatioRel: 1e-5,
-  radiusRatioRel: 2e-5,
+  // After RADIOSS_ONEP333 + hierarchical DETDP DELTAX: production 6×6×16 native
+  // CFL vs live .f64bin is ~3e-15 Lf / ~6e-15 Rf (few ulps). Gates require that
+  // floor; Object.is remains the pin target flag.
+  lengthRatioRel: 1e-13,
+  radiusRatioRel: 1e-13,
 };
 
 export interface OracleCompareResult {

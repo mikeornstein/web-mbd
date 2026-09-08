@@ -23,11 +23,11 @@ POINTS 5 float
 
   it("compares relative shape errors against tolerances", () => {
     const near = compareToOracle(
-      { lengthRatio: 0.6665610, radiusRatio: 2.2318910 },
-      { lengthRatio: 0.6665617, radiusRatio: 2.2318897 },
+      { lengthRatio: 0.666562024028488, radiusRatio: 2.231889693506488 },
+      { lengthRatio: 0.6665620240284902, radiusRatio: 2.2318896935064743 },
     );
-    expect(near.lengthRelError).toBeLessThan(1e-5);
-    expect(near.radiusRelError).toBeLessThan(2e-5);
+    expect(near.lengthRelError).toBeLessThan(1e-13);
+    expect(near.radiusRelError).toBeLessThan(1e-13);
     expect(near.ok).toBe(true);
     expect(near.bitwiseEqual).toBe(false);
 
