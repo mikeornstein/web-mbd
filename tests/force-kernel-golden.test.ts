@@ -2,14 +2,13 @@
  * Write a binary golden and verify the C force kernel matches TypeScript
  * hexInternalForces bit-for-bit (Object.is / memcmp on IEEE doubles).
  */
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { createTaylorBarModel } from "../src/fixtures/taylorBar.js";
 import { gatherHex, hexInternalForces, createHexGpStates } from "../src/fe/hex.js";
-
-const KERNEL_DIR = join(process.cwd(), "native/force-kernel");
+import { KERNEL_DIR, makeForceKernel } from "./forceKernelBuild.js";
 
 function packDoubles(values: number[]): Buffer {
   const buf = Buffer.alloc(values.length * 8);
@@ -82,10 +81,7 @@ describe("native force kernel ↔ TypeScript", () => {
       ),
     );
 
-    const build = spawnSync("make", ["golden-test"], {
-      cwd: KERNEL_DIR,
-      encoding: "utf8",
-    });
+    const build = makeForceKernel("golden-test");
     expect(build.status, build.stderr + build.stdout).toBe(0);
 
     const run = spawnSync(join(KERNEL_DIR, "force_kernel_golden"), [goldenPath], {

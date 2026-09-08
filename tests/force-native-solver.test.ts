@@ -1,16 +1,13 @@
-import { spawnSync } from "node:child_process";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createTaylorBarModel } from "../src/fixtures/taylorBar.js";
 import { solveExplicit } from "../src/fe/solver.js";
 import { hexInternalForcesNative, loadNativeForceKernel } from "../src/cli/forceNative.js";
+import { makeForceKernel } from "./forceKernelBuild.js";
 
 describe("native force backend", () => {
   it("matches TypeScript solver Object.is on a coarse Taylor run", () => {
-    spawnSync("make", ["libforce_kernel.so"], {
-      cwd: join(process.cwd(), "native/force-kernel"),
-      encoding: "utf8",
-    });
+    const build = makeForceKernel("libforce_kernel.so");
+    expect(build.status, build.stderr + build.stdout).toBe(0);
     expect(loadNativeForceKernel()).toBe(true);
 
     const make = () => {
