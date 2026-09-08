@@ -379,6 +379,12 @@ export function meanDilatationRate(
 export interface HexForceOptions {
   /** Mean-dilatation / constant-pressure (Radioss Icpre=1). Default true. */
   constantPressure?: boolean;
+  /**
+   * Element-mean AMU for LAW2 pressure (V0_sum/V_sum − 1). Default true when
+   * `constantPressure` is on. Radioss instead corrects VOLO via DSV; mean AMU is
+   * a close stand-in once PXC handles the force path.
+   */
+  meanAmu?: boolean;
   /** Quadratic bulk viscosity qa (Radioss). Default 0. */
   bulkViscQuad?: number;
   /** Linear bulk viscosity qb (Radioss). Default 0. */
@@ -397,6 +403,7 @@ export function hexInternalForces(args: {
 }): number {
   const { x, v, states, mat, dt, fOut } = args;
   const constantPressure = args.options?.constantPressure !== false;
+  const meanAmu = args.options?.meanAmu ?? constantPressure;
   const qa = args.options?.bulkViscQuad ?? 0;
   const qb = args.options?.bulkViscLin ?? 0;
   fOut.fill(0);
@@ -459,7 +466,7 @@ export function hexInternalForces(args: {
   for (let gp = 0; gp < 8; gp++) vol0Sum += states[gp]!.vol0;
   // Element-mean AMU mirrors Radioss constant-pressure EOS; force path uses PXC.
   const amuElem =
-    constantPressure && vol0Sum > 0 ? vol0Sum / Math.max(volSum, 1e-30) - 1 : undefined;
+    meanAmu && vol0Sum > 0 ? vol0Sum / Math.max(volSum, 1e-30) - 1 : undefined;
 
   for (let gp = 0; gp < 8; gp++) {
     const gpCache = cache[gp]!;
