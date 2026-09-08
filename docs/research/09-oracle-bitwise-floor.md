@@ -36,6 +36,17 @@ Independent TypeScript vs gfortran force evaluations will not match IEEE bits at
 
 Until that kernel is shared, CI gates stay relative (tightened) and `bitwiseEqual` remains the recorded target flag on the pin.
 
+## Float64 OpenRadioss state path
+
+Anim→VTK is float32 and cannot host an `Object.is` gate. The Taylor engine deck
+now emits `/STATE/DT/ALL` at `endTime`; OpenRadioss writes `ROOT_NNNN.sta` with
+`/NODE` rows as `I10,1P3E20.13` (`stat_node.F`).
+
+- Parser: `src/oracle/shapeFromSta.ts` (ID-sort → packed XYZ)
+- Runner: `src/cli/openRadiossRunner.ts` prefers `.sta`, falls back to VTK
+- Compare: `alignedCoordGap` for ID-aligned `Object.is` on coords; pin records
+  `coordSource`, `alignedMax`, `coordsBitwiseEqual`
+
 ## Shared kernel status (web-mbd)
 
 - C mirror of H8C/LAW2: `native/force-kernel/` (ABI in `force_kernel.h`)

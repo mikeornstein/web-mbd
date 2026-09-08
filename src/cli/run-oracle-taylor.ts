@@ -1,9 +1,8 @@
-import { mkdirSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createTaylorBarModel, TAYLOR_ACCEPTANCE } from "../fixtures/taylorBar.js";
 import { solveExplicit } from "../fe/solver.js";
-import { compareToOracle, nearestNeighborGap } from "../oracle/compare.js";
-import { parseVtkPoints } from "../oracle/shapeFromVtk.js";
+import { alignedCoordGap, compareToOracle, nearestNeighborGap } from "../oracle/compare.js";
 import { metricsPassAcceptance } from "../research/catalog.js";
 import { openRadiossAvailable, runOpenRadiossTaylorOracle } from "./openRadiossRunner.js";
 
@@ -37,15 +36,11 @@ function main(): void {
   console.log("oracle metrics", oracle.metrics);
 
   const cmp = compareToOracle(ours.metrics, oracle.metrics);
-  const vtkName = readdirSync(workDir)
-    .filter((f) => f.endsWith(".vtk"))
-    .sort()
-    .at(-1);
-  if (!vtkName) throw new Error(`no VTK in ${workDir}`);
-  const vtkPts = parseVtkPoints(readFileSync(join(workDir, vtkName), "utf8"), {
-    expectedNodes: model.mesh.coords.length / 3,
-  });
-  const nn = nearestNeighborGap(ours.coords, vtkPts);
+  const nn = nearestNeighborGap(ours.coords, oracle.coords);
+  const aligned =
+    oracle.metrics.coordSource === "sta"
+      ? alignedCoordGap(ours.coords, oracle.coords)
+      : { max: nn.max, mean: nn.mean, bitwiseEqual: false };
   const gate = metricsPassAcceptance(ours.metrics, TAYLOR_ACCEPTANCE);
   const report = {
     webmbd: {
@@ -62,6 +57,10 @@ function main(): void {
       ...cmp,
       nearestNeighborMax: nn.max,
       nearestNeighborMean: nn.mean,
+      alignedMax: aligned.max,
+      alignedMean: aligned.mean,
+      coordsBitwiseEqual: aligned.bitwiseEqual,
+      coordSource: oracle.metrics.coordSource,
     },
     acceptancePass: gate,
     acceptance: TAYLOR_ACCEPTANCE,

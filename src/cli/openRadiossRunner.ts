@@ -1,9 +1,10 @@
-import { mkdirSync, readdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import type { ModelIR } from "../ir/types.js";
 import { exportTaylorRadiossDecks } from "../oracle/exportRadioss.js";
-import { shapeFromVtk } from "../oracle/shapeFromVtk.js";
+import { shapeFromSta } from "../oracle/shapeFromSta.js";
+import { parseVtkPoints, shapeFromVtk } from "../oracle/shapeFromVtk.js";
 
 export interface OracleShapeMetrics {
   lengthRatio: number;
@@ -12,13 +13,19 @@ export interface OracleShapeMetrics {
   finalMaxRadius: number;
   source: "openradioss";
   root: string;
+  /** float64 `.sta` preferred; anim VTK is float32 fallback. */
+  coordSource: "sta" | "vtk";
 }
 
 export interface OracleRunResult {
   metrics: OracleShapeMetrics;
+  /** Final nodal XYZ (ID-sorted when from `.sta`). */
+  coords: Float64Array;
   workDir: string;
   starterLog: string;
   engineLog: string;
+  staFile?: string;
+  vtkFile?: string;
 }
 
 function requireEnv(name: string): string {
@@ -34,8 +41,8 @@ export function openRadiossAvailable(): boolean {
 }
 
 /**
- * Run OpenRadioss starter+engine on the exported Taylor deck and extract final
- * shape metrics from the last anim→VTK conversion.
+ * Run OpenRadioss starter+engine on the exported Taylor deck.
+ * Prefer float64 `.sta` (`/STATE/DT/ALL`); fall back to anim→VTK (float32).
  */
 export function runOpenRadiossTaylorOracle(
   model: ModelIR,
@@ -87,12 +94,40 @@ export function runOpenRadiossTaylorOracle(
     throw new Error(`OpenRadioss engine failed:\n${engine.stdout}\n${engine.stderr}`);
   }
 
+  const expectedNodes = model.mesh.coords.length / 3;
+  const staFiles = readdirSync(workDir)
+    .filter((f) => f.endsWith(".sta"))
+    .sort();
+  const lastSta = staFiles[staFiles.length - 1];
+  if (lastSta) {
+    const staPath = join(workDir, lastSta);
+    const shape = shapeFromSta(readFileSync(staPath, "utf8"), model.reference.length0, model.reference.radius0, {
+      expectedNodes,
+    });
+    return {
+      metrics: {
+        finalLength: shape.finalLength,
+        finalMaxRadius: shape.finalMaxRadius,
+        lengthRatio: shape.lengthRatio,
+        radiusRatio: shape.radiusRatio,
+        source: "openradioss",
+        root: decks.root,
+        coordSource: "sta",
+      },
+      coords: shape.coords,
+      workDir,
+      starterLog: starter.stdout,
+      engineLog: engine.stdout,
+      staFile: staPath,
+    };
+  }
+
   const animFiles = readdirSync(workDir)
     .filter((f) => /A\d{3}$/.test(f) && !f.includes("."))
     .sort();
   const lastAnim = animFiles[animFiles.length - 1];
   if (!lastAnim) {
-    throw new Error(`no animation files in ${workDir}: ${readdirSync(workDir).join(", ")}`);
+    throw new Error(`no .sta or animation files in ${workDir}: ${readdirSync(workDir).join(", ")}`);
   }
 
   const conv = spawnSync(animToVtk, [join(workDir, lastAnim)], {
@@ -111,12 +146,14 @@ export function runOpenRadiossTaylorOracle(
   const vtkText = conv.stdout;
 
   const shape = shapeFromVtk(vtkText, model.reference.length0, model.reference.radius0, {
-    expectedNodes: model.mesh.coords.length / 3,
+    expectedNodes,
   });
   return {
-    metrics: { ...shape, source: "openradioss", root: decks.root },
+    metrics: { ...shape, source: "openradioss", root: decks.root, coordSource: "vtk" },
+    coords: parseVtkPoints(vtkText, { expectedNodes }),
     workDir,
     starterLog: starter.stdout,
     engineLog: engine.stdout,
+    vtkFile: produced,
   };
 }

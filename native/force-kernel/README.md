@@ -21,8 +21,9 @@ IEEE bits.
    `s8eforc3` + `m2law` + `rgwall` (or call a prebuilt OR object archive).
 4. **Wire** — optional `SolveOptions.forceBackend: "ts" | "native"`; default TS
    until the OR extract is validated.
-5. **Compare** — float64 restart / TH probes, not anim float32 VTK, for the
-   final `Object.is` gate.
+5. **Compare** — float64 `/STATE/DT/ALL` `.sta` (`stat_node.F` E20.13), not
+   anim float32 VTK, for the final `Object.is` gate (wired in
+   `src/oracle/shapeFromSta.ts` + oracle runner).
 
 ## OpenRadioss Fortran extract (next)
 

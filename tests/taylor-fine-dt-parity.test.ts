@@ -1,23 +1,23 @@
-import { mkdirSync, writeFileSync, readdirSync } from "node:fs";
+import { mkdirSync, writeFileSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { createTaylorBarModel } from "../src/fixtures/taylorBar.js";
 import { solveExplicit } from "../src/fe/solver.js";
 import { exportTaylorRadiossDecks } from "../src/oracle/exportRadioss.js";
-import { compareToOracle, nearestNeighborGap } from "../src/oracle/compare.js";
-import { parseVtkPoints, shapeFromVtk } from "../src/oracle/shapeFromVtk.js";
+import { alignedCoordGap, compareToOracle, nearestNeighborGap } from "../src/oracle/compare.js";
+import { shapeFromSta } from "../src/oracle/shapeFromSta.js";
 import { openRadiossAvailable } from "../src/cli/openRadiossRunner.js";
 
 /**
  * Under a shared fixed DT ≪ CFL, independent TS vs gfortran truncation shrinks
- * toward the anim float32 floor (~1e-6 relative / ~0.05 μm NN). Proves the
- * remaining CFL=0.9 adaptive residual is primarily step-size truncation, not a
- * missing constitutive/contact term. Object.is still needs a shared force kernel.
+ * (~1e-6 relative / ~0.05 μm). Proves the remaining CFL=0.9 adaptive residual is
+ * primarily step-size truncation, not a missing constitutive/contact term.
+ * Object.is still needs a shared force kernel. Compare uses float64 `.sta`.
  */
 describe("taylor fine-DT OpenRadioss parity", () => {
   it.skipIf(!openRadiossAvailable())(
-    "closes toward float32 floor at fixed DT=2.5e-8",
+    "closes toward truncation floor at fixed DT=2.5e-8 (float64 .sta)",
     () => {
       const fixedDt = 2.5e-8;
       const tEnd = 80e-6;
@@ -37,6 +37,8 @@ ${(1.0).toExponential(10).padStart(20)}${(0).toExponential(10).padStart(20)}
 /ANIM/DT
 ${(0).toExponential(10).padStart(20)}${tEnd.toExponential(10).padStart(20)}
 /ANIM/NODA/DT
+/STATE/DT/ALL
+${tEnd.toExponential(10).padStart(20)}${tEnd.toExponential(10).padStart(20)}
 /PRINT/1000/100
 /MON/ON
 /PARITH/OFF
@@ -73,37 +75,31 @@ ${(0).toExponential(10).padStart(20)}${tEnd.toExponential(10).padStart(20)}
       );
       expect(engineRun.status).toBe(0);
 
-      const anim = readdirSync(workDir)
-        .filter((f) => /A\d{3}$/.test(f))
+      const sta = readdirSync(workDir)
+        .filter((f) => f.endsWith(".sta"))
         .sort()
         .at(-1);
-      expect(anim).toBeTruthy();
-      const conv = spawnSync(join(orPath, "exec/anim_to_vtk_linux64_gf"), [join(workDir, anim!)], {
-        cwd: workDir,
-        env,
-        encoding: "utf8",
-        maxBuffer: 64 << 20,
-      });
-      expect(conv.status).toBe(0);
-      writeFileSync(join(workDir, `${anim}.vtk`), conv.stdout);
-
-      const orShape = shapeFromVtk(conv.stdout, model.reference.length0, model.reference.radius0, {
-        expectedNodes: model.mesh.coords.length / 3,
-      });
+      expect(sta).toBeTruthy();
+      const orShape = shapeFromSta(
+        readFileSync(join(workDir, sta!), "utf8"),
+        model.reference.length0,
+        model.reference.radius0,
+        { expectedNodes: model.mesh.coords.length / 3 },
+      );
       const web = solveExplicit(model, { maxWallMs: 600_000 });
       const cmp = compareToOracle(web.metrics, orShape, {
         lengthRatioRel: 5e-6,
         radiusRatioRel: 5e-6,
       });
-      const nn = nearestNeighborGap(
-        web.coords,
-        parseVtkPoints(conv.stdout, { expectedNodes: model.mesh.coords.length / 3 }),
-      );
+      const nn = nearestNeighborGap(web.coords, orShape.coords);
+      const aligned = alignedCoordGap(web.coords, orShape.coords);
 
       expect(cmp.ok).toBe(true);
       expect(nn.max).toBeLessThan(1e-7); // 0.1 μm
+      expect(aligned.max).toBeLessThan(1e-7);
       // Still not bitwise at CFL-scale or fine DT without a shared force kernel.
       expect(cmp.bitwiseEqual).toBe(false);
+      expect(aligned.bitwiseEqual).toBe(false);
     },
     600_000,
   );

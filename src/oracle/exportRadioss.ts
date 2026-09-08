@@ -102,6 +102,8 @@ ${f20(wall.point[0] + wall.normal[0])}${f20(wall.point[1] + wall.normal[1])}${f2
 
   const tEnd = controls.endTime * 1.01;
   const dtScale = controls.cfl > 0 ? controls.cfl : 0.9;
+  // Float64 nodal dump for Object.is gates (stat_node.F E20.13). Anim VTK is float32.
+  // /STATE/DT/ALL tags every node (NSTATALL); dump once at fixture endTime.
   const engine = `#RADIOSS ENGINE
 /RUN/${root}/1
 ${f20(tEnd)}
@@ -111,6 +113,8 @@ ${f20(dtScale)}${f20(0)}
 ${f20(0)}${f20(controls.endTime)}
 /ANIM/NODA/DT
 /ANIM/ELEM/EPSP
+/STATE/DT/ALL
+${f20(controls.endTime)}${f20(controls.endTime)}
 /TFILE/4
 ${f20(model.output.historyInterval)}
 /PRINT/-1/100

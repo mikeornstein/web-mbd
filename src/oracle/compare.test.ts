@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { compareToOracle, nearestNeighborGap } from "./compare.js";
+import { alignedCoordGap, compareToOracle, nearestNeighborGap } from "./compare.js";
 import { shapeFromVtk } from "./shapeFromVtk.js";
+
 
 describe("oracle helpers", () => {
   it("parses VTK points and ignores trailing wall markers when expectedNodes set", () => {
@@ -42,5 +43,13 @@ POINTS 5 float
     const nn = nearestNeighborGap(pts, pts);
     expect(nn.max).toBe(0);
     expect(nn.mean).toBe(0);
+  });
+
+  it("alignedCoordGap is Object.is when buffers match bit-for-bit", () => {
+    const a = Float64Array.from([0, 0, 0, 1, 2, 3]);
+    const b = Float64Array.from(a);
+    expect(alignedCoordGap(a, b).bitwiseEqual).toBe(true);
+    b[5] = 4;
+    expect(alignedCoordGap(a, b).bitwiseEqual).toBe(false);
   });
 });

@@ -37,7 +37,7 @@ export function metricsBitwiseEqual(
 
 /**
  * Max / mean nearest-neighbor distance from `ours` nodes to `theirs`.
- * VTK / Radioss node IDs are not comparable; match geometrically.
+ * VTK node ordering is not guaranteed; match geometrically.
  */
 export function nearestNeighborGap(
   ours: ArrayLike<number>,
@@ -61,6 +61,37 @@ export function nearestNeighborGap(
     sum += best;
   }
   return { max, mean: sum / nOurs };
+}
+
+/**
+ * ID-aligned max / mean gap when both arrays share the same node order
+ * (web-mbd index i ↔ Radioss ITAB i+1 after `.sta` ID sort).
+ */
+export function alignedCoordGap(
+  ours: ArrayLike<number>,
+  theirs: ArrayLike<number>,
+): { max: number; mean: number; bitwiseEqual: boolean } {
+  if (ours.length !== theirs.length || ours.length % 3 !== 0) {
+    return { max: Infinity, mean: Infinity, bitwiseEqual: false };
+  }
+  const n = ours.length / 3;
+  if (n === 0) return { max: 0, mean: 0, bitwiseEqual: true };
+  let max = 0;
+  let sum = 0;
+  let bitwiseEqual = true;
+  for (let a = 0; a < n; a++) {
+    const ox = ours[a * 3]!,
+      oy = ours[a * 3 + 1]!,
+      oz = ours[a * 3 + 2]!;
+    const tx = theirs[a * 3]!,
+      ty = theirs[a * 3 + 1]!,
+      tz = theirs[a * 3 + 2]!;
+    if (!Object.is(ox, tx) || !Object.is(oy, ty) || !Object.is(oz, tz)) bitwiseEqual = false;
+    const d = Math.hypot(ox - tx, oy - ty, oz - tz);
+    max = Math.max(max, d);
+    sum += d;
+  }
+  return { max, mean: sum / n, bitwiseEqual };
 }
 
 export function compareToOracle(

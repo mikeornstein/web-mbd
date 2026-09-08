@@ -56,9 +56,9 @@ Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
 - \|Δ(L_f/L₀)\| / oracle ≤ 0.001% (1×10⁻⁵ rel)
 - \|Δ(R_f/R₀)\| / oracle ≤ 0.002% (2×10⁻⁵ rel)
-- Fine fixed-DT live probe (`tests/taylor-fine-dt-parity.test.ts`, needs `OPENRADIOSS_PATH`): ≤ 5×10⁻⁶ rel and NN < 0.1 μm
+- Fine fixed-DT live probe (`tests/taylor-fine-dt-parity.test.ts`, needs `OPENRADIOSS_PATH`): ≤ 5×10⁻⁶ rel and NN < 0.1 μm (float64 `.sta`)
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current CFL=0.9 adaptive residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), infinite-plane `/RWALL` ITIED=0 (`rgwall.F`), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Adaptive DT tracks OpenRadioss within ~0.01% mean; lockstep with printed OR DT2 does not close the residual.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and ID-aligned nodal coords from float64 `/STATE` `.sta`, not anim VTK). Current CFL=0.9 adaptive residual is ~0.0005% Rf / ~0.0004% Lf (~0.14 μm max nearest-neighbor nodal gap; `bitwiseEqual: false`) after matching Radioss `resol` CD order (FORINT→DT12→RWALL→V→X, no double-kick), infinite-plane `/RWALL` ITIED=0 (`rgwall.F`), H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, Radioss variable-dt (`DT12=½(DT1+DT2)`, `DT2≤1.1·DT2OLD`), and Radioss PG quadrature. Adaptive DT tracks OpenRadioss within ~0.01% mean; lockstep with printed OR DT2 does not close the residual.
 
 **Residual diagnostics (same mesh):**
 - Mid-run anims (20/40/60/80 μs): relative Lf error peaks near **60 μs** (~0.007%) then shrinks by 80 μs; NN peaks ~1.8 μm at 60 μs → ~0.14 μm at end.
@@ -81,7 +81,7 @@ src/fe/           hex, J2/LAW2, rigid wall, explicit solver
 src/mesh/         cylinder hex generator
 src/fixtures/     Taylor bar model
 src/research/     stock models from research notes
-src/oracle/       Radioss export, VTK shape parse, pinned compare
+src/oracle/       Radioss export, `.sta`/VTK shape parse, pinned compare
 src/ui/           browser workbench (pre / solve / post)
 src/viz/          canvas mesh + energy plots
 src/cli/          headless runner + OpenRadioss driver
