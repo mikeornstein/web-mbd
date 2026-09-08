@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareToOracle } from "./compare.js";
+import { compareToOracle, nearestNeighborGap } from "./compare.js";
 import { shapeFromVtk } from "./shapeFromVtk.js";
 
 describe("oracle helpers", () => {
@@ -28,11 +28,19 @@ POINTS 5 float
     expect(near.lengthRelError).toBeLessThan(0.001);
     expect(near.radiusRelError).toBeLessThan(0.002);
     expect(near.ok).toBe(true);
+    expect(near.bitwiseEqual).toBe(false);
 
     const far = compareToOracle(
       { lengthRatio: 0.62, radiusRatio: 1.5 },
       { lengthRatio: 0.67, radiusRatio: 2.2 },
     );
     expect(far.ok).toBe(false);
+  });
+
+  it("reports zero nearest-neighbor gap on identical clouds", () => {
+    const pts = Float64Array.from([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const nn = nearestNeighborGap(pts, pts);
+    expect(nn.max).toBe(0);
+    expect(nn.mean).toBe(0);
   });
 });

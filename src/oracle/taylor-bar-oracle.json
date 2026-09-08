@@ -23,7 +23,10 @@
     "tolerances": {
       "lengthRatioRel": 0.001,
       "radiusRatioRel": 0.002
-    }
+    },
+    "bitwiseEqual": false,
+    "nearestNeighborMax": 0.000002551607062593381,
+    "nearestNeighborMean": 8.959506325770882e-7
   },
   "acceptancePass": true,
   "acceptance": {

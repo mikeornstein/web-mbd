@@ -24,6 +24,7 @@ export interface OracleCompareResult {
   lengthRelError: number;
   radiusRelError: number;
   tolerances: OracleCompareTolerances;
+  bitwiseEqual: boolean;
 }
 
 /** True only when every finite metric field is Object.is-equal (bitwise). */
@@ -32,6 +33,34 @@ export function metricsBitwiseEqual(
   b: Pick<OracleShapeMetrics, "lengthRatio" | "radiusRatio">,
 ): boolean {
   return Object.is(a.lengthRatio, b.lengthRatio) && Object.is(a.radiusRatio, b.radiusRatio);
+}
+
+/**
+ * Max / mean nearest-neighbor distance from `ours` nodes to `theirs`.
+ * VTK / Radioss node IDs are not comparable; match geometrically.
+ */
+export function nearestNeighborGap(
+  ours: ArrayLike<number>,
+  theirs: ArrayLike<number>,
+): { max: number; mean: number } {
+  const nOurs = ours.length / 3;
+  const nTheirs = theirs.length / 3;
+  if (nOurs === 0 || nTheirs === 0) return { max: Infinity, mean: Infinity };
+  let max = 0;
+  let sum = 0;
+  for (let a = 0; a < nOurs; a++) {
+    const px = ours[a * 3]!,
+      py = ours[a * 3 + 1]!,
+      pz = ours[a * 3 + 2]!;
+    let best = Infinity;
+    for (let b = 0; b < nTheirs; b++) {
+      const d = Math.hypot(px - theirs[b * 3]!, py - theirs[b * 3 + 1]!, pz - theirs[b * 3 + 2]!);
+      if (d < best) best = d;
+    }
+    max = Math.max(max, best);
+    sum += best;
+  }
+  return { max, mean: sum / nOurs };
 }
 
 export function compareToOracle(
@@ -50,5 +79,6 @@ export function compareToOracle(
     lengthRelError,
     radiusRelError,
     tolerances,
+    bitwiseEqual: metricsBitwiseEqual(ours, oracle),
   };
 }

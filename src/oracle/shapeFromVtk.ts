@@ -1,15 +1,5 @@
 /** Extract Taylor shape metrics from an anim_to_vtk VTK file. */
-export function shapeFromVtk(
-  vtk: string,
-  length0: number,
-  radius0: number,
-  options: { expectedNodes?: number } = {},
-): {
-  finalLength: number;
-  finalMaxRadius: number;
-  lengthRatio: number;
-  radiusRatio: number;
-} {
+export function parseVtkPoints(vtk: string, options: { expectedNodes?: number } = {}): Float64Array {
   const points: number[] = [];
   const lines = vtk.split(/\r?\n/);
   let i = 0;
@@ -29,19 +19,34 @@ export function shapeFromVtk(
   if (points.length < 9 || points.length % 3 !== 0) {
     throw new Error(`bad VTK point count ${points.length}`);
   }
-  // OpenRadioss anim VTK appends rigid-wall corner markers after mesh nodes.
   const nPts = points.length / 3;
   const useN =
     options.expectedNodes !== undefined
       ? Math.min(options.expectedNodes, nPts)
       : Math.min(declared || nPts, nPts);
+  return Float64Array.from(points.slice(0, useN * 3));
+}
+
+export function shapeFromVtk(
+  vtk: string,
+  length0: number,
+  radius0: number,
+  options: { expectedNodes?: number } = {},
+): {
+  finalLength: number;
+  finalMaxRadius: number;
+  lengthRatio: number;
+  radiusRatio: number;
+} {
+  const coords = parseVtkPoints(vtk, options);
   let zMin = Infinity;
   let zMax = -Infinity;
   let rMax = 0;
-  for (let p = 0; p < useN; p++) {
-    const x = points[p * 3]!;
-    const y = points[p * 3 + 1]!;
-    const z = points[p * 3 + 2]!;
+  const n = coords.length / 3;
+  for (let p = 0; p < n; p++) {
+    const x = coords[p * 3]!;
+    const y = coords[p * 3 + 1]!;
+    const z = coords[p * 3 + 2]!;
     zMin = Math.min(zMin, z);
     zMax = Math.max(zMax, z);
     rMax = Math.max(rMax, Math.hypot(x, y));
