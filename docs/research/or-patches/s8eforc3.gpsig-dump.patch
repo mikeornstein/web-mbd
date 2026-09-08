@@ -1,0 +1,44 @@
+--- engine/source/elements/solid/solide8e/s8eforc3.F.pre-gpsig.bak	2026-09-08 23:43:12.700184593 +0000
++++ engine/source/elements/solid/solide8e/s8eforc3.F	2026-09-08 23:43:41.752085410 +0000
+@@ -246,6 +246,7 @@
+ C-----------------------------------------------
+       INTEGER NF1, IFLAG, I, 
+      .     ILAY,IP,IR,IS,IT,NPTR,NPTS,NPTT,J
++      CHARACTER*80 WMBD_SIGF
+       INTEGER IBID,IBIDV(1), MX, IFVM22
+       INTEGER MXT(MVSIZ),NGL(MVSIZ),NGEO(MVSIZ)
+       my_real
+@@ -1703,6 +1704,23 @@
+      7   LBUF%EINTTH,GBUF%EINTTH,IEXPAN,     NEL,
+      8   CONDE,      CONDEN,SVIS,GLOB_THERM%NODADT_THERM,
+      9   GBUF%WPLA,  LBUF%WPLA, GBUF%G_WPLA)
++C     web-mbd: per-GP D + SIG/PLA/QVIS after constitutive update (NCYCLE<=2)
++      IF (NCYCLE<=2 .AND. ITASK==0) THEN
++        IF (IP == 1 .AND. NFT == 0) THEN
++          WRITE(WMBD_SIGF,'(A,I1,A)') 'wmbd_gpsig_',NCYCLE,'.f64bin'
++          OPEN(UNIT=781,FILE=TRIM(WMBD_SIGF),
++     .         ACCESS='STREAM',FORM='UNFORMATTED',STATUS='REPLACE')
++          WRITE(781) NCYCLE,NEL,NPTR,NPTS,NPTT
++        ENDIF
++        DO I=LFT,LLT
++          WRITE(781) NFT+I,IR,IS,IT,IP,
++     .      DXX(I),DYY(I),DZZ(I),D4(I),D5(I),D6(I),
++     .      LBUF%SIG(I),LBUF%SIG(NEL+I),LBUF%SIG(2*NEL+I),
++     .      LBUF%SIG(3*NEL+I),LBUF%SIG(4*NEL+I),LBUF%SIG(5*NEL+I),
++     .      LBUF%PLA(I),LBUF%QVIS(I),LBUF%EPSD(I),
++     .      LBUF%VOL(I),LBUF%RHO(I),AMU(I),LBUF%EINT(I)
++        ENDDO
++      ENDIF
+ c-------------------------
+ c     Virtual internal forces of regularized non local ddl 
+ c--------------------------
+@@ -2074,5 +2092,9 @@
+       ENDIF
+ C-----------
+       IF (ALLOCATED(VAR_REG)) call my_dealloc(VAR_REG)
++C     web-mbd: close GP SIG dump if open
++      IF (NCYCLE<=2 .AND. ITASK==0) THEN
++        CLOSE(UNIT=781,IOSTAT=IBID)
++      ENDIF
+       RETURN
+       END

@@ -164,6 +164,10 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     };
   };
 
+  // Radioss M2LAW / SROTA3 / SRHO3 use DT1 (prior DT2; 0 on cycle 0), not DT2.
+  // FORINT runs before DT2 is recomputed — pass dt1 into the force kernel.
+  let dt1 = 0;
+
   const assembleInternal = (): void => {
     f.fill(0);
     if (assembleForces) {
@@ -173,7 +177,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
         hexStates,
         hexConn,
         mat: model.material,
-        dt,
+        dt: dt1,
         f,
       });
       return;
@@ -187,7 +191,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
         v: vScratch,
         states: hexStates[e]!,
         mat: model.material,
-        dt,
+        dt: dt1,
         fOut: fHex,
         elementIndex: e,
       });
@@ -220,13 +224,11 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
   };
 
-  // Radioss resol CD: FORINT(X) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2 → TT+=DT2.
-  // Live engine cold-starts DT1=0 (see patched resol A/V dumps): first-cycle
-  // DT12=½(0+DT2)=DT2/2. Do not seed DT1=DT2 — that doubled first-cycle DT12.
+  // Radioss resol CD: FORINT(X,DT1) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2.
+  // Cold DT1=0 ⇒ first-cycle constitutive G·DT1=0 (live SIG stays 0) and DT12=DT2/2.
   let contactEnergy = 0;
   history.push(sample(contactEnergy));
   nextSample = model.output.historyInterval;
-  let dt1 = 0;
 
   while (t < model.controls.endTime - 1e-18 && step < maxSteps) {
     if (performance.now() - wallClock0 > maxWallMs) {
