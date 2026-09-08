@@ -112,23 +112,23 @@ export function hexInternalForces(args: {
     const Jinv = mat3Inverse(J);
     const gN = gradN(dN, Jinv);
 
-    const L = new Array<number>(9).fill(0);
+    const L: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     for (let a = 0; a < 8; a++) {
-      const gx = gN[a]![0]!,
-        gy = gN[a]![1]!,
-        gz = gN[a]![2]!;
-      const vx = v[a * 3]!,
-        vy = v[a * 3 + 1]!,
-        vz = v[a * 3 + 2]!;
-      L[0] += vx * gx;
-      L[1] += vx * gy;
-      L[2] += vx * gz;
-      L[3] += vy * gx;
-      L[4] += vy * gy;
-      L[5] += vy * gz;
-      L[6] += vz * gx;
-      L[7] += vz * gy;
-      L[8] += vz * gz;
+      const gx = gN[a]![0]!;
+      const gy = gN[a]![1]!;
+      const gz = gN[a]![2]!;
+      const vx = v[a * 3]!;
+      const vy = v[a * 3 + 1]!;
+      const vz = v[a * 3 + 2]!;
+      L[0]! += vx * gx;
+      L[1]! += vx * gy;
+      L[2]! += vx * gz;
+      L[3]! += vy * gx;
+      L[4]! += vy * gy;
+      L[5]! += vy * gz;
+      L[6]! += vz * gx;
+      L[7]! += vz * gy;
+      L[8]! += vz * gz;
     }
 
     const d = new Float64Array(6);
@@ -166,12 +166,12 @@ export function hexInternalForces(args: {
     ];
     const Ws = mat3Mul(W, sm);
     const sWt = mat3Mul(sm, mat3Transpose(W));
-    sigma[0] += dt * (Ws[0]! + sWt[0]!);
-    sigma[1] += dt * (Ws[4]! + sWt[4]!);
-    sigma[2] += dt * (Ws[8]! + sWt[8]!);
-    sigma[3] += dt * (Ws[1]! + sWt[1]!);
-    sigma[4] += dt * (Ws[5]! + sWt[5]!);
-    sigma[5] += dt * (Ws[2]! + sWt[2]!);
+    sigma[0]! += dt * (Ws[0]! + sWt[0]!);
+    sigma[1]! += dt * (Ws[4]! + sWt[4]!);
+    sigma[2]! += dt * (Ws[8]! + sWt[8]!);
+    sigma[3]! += dt * (Ws[1]! + sWt[1]!);
+    sigma[4]! += dt * (Ws[5]! + sWt[5]!);
+    sigma[5]! += dt * (Ws[2]! + sWt[2]!);
 
     j2Update(mat, state, d, dt);
 

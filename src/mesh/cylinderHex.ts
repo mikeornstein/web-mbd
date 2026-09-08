@@ -29,15 +29,17 @@ export function createCylinderHexMesh(opt: CylinderMeshOptions): CylinderMesh {
   const nodeAt: number[][][] = [];
 
   for (let iz = 0; iz <= nZ; iz++) {
-    nodeAt[iz] = [];
+    const layer: number[][] = [];
+    nodeAt[iz] = layer;
     const z = (length * iz) / nZ;
     for (let ix = 0; ix < nXY; ix++) {
-      nodeAt[iz][ix] = [];
+      const col: number[] = [];
+      layer[ix] = col;
       const u = -1 + (2 * ix) / nSide;
       for (let iy = 0; iy < nXY; iy++) {
         const v = -1 + (2 * iy) / nSide;
         const [x, y] = squareToCircle(u, v, radius);
-        nodeAt[iz][ix][iy] = coords.length / 3;
+        col[iy] = coords.length / 3;
         coords.push(x, y, z);
       }
     }
@@ -45,16 +47,18 @@ export function createCylinderHexMesh(opt: CylinderMeshOptions): CylinderMesh {
 
   const hexes: number[] = [];
   for (let iz = 0; iz < nZ; iz++) {
+    const bottom = nodeAt[iz]!;
+    const top = nodeAt[iz + 1]!;
     for (let ix = 0; ix < nSide; ix++) {
       for (let iy = 0; iy < nSide; iy++) {
-        const n000 = nodeAt[iz][ix]![iy]!;
-        const n100 = nodeAt[iz][ix + 1]![iy]!;
-        const n110 = nodeAt[iz][ix + 1]![iy + 1]!;
-        const n010 = nodeAt[iz][ix]![iy + 1]!;
-        const n001 = nodeAt[iz + 1]![ix]![iy]!;
-        const n101 = nodeAt[iz + 1]![ix + 1]![iy]!;
-        const n111 = nodeAt[iz + 1]![ix + 1]![iy + 1]!;
-        const n011 = nodeAt[iz + 1]![ix]![iy + 1]!;
+        const n000 = bottom[ix]![iy]!;
+        const n100 = bottom[ix + 1]![iy]!;
+        const n110 = bottom[ix + 1]![iy + 1]!;
+        const n010 = bottom[ix]![iy + 1]!;
+        const n001 = top[ix]![iy]!;
+        const n101 = top[ix + 1]![iy]!;
+        const n111 = top[ix + 1]![iy + 1]!;
+        const n011 = top[ix]![iy + 1]!;
         hexes.push(n000, n100, n110, n010, n001, n101, n111, n011);
       }
     }

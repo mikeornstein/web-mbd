@@ -13,9 +13,9 @@ First end-to-end explicit solid model for web-mbd.
 ## Run
 
 ```bash
-npm install
-npm test
-npm run taylor
+pnpm install
+pnpm test
+pnpm taylor
 ```
 
 ## Fixture

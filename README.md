@@ -39,9 +39,10 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 Copper-like cylinder into a rigid wall — the Layer-1 gate from the research notes. See [`docs/mvp-taylor-bar.md`](docs/mvp-taylor-bar.md).
 
 ```bash
-npm install
-npm test          # mesh + Taylor golden / determinism
-npm run taylor    # headless solve + metrics
+pnpm install
+pnpm test          # unit + Taylor golden / determinism
+pnpm taylor        # headless Taylor bar solve + metrics
+pnpm dev           # Vite app shell
 ```
 
 This repository is the product, not a paper. Algorithms land here when they run in the browser on real models.
@@ -84,10 +85,32 @@ Prior-art research (OpenRadioss Confluence + broader solver landscape) lives in 
 
 ## Status
 
-Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via `npm test` / `npm run taylor`. WebGPU and unified pre/post are next.
+Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via `pnpm test` / `pnpm taylor`. WebGPU and unified pre/post are next.
 
 If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.
 
+## Develop
+
+Install [Node.js](https://nodejs.org/) 22 or newer and [pnpm](https://pnpm.io/) 10, then:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Checks:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+pnpm build
+```
+
+The production site is [GitHub Pages](https://mikeornstein.github.io/web-mbd/). Changes land through pull requests. `main` is protected. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
-TBD.
+Apache License 2.0. See [LICENSE](LICENSE).
+
