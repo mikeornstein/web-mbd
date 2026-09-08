@@ -43,7 +43,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     const m = hexLumpedNodalMass(xScratch, model.material.density);
     for (let a = 0; a < 8; a++) masses[conn[a]!]! += m[a]!;
     hexStates.push(createHexGpStates(Float64Array.from(xScratch)));
-    minH = Math.min(minH, characteristicLength(xScratch));
+    minH = Math.min(minH, characteristicLength(xScratch, model.material.poisson));
   }
 
   for (let a = 0; a < nNodes; a++) {
@@ -61,7 +61,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     let h = Infinity;
     for (let e = 0; e < nHex; e++) {
       gatherHex(x, hexConn[e]!, xScratch);
-      h = Math.min(h, characteristicLength(xScratch));
+      h = Math.min(h, characteristicLength(xScratch, model.material.poisson));
     }
     const dtNew = model.controls.cfl * (h / cd);
     if (dtNew > 0 && Number.isFinite(dtNew)) dt = dtNew;

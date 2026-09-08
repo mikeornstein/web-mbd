@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { meanDilatationOperators, meanDilatationRate } from "../src/fe/hex.js";
+import {
+  characteristicLengthSmax,
+  meanDilatationOperators,
+  meanDilatationRate,
+} from "../src/fe/hex.js";
 
 function unitCube(): Float64Array {
   // Radioss node order: 1(0,0,0) 2(1,0,0) 3(1,1,0) 4(0,1,0) 5(0,0,1) 6(1,0,1) 7(1,1,1) 8(0,1,1)
@@ -23,5 +27,9 @@ describe("H8C mean-dilatation PXC", () => {
     }
     const dvc = meanDilatationRate(ops.pxc, ops.pyc, ops.pzc, v);
     expect(dvc).toBeCloseTo(-3, 10);
+  });
+
+  it("SMAX DELTAX equals the edge length on the unit cube", () => {
+    expect(characteristicLengthSmax(unitCube())).toBeCloseTo(1, 12);
   });
 });

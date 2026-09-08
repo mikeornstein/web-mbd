@@ -96,9 +96,15 @@ export function createHexGpStates(x0?: Float64Array): J2State[] {
   });
 }
 
-export function characteristicLength(x0: Float64Array): number {
-  // Radioss H8C DELTAX is more conservative than ∛V; min edge length tracks
-  // their initial critical dt much more closely on this mesh (~0.4 mm vs ∛V~1.1 mm).
+export function characteristicLength(x0: Float64Array, poisson = 0.35): number {
+  // Radioss H8C / LAW2: DELTAX = min_gp(128 * VOL_gp * SMAX) (s8ederi_2);
+  // FAC_NU=1 for LAW2 so sz_dt1 is overwritten. Fall back to min edge.
+  // `poisson` reserved for optional sz_dt1 blend when FAC_NU<1.
+  const hPxc = characteristicLengthPxc(x0, poisson);
+  const h = characteristicLengthSmax(x0);
+  // Prefer SMAX (LAW2 path); keep PXC available for diagnostics / future FAC_NU.
+  if (h > 0 && Number.isFinite(h)) return h;
+  if (hPxc > 0 && Number.isFinite(hPxc)) return hPxc;
   let minEdge = Infinity;
   const edges: [number, number][] = [
     [0, 1],
@@ -121,6 +127,121 @@ export function characteristicLength(x0: Float64Array): number {
     minEdge = Math.min(minEdge, Math.hypot(dx, dy, dz));
   }
   return minEdge;
+}
+
+/**
+ * Radioss `s8ederic3` SMAX (1 / √ max median-face metric) times GP volume:
+ * DELTAX = 128 * VOL_gp * SMAX  (`s8ederi_2`, WI=1 for 2×2×2).
+ */
+export function characteristicLengthSmax(x: Float64Array): number {
+  // Raw cofactors for SMAX (before 1/64 scaling) — Radioss s8ederic3.
+  const x1 = x[0]!,
+    y1 = x[1]!,
+    z1 = x[2]!;
+  const x2 = x[3]!,
+    y2 = x[4]!,
+    z2 = x[5]!;
+  const x3 = x[6]!,
+    y3 = x[7]!,
+    z3 = x[8]!;
+  const x4 = x[9]!,
+    y4 = x[10]!,
+    z4 = x[11]!;
+  const x5 = x[12]!,
+    y5 = x[13]!,
+    z5 = x[14]!;
+  const x6 = x[15]!,
+    y6 = x[16]!,
+    z6 = x[17]!;
+  const x7 = x[18]!,
+    y7 = x[19]!,
+    z7 = x[20]!;
+  const x8 = x[21]!,
+    y8 = x[22]!,
+    z8 = x[23]!;
+
+  const x17 = x7 - x1,
+    x28 = x8 - x2,
+    x35 = x5 - x3,
+    x46 = x6 - x4;
+  const y17 = y7 - y1,
+    y28 = y8 - y2,
+    y35 = y5 - y3,
+    y46 = y6 - y4;
+  const z17 = z7 - z1,
+    z28 = z8 - z2,
+    z35 = z5 - z3,
+    z46 = z6 - z4;
+
+  const aj4 = x17 + x28 - x35 - x46;
+  const aj5 = y17 + y28 - y35 - y46;
+  const aj6 = z17 + z28 - z35 - z46;
+  const a17 = x17 + x46,
+    a28 = x28 + x35;
+  const b17 = y17 + y46,
+    b28 = y28 + y35;
+  const c17 = z17 + z46,
+    c28 = z28 + z35;
+  const aj7 = a17 + a28,
+    aj8 = b17 + b28,
+    aj9 = c17 + c28;
+  const aj1 = a17 - a28,
+    aj2 = b17 - b28,
+    aj3 = c17 - c28;
+
+  const jac_59_68 = aj5 * aj9 - aj6 * aj8;
+  const jac_67_49 = aj6 * aj7 - aj4 * aj9;
+  const jac_48_57 = aj4 * aj8 - aj5 * aj7;
+  const jac_38_29 = -aj2 * aj9 + aj3 * aj8;
+  const jac_19_37 = aj1 * aj9 - aj3 * aj7;
+  const jac_27_18 = -aj1 * aj8 + aj2 * aj7;
+  const jac_26_35 = aj2 * aj6 - aj3 * aj5;
+  const jac_34_16 = -aj1 * aj6 + aj3 * aj4;
+  const jac_15_24 = aj1 * aj5 - aj2 * aj4;
+
+  let s2 =
+    jac_59_68 * jac_59_68 + jac_67_49 * jac_67_49 + jac_48_57 * jac_48_57;
+  s2 = Math.max(
+    s2,
+    jac_38_29 * jac_38_29 + jac_19_37 * jac_19_37 + jac_27_18 * jac_27_18,
+  );
+  s2 = Math.max(
+    s2,
+    jac_26_35 * jac_26_35 + jac_34_16 * jac_34_16 + jac_15_24 * jac_15_24,
+  );
+  if (!(s2 > 0)) return 0;
+  const smax = 1 / Math.sqrt(s2);
+
+  // Min over 2×2×2 Gauss volumes (WI=1).
+  let minVol = Infinity;
+  for (const sh of SHAPES) {
+    const detJ = mat3Det(jacobian(sh.dN, x));
+    if (detJ <= 0) return 0;
+    minVol = Math.min(minVol, detJ * W1 * W1 * W1);
+  }
+  return 128 * minVol * smax;
+}
+
+/**
+ * Radioss `sz_dt1` characteristic length from PXC/PYC/PZC (used when FAC_NU<1).
+ * `gfac = (1-2ν)/(1-ν)`; when gfac≥1 the routine returns 0 (caller falls back).
+ */
+export function characteristicLengthPxc(x: Float64Array, poisson = 0.35): number {
+  const gfac = (1 - 2 * poisson) / (1 - poisson);
+  if (!(gfac < 1)) return 0;
+  const { pxc, pyc, pzc } = meanDilatationOperators(x);
+  const pxx = 2 * (pxc[0]! ** 2 + pxc[1]! ** 2 + pxc[2]! ** 2 + pxc[3]! ** 2);
+  const pyy = 2 * (pyc[0]! ** 2 + pyc[1]! ** 2 + pyc[2]! ** 2 + pyc[3]! ** 2);
+  const pzz = 2 * (pzc[0]! ** 2 + pzc[1]! ** 2 + pzc[2]! ** 2 + pzc[3]! ** 2);
+  const pxy = 2 * (pxc[0]! * pyc[0]! + pxc[1]! * pyc[1]! + pxc[2]! * pyc[2]! + pxc[3]! * pyc[3]!);
+  const pxz = 2 * (pxc[0]! * pzc[0]! + pxc[1]! * pzc[1]! + pxc[2]! * pzc[2]! + pxc[3]! * pzc[3]!);
+  const pyz = 2 * (pyc[0]! * pzc[0]! + pyc[1]! * pzc[1]! + pyc[2]! * pzc[2]! + pyc[3]! * pzc[3]!);
+  const aa = -(pxx + pyy + pzz);
+  const bb = gfac * (pxx * pyy + pxx * pzz + pyy * pzz - pxy * pxy - pxz * pxz - pyz * pyz);
+  const p = bb - (1 / 3) * aa * aa;
+  const d = 4 * Math.sqrt((1 / 3) * Math.max(-p, 0)) - (2 / 3) * aa;
+  if (!(d > 0)) return 0;
+  return 1 / Math.sqrt(d);
 }
 
 /** Radioss constant.inc: ZEP3 = 3/10 used in Icpre=1 force splitting. */
