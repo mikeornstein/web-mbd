@@ -399,8 +399,8 @@ double wmbd_hex_internal_forces(
 
   if (jcvt == 1) {
     hex_corot_R(x0, R);
-    rotate_nodes8(R, x0, x_loc, 1);
-    rotate_nodes8(R, v0, v_loc, 1);
+    rotate_nodes8(R, x0, x_loc, 0); /* x_local = R x_global */
+    rotate_nodes8(R, v0, v_loc, 0);
     x = x_loc;
     v = v_loc;
   } else {
@@ -574,7 +574,7 @@ double wmbd_hex_internal_forces(
 
   if (jcvt == 1) {
     memcpy(f_loc, f_out, 24 * sizeof(double));
-    rotate_nodes8(R, f_loc, f_out, 0);
+    rotate_nodes8(R, f_loc, f_out, 1); /* F_global = R^T F_local */
   }
 
   return dU;

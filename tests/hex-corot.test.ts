@@ -25,7 +25,7 @@ describe("hexCorotR (Radioss SORTHO3 / SRCOOR3)", () => {
     expect(Math.abs(det - 1)).toBeLessThan(1e-14);
   });
 
-  it("rotateNodes8 Rᵀ then R recovers vectors", () => {
+  it("rotateNodes8 R then Rᵀ recovers vectors (Radioss convention)", () => {
     const x = new Float64Array([
       0, 0, 0, 1.1, 0.05, 0, 1.05, 1, 0.02, 0, 1, 0, 0.02, 0, 1, 1, 0.05, 1, 1, 1, 1.05, 0, 1, 1,
     ]);
@@ -34,8 +34,8 @@ describe("hexCorotR (Radioss SORTHO3 / SRCOOR3)", () => {
     for (let i = 0; i < 24; i++) v[i] = (i + 1) * 0.01;
     const loc = new Float64Array(24);
     const back = new Float64Array(24);
-    rotateNodes8(R, v, loc, true);
-    rotateNodes8(R, loc, back, false);
+    rotateNodes8(R, v, loc, false); // to local
+    rotateNodes8(R, loc, back, true); // to global
     for (let i = 0; i < 24; i++) {
       expect(Math.abs(back[i]! - v[i]!)).toBeLessThan(1e-14);
     }

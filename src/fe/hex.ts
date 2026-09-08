@@ -512,17 +512,22 @@ export function hexCorotR(x: Float64Array): Float64Array {
   return hexOrthoR(rx, sx, tx);
 }
 
-/** Apply x' = Rᵀ x (or F = R F') for all 8 nodes. `rT` true → Rᵀ, false → R. */
+/** Apply R or Rᵀ to all 8 nodes. `rT` true → Rᵀ, false → R.
+ * Radioss SRCOOR3: x_local = R x_global; SRROTA3 forces: F_global = Rᵀ F_local
+ * with R = [e1|e2|e3] (SORTHO3).
+ */
 export function rotateNodes8(r: Float64Array, src: Float64Array, dst: Float64Array, rT: boolean): void {
   for (let a = 0; a < 8; a++) {
     const ox = src[a * 3]!,
       oy = src[a * 3 + 1]!,
       oz = src[a * 3 + 2]!;
     if (rT) {
+      // Rᵀ: (e1·v, e2·v, e3·v)
       dst[a * 3] = r[0]! * ox + r[1]! * oy + r[2]! * oz;
       dst[a * 3 + 1] = r[3]! * ox + r[4]! * oy + r[5]! * oz;
       dst[a * 3 + 2] = r[6]! * ox + r[7]! * oy + r[8]! * oz;
     } else {
+      // R: e1*vx + e2*vy + e3*vz
       dst[a * 3] = r[0]! * ox + r[3]! * oy + r[6]! * oz;
       dst[a * 3 + 1] = r[1]! * ox + r[4]! * oy + r[7]! * oz;
       dst[a * 3 + 2] = r[2]! * ox + r[5]! * oy + r[8]! * oz;
@@ -548,8 +553,9 @@ export interface HexForceOptions {
   /** Linear bulk viscosity qb (Radioss). Default 0. */
   bulkViscLin?: number;
   /**
-   * Radioss JCVT: 1 = co-rotational (`SRCOOR3`/`SRROTA3`, no Jaumann; Taylor
-   * deck default). 0 = global + `SROTA3` Jaumann. Default 1.
+   * Radioss JCVT: 1 = co-rotational (`SRCOOR3`/`SRROTA3`, no Jaumann).
+   * 0 = global + `SROTA3` Jaumann. Default **0** until co-rot residual vs the
+   * live Taylor oracle is back under gates (deck is JCVT=1; port still drifts Rf).
    */
   jcvt?: 0 | 1;
 }
@@ -570,7 +576,7 @@ export function hexInternalForces(args: {
   const meanAmu = args.options?.meanAmu === true;
   const qa = args.options?.bulkViscQuad ?? 0;
   const qb = args.options?.bulkViscLin ?? 0;
-  const jcvt = args.options?.jcvt ?? 1;
+  const jcvt = args.options?.jcvt ?? 0;
   fOut.fill(0);
   let dU = 0;
 
@@ -582,8 +588,9 @@ export function hexInternalForces(args: {
     R = hexCorotR(args.x);
     const xLoc = new Float64Array(24);
     const vLoc = new Float64Array(24);
-    rotateNodes8(R, args.x, xLoc, true);
-    rotateNodes8(R, args.v, vLoc, true);
+    // Radioss: x_local = R x_global (SRROTA3 with R11,R12,R13 / R21,...)
+    rotateNodes8(R, args.x, xLoc, false);
+    rotateNodes8(R, args.v, vLoc, false);
     x = xLoc;
     v = vLoc;
   }
@@ -772,10 +779,10 @@ export function hexInternalForces(args: {
     }
   }
 
-  // JCVT=1: SRROTA3 — F_global = R F_local
+  // JCVT=1: SRROTA3 — F_global = Rᵀ F_local
   if (R) {
     const fLoc = Float64Array.from(fOut);
-    rotateNodes8(R, fLoc, fOut, false);
+    rotateNodes8(R, fLoc, fOut, true);
   }
 
   return dU;

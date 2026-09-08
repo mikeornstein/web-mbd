@@ -119,7 +119,7 @@ export function hexInternalForcesNative(args: {
     args.mat.hardeningModulus,
   ]);
   args.fOut.fill(0);
-  const jcvt = args.options?.jcvt ?? 1;
+  const jcvt = args.options?.jcvt ?? 0;
   const dU = nativeLib.wmbd_hex_internal_forces(
     args.x,
     args.v,
