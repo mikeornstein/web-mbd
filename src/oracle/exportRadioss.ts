@@ -26,11 +26,6 @@ export function snapCoordsToRadiossF20(coords: ArrayLike<number>): Float64Array 
   return out;
 }
 
-/** @deprecated Use formatRadiossF20. */
-function f20(v: number): string {
-  return formatRadiossF20(v);
-}
-
 /** Format a Radioss 10-column integer field. */
 function i10(v: number): string {
   return String(v).padStart(10, " ");
@@ -56,7 +51,7 @@ export function exportTaylorRadiossDecks(model: ModelIR): {
   for (let a = 0; a < nNodes; a++) {
     const id = a + 1;
     nodes.push(
-      `${i10(id)}${f20(snapped[a * 3]!)}${f20(snapped[a * 3 + 1]!)}${f20(snapped[a * 3 + 2]!)}`,
+      `${i10(id)}${formatRadiossF20(snapped[a * 3]!)}${formatRadiossF20(snapped[a * 3 + 1]!)}${formatRadiossF20(snapped[a * 3 + 2]!)}`,
     );
   }
 
@@ -93,18 +88,18 @@ Taylor bar OFHC-like J2 linear hardening
         17         4         1                   0         0         0         1         0
 /MAT/PLAS_JOHNS/1
 taylor_copper
-${f20(mat.density)}${f20(0)}
-${f20(mat.young)}${f20(mat.poisson)}${i10(0)}
-${f20(mat.yieldStress)}${f20(mat.hardeningModulus)}${f20(1)}${f20(0)}${f20(0)}
-${f20(0)}${f20(1)}${i10(0)}${i10(0)}${f20(0)}${f20(0)}
-${f20(0)}${f20(0)}${f20(0)}${f20(0)}
+${formatRadiossF20(mat.density)}${formatRadiossF20(0)}
+${formatRadiossF20(mat.young)}${formatRadiossF20(mat.poisson)}${i10(0)}
+${formatRadiossF20(mat.yieldStress)}${formatRadiossF20(mat.hardeningModulus)}${formatRadiossF20(1)}${formatRadiossF20(0)}${formatRadiossF20(0)}
+${formatRadiossF20(0)}${formatRadiossF20(1)}${i10(0)}${i10(0)}${formatRadiossF20(0)}${formatRadiossF20(0)}
+${formatRadiossF20(0)}${formatRadiossF20(0)}${formatRadiossF20(0)}${formatRadiossF20(0)}
 /NODE
 ${nodes.join("\n")}
 /PROP/SOLID/1
 taylor_hex_full
 ${i10(17)}${i10(4)}${i10(0)}${i10(1)}${i10(0)}${i10(0)}${i10(0)}${i10(1)}${i10(0)}
-${f20(1e-20)}${f20(1e-21)}
-${f20(0)}
+${formatRadiossF20(1e-20)}${formatRadiossF20(1e-21)}
+${formatRadiossF20(0)}
 /PART/1
 taylor_bar
          1         1         0
@@ -115,13 +110,13 @@ all_nodes
 ${grnodLines.join("\n")}
 /INIVEL/TRA/1
 impact_velocity
-${f20(initialVelocity[0])}${f20(initialVelocity[1])}${f20(initialVelocity[2])}${i10(1)}${i10(0)}
+${formatRadiossF20(initialVelocity[0])}${formatRadiossF20(initialVelocity[1])}${formatRadiossF20(initialVelocity[2])}${i10(1)}${i10(0)}
 /RWALL/PLANE/1
 impact_wall
 ${i10(0)}${i10(0)}${i10(1)}${i10(0)}
-${f20(0)}${f20(0)}${f20(0)}${f20(0)}${i10(0)}
-${f20(wall.point[0])}${f20(wall.point[1])}${f20(wall.point[2])}
-${f20(wall.point[0] + wall.normal[0])}${f20(wall.point[1] + wall.normal[1])}${f20(wall.point[2] + wall.normal[2])}
+${formatRadiossF20(0)}${formatRadiossF20(0)}${formatRadiossF20(0)}${formatRadiossF20(0)}${i10(0)}
+${formatRadiossF20(wall.point[0])}${formatRadiossF20(wall.point[1])}${formatRadiossF20(wall.point[2])}
+${formatRadiossF20(wall.point[0] + wall.normal[0])}${formatRadiossF20(wall.point[1] + wall.normal[1])}${formatRadiossF20(wall.point[2] + wall.normal[2])}
 /ANIM/VERS
         44
 /END
@@ -135,17 +130,17 @@ ${f20(wall.point[0] + wall.normal[0])}${f20(wall.point[1] + wall.normal[1])}${f2
   // /STATE/DT/ALL tags every node (NSTATALL); dump at fixture endTime.
   const engine = `#RADIOSS ENGINE
 /RUN/${root}/1
-${f20(tEnd)}
+${formatRadiossF20(tEnd)}
 /DT
-${f20(dtScale)}${f20(0)}
+${formatRadiossF20(dtScale)}${formatRadiossF20(0)}
 /ANIM/DT
-${f20(0)}${f20(controls.endTime)}
+${formatRadiossF20(0)}${formatRadiossF20(controls.endTime)}
 /ANIM/NODA/DT
 /ANIM/ELEM/EPSP
 /STATE/DT/ALL
-${f20(controls.endTime)}${f20(controls.endTime)}
+${formatRadiossF20(controls.endTime)}${formatRadiossF20(controls.endTime)}
 /TFILE/4
-${f20(model.output.historyInterval)}
+${formatRadiossF20(model.output.historyInterval)}
 /PRINT/-1/100
 /MON/ON
 /PARITH/OFF
