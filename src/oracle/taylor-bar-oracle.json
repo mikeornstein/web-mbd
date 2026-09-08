@@ -1,11 +1,11 @@
 {
   "webmbd": {
-    "lengthRatio": 0.6665239193357085,
-    "radiusRatio": 2.2315147256087657,
-    "axialShortening": 0.010804625013523042,
-    "maxDisplacement": 0.01080657337167788,
-    "maxEqPlasticStrain": 2.8281726373295455,
-    "energyErrorPct": -4.460696873846177e-13,
+    "lengthRatio": 0.6665239193357144,
+    "radiusRatio": 2.2315147256087484,
+    "axialShortening": 0.010804625013522851,
+    "maxDisplacement": 0.010806573371677859,
+    "maxEqPlasticStrain": 2.8281726373294007,
+    "energyErrorPct": 9.912659719658173e-14,
     "nSteps": 2568
   },
   "oracle": {
@@ -18,8 +18,8 @@
   },
   "compare": {
     "ok": true,
-    "lengthRelError": 0.000056718385815651753,
-    "radiusRelError": 0.0001680286591381292,
+    "lengthRelError": 0.00005671838580682409,
+    "radiusRelError": 0.0001680286591458892,
     "tolerances": {
       "lengthRatioRel": 0.001,
       "radiusRatioRel": 0.002

@@ -64,7 +64,8 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
       h = Math.min(h, characteristicLength(xScratch, model.material.poisson));
     }
     const dtNew = model.controls.cfl * (h / cd);
-    if (dtNew > 0 && Number.isFinite(dtNew)) dt = dtNew;
+    // Radioss resol.F: DT2 = MIN(DT2, 1.1*DT2OLD, DTMX)
+    if (dtNew > 0 && Number.isFinite(dtNew)) dt = Math.min(dtNew, 1.1 * dt);
   };
 
   const lameParams = lame(model.material.young, model.material.poisson);

@@ -7,8 +7,8 @@ import {
 } from "./materialJ2.js";
 import { mat3Det, mat3Inverse } from "./math3.js";
 
-const G = 1 / Math.sqrt(3);
-const GAUSS = [-G, G];
+/** Radioss `s8eprst_ini` PG=.577350269189625D0 (not 1/√3, which is ~1 ulp larger). */
+const G = 0.577350269189625;
 const W1 = 1;
 
 const CORNERS: [number, number, number][] = [
@@ -22,21 +22,29 @@ const CORNERS: [number, number, number][] = [
   [-1, 1, 1],
 ];
 
+/** Radioss 2×2×2 order: ξ fastest, then η, then ζ (`KSI/ETA/ZETA` in `s8eprst_ini`). */
+const RADIOSS_GAUSS: [number, number, number][] = [
+  [-G, -G, -G],
+  [G, -G, -G],
+  [-G, G, -G],
+  [G, G, -G],
+  [-G, -G, G],
+  [G, -G, G],
+  [-G, G, G],
+  [G, G, G],
+];
+
 const SHAPES: { dN: number[][] }[] = [];
-for (const xi of GAUSS) {
-  for (const eta of GAUSS) {
-    for (const zeta of GAUSS) {
-      const dN: number[][] = [];
-      for (const c of CORNERS) {
-        dN.push([
-          0.125 * c[0] * (1 + c[1] * eta) * (1 + c[2] * zeta),
-          0.125 * c[1] * (1 + c[0] * xi) * (1 + c[2] * zeta),
-          0.125 * c[2] * (1 + c[0] * xi) * (1 + c[1] * eta),
-        ]);
-      }
-      SHAPES.push({ dN });
-    }
+for (const [xi, eta, zeta] of RADIOSS_GAUSS) {
+  const dN: number[][] = [];
+  for (const c of CORNERS) {
+    dN.push([
+      0.125 * c[0] * (1 + c[1] * eta) * (1 + c[2] * zeta),
+      0.125 * c[1] * (1 + c[0] * xi) * (1 + c[2] * zeta),
+      0.125 * c[2] * (1 + c[0] * xi) * (1 + c[1] * eta),
+    ]);
   }
+  SHAPES.push({ dN });
 }
 
 function jacobian(dN: number[][], x: Float64Array): number[] {
