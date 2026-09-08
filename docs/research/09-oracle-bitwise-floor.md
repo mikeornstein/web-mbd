@@ -35,3 +35,9 @@ Independent TypeScript vs gfortran force evaluations will not match IEEE bits at
 4. Compare float64 nodal state (not anim float32 VTK) for `Object.is`.
 
 Until that kernel is shared, CI gates stay relative (tightened) and `bitwiseEqual` remains the recorded target flag on the pin.
+
+## Shared kernel status (web-mbd)
+
+- C mirror of H8C/LAW2: `native/force-kernel/` (ABI in `force_kernel.h`)
+- Proven **TypeScript ↔ C `Object.is`** on one-hex forces and on coarse full solves via `SolveOptions.hexForce` + `src/cli/forceNative.ts` (koffi)
+- Remaining for OR parity: replace the C mirror body with OpenRadioss `s8eforc3` / `m2law` (same ABI), keeping the web-mbd CD loop
