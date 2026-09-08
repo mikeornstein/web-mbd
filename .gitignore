@@ -3,10 +3,12 @@ dist
 dist-ssr
 *.local
 *.tsbuildinfo
+*.log
 .DS_Store
 .env
 .env.*
 coverage
+artifacts
 test-results
 playwright-report
 blob-report

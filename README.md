@@ -25,14 +25,25 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 | --- | --- |
 | Rigid multibody (joints, constraints, contacts) | planned |
 | Flexible bodies (linear modal + nonlinear FE) | planned |
-| Explicit dynamics (central difference / symplectic) | planned |
+| Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar) |
 | Implicit dynamics (Newmark / HHT, Newton–Raphson) | planned |
-| Nonlinear materials (plasticity, rubber, foam) | planned |
-| Contact & impact (penalty, constraint, mortar) | planned |
-| Shells, solids, beams, discrete elements | planned |
+| Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** |
+| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** |
+| Shells, solids, beams, discrete elements | **hex solids MVP** |
 | GPU time integration (WebGPU) | planned |
-| Interactive 3D pre/post | planned |
+| Interactive 3D pre/post | planned (CLI runner today) |
 | LS-DYNA / OpenRadioss deck import | planned |
+
+### First model: Taylor bar
+
+Copper-like cylinder into a rigid wall — the Layer-1 gate from the research notes. See [`docs/mvp-taylor-bar.md`](docs/mvp-taylor-bar.md).
+
+```bash
+pnpm install
+pnpm test          # unit + Taylor golden / determinism
+pnpm taylor        # headless Taylor bar solve + metrics
+pnpm dev           # Vite app shell
+```
 
 This repository is the product, not a paper. Algorithms land here when they run in the browser on real models.
 
@@ -74,7 +85,7 @@ Prior-art research (OpenRadioss Confluence + broader solver landscape) lives in 
 
 ## Status
 
-Greenfield. Research docs are in-tree; the solver implementation is next.
+Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via `pnpm test` / `pnpm taylor`. WebGPU and unified pre/post are next.
 
 If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.
 
