@@ -139,14 +139,15 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     return 0;
   };
 
-  const applyWallKinematics = (): void => {
+  const applyWallKinematics = (dt2: number, dt12: number): void => {
     if (wallKind === "kinematic") {
       applyRigidWallKinematic({
         wall,
         coords: x,
         velocities: v,
         accelerations: acc,
-        dt,
+        dt: dt2,
+        dt12,
       });
     }
   };
@@ -159,12 +160,13 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
     acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
   }
-  applyWallKinematics();
+  applyWallKinematics(dt, 0.5 * dt);
   for (let i = 0; i < v.length; i++) v[i]! += 0.5 * dt * acc[i]!;
-  applyWallKinematics();
+  applyWallKinematics(dt, 0.5 * dt);
 
   history.push(sample(contactEnergy));
   nextSample = model.output.historyInterval;
+  let dtPrev = dt;
 
   while (t < model.controls.endTime - 1e-18 && step < maxSteps) {
     if (performance.now() - wallClock0 > maxWallMs) {
@@ -180,6 +182,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
     const contactBefore = contactEnergy;
 
+    // Radioss: advance positions with DT2 (= current dt).
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
     t += dt;
     step += 1;
@@ -192,10 +195,14 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
       acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
       acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
     }
-    applyWallKinematics();
-    for (let i = 0; i < v.length; i++) v[i]! += dt * acc[i]!;
-    applyWallKinematics();
+
+    // Radioss variable-dt: DT1=dtPrev, compute DT2, DT12=½(DT1+DT2), V+=A·DT12.
+    dtPrev = dt;
     recomputeDt();
+    const dt12 = 0.5 * (dtPrev + dt);
+    applyWallKinematics(dt, dt12);
+    for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
+    applyWallKinematics(dt, dt12);
 
     let keAfter = 0;
     for (let i = 0; i < nNodes; i++) {

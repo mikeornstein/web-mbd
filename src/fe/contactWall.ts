@@ -29,23 +29,28 @@ export function applyRigidWallPenalty(args: {
 /**
  * OpenRadioss `/RWALL/PLANE` ITIED=0 (slide) kinematic constraint.
  *
- * Predicts mid-step motion `X + (V+A·dt/2)·dt`. If that prediction penetrates
- * and the relative normal velocity approaches the wall, strip the normal
- * components of V and A. Positions are **not** hard-projected (matches `rgwall.F`).
+ * Predicts mid-step motion with Radioss variable-dt factors:
+ * `VX = V + A·DT12`, `UX = X + VX·DT2` where `DT12 = ½(DT1+DT2)`.
+ * If that prediction penetrates and the relative normal velocity approaches
+ * the wall, strip the normal components of V and A. Positions are **not**
+ * hard-projected (matches `rgwall.F`).
  */
 export function applyRigidWallKinematic(args: {
   wall: RigidWallPlane;
   coords: Float64Array;
   velocities: Float64Array;
   accelerations?: Float64Array;
+  /** Current / next step size (Radioss DT2). */
   dt?: number;
+  /** Half-sum of consecutive steps (Radioss DT12). Defaults to dt/2. */
+  dt12?: number;
 }): { nContact: number } {
   const { wall, coords, velocities } = args;
   const [px, py, pz] = wall.point;
   const [nx, ny, nz] = wall.normal;
   const acc = args.accelerations;
-  const dt = args.dt ?? 0;
-  const dt12 = 0.5 * dt;
+  const dt2 = args.dt ?? 0;
+  const dt12 = args.dt12 ?? 0.5 * dt2;
   let nContact = 0;
   const nNodes = coords.length / 3;
 
@@ -55,13 +60,13 @@ export function applyRigidWallKinematic(args: {
     const ay = acc ? acc[i + 1]! : 0;
     const az = acc ? acc[i + 2]! : 0;
 
-    // Radioss: VX = V + A*DT12 ; UX = X + VX*DT2 with DT2≈dt
+    // Radioss: VX = V + A*DT12 ; UX = X + VX*DT2
     const vxP = velocities[i]! + ax * dt12;
     const vyP = velocities[i + 1]! + ay * dt12;
     const vzP = velocities[i + 2]! + az * dt12;
-    const ux = coords[i]! + vxP * dt;
-    const uy = coords[i + 1]! + vyP * dt;
-    const uz = coords[i + 2]! + vzP * dt;
+    const ux = coords[i]! + vxP * dt2;
+    const uy = coords[i + 1]! + vyP * dt2;
+    const uz = coords[i + 2]! + vzP * dt2;
     const dp = (ux - px) * nx + (uy - py) * ny + (uz - pz) * nz;
     if (dp > 0) continue;
 

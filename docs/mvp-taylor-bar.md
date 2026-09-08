@@ -49,20 +49,20 @@ Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
 | | web-mbd | OpenRadioss | rel. error |
 | --- | --- | --- | --- |
-| L_f / L₀ | ~0.6667 | ~0.6666 | ~0.015% |
-| R_f / R₀ | ~2.231 | ~2.232 | ~0.04% |
+| L_f / L₀ | ~0.66652 | ~0.66656 | ~0.006% |
+| R_f / R₀ | ~2.2315 | ~2.2319 | ~0.017% |
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
 - \|Δ(L_f/L₀)\| / oracle ≤ 0.1%
 - \|Δ(R_f/R₀)\| / oracle ≤ 0.2%
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.04% Rf / ~0.015% Lf after H8C PXC Icpre forces, SMAX `/DT`, and `s8edefo3` DSV `vol0` correction. Remaining work: finer RWALL/foot timing and machine-eps floor across JS vs Fortran.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.017% Rf / ~0.006% Lf (~5 μm max nearest-neighbor nodal gap) after H8C PXC Icpre, SMAX `/DT`, DSV `vol0`, and Radioss variable-dt (`DT12=½(DT1+DT2)`). Remaining floor: JS vs Fortran FP / assembly-order differences.
 
 ## Element / mesh notes
 
 - **Element:** 8-node hex, trilinear, **2×2×2 Gauss**, updated Lagrangian, Radioss SROTA3 Jaumann, LAW2-style hypoelastic J2 + bulk EOS pressure, Icpre via DSV vol0 + ZEP3 strip + PXC mid-face pressure forces, kinematic rigid wall.
-- **CFL:** Radioss `128·V·SMAX` DELTAX (not ∛V / min-edge), scale 0.9, adaptive.
+- **CFL / time:** Radioss `128·V·SMAX` DELTAX, scale 0.9, adaptive with `DT12=½(DT1+DT2)` velocity update.
 - **Mesh:** `src/mesh/cylinderHex.ts` structured generator (square mapped to disk, extruded in Z). Gmsh is still future work.
 
 ## Layout
