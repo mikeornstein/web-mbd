@@ -47,6 +47,8 @@ export interface ModelIR {
     endTime: number;
     cfl: number;
     fixedDt?: number;
+    /** Recompute CFL dt from current mesh each step (Radioss-like). Default true. */
+    adaptiveDt?: boolean;
     maxSteps?: number;
     /** If true, never early-exit on residual KE (needed for oracle parity). */
     runToEnd?: boolean;

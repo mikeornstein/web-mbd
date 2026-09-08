@@ -97,7 +97,30 @@ export function createHexGpStates(x0?: Float64Array): J2State[] {
 }
 
 export function characteristicLength(x0: Float64Array): number {
-  return Math.cbrt(Math.abs(hexVolume(x0)));
+  // Radioss H8C DELTAX is more conservative than ∛V; min edge length tracks
+  // their initial critical dt much more closely on this mesh (~0.4 mm vs ∛V~1.1 mm).
+  let minEdge = Infinity;
+  const edges: [number, number][] = [
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [3, 0],
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [7, 4],
+    [0, 4],
+    [1, 5],
+    [2, 6],
+    [3, 7],
+  ];
+  for (const [a, b] of edges) {
+    const dx = x0[a * 3]! - x0[b * 3]!;
+    const dy = x0[a * 3 + 1]! - x0[b * 3 + 1]!;
+    const dz = x0[a * 3 + 2]! - x0[b * 3 + 2]!;
+    minEdge = Math.min(minEdge, Math.hypot(dx, dy, dz));
+  }
+  return minEdge;
 }
 
 export interface HexForceOptions {

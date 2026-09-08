@@ -34,7 +34,7 @@ pnpm oracle:taylor
 | E, ν, σ_y, H | 117 GPa, 0.35, 400 MPa, 100 MPa |
 | ρ | 8930 kg/m³ |
 | Default mesh | structured square→disk hex, **nSide=6, nZ=16** (576 hexes) — **not Gmsh** |
-| CFL | 0.2 |
+| CFL | 0.9 (Radioss `/DT` scale) + min-edge length + adaptive dt |
 | Wall | kinematic (Radioss `/RWALL` style) |
 
 Acceptance (refined mesh, H8C/LAW2-aligned):
@@ -49,15 +49,15 @@ Pinned OpenRadioss same-mesh oracle (`src/oracle/taylor-bar-oracle.json`):
 
 | | web-mbd | OpenRadioss | rel. error |
 | --- | --- | --- | --- |
-| L_f / L₀ | ~0.6668 | ~0.6666 | ~0.05% |
-| R_f / R₀ | ~2.256 | ~2.232 | ~1.1% |
+| L_f / L₀ | ~0.6667 | ~0.6666 | ~0.02% |
+| R_f / R₀ | ~2.252 | ~2.232 | ~0.9% |
 
 Oracle gates (CI uses the pin; live re-run via `pnpm oracle:taylor`):
 
 - \|Δ(L_f/L₀)\| / oracle ≤ 0.5%
 - \|Δ(R_f/R₀)\| / oracle ≤ 2%
 
-**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~1% foot radius / ~0.09 mm max nearest-neighbor nodal gap after aligning kinematic wall, mean-pressure Icpre, SROTA3 Jaumann, and LAW2 bulk EOS pressure \(P=K(V_0/V-1)\). Remaining work: Radioss H8C selective RI force path (`s8efint3`/`s8zfintp3`), adaptive `/DT`, and contact timing.
+**Parity target:** with identical model / inputs / BCs, web-mbd and OpenRadioss should be bitwise identical (`Object.is` on shape metrics and nearest-neighbor–matched nodal coords). Current residual is ~0.9% foot radius / ~0.09 mm max nearest-neighbor nodal gap after aligning kinematic wall, mean-pressure Icpre, SROTA3 Jaumann, LAW2 bulk EOS pressure, and Radioss-like CFL (min-edge + scale 0.9). Remaining work: H8C selective RI force path and exact DELTAX/RWALL timing.
 
 ## Element / mesh notes
 

@@ -8,7 +8,8 @@ import { createCylinderHexMesh } from "../mesh/cylinderHex.js";
  * - L0 = 32.4 mm, R0 = 3.2 mm
  * - V0 = 227 m/s into a rigid wall at z = 0
  *
- * Default mesh is refined (nSide=6, nZ=16) with CFL 0.25 for stable full-integration hexes.
+ * Default mesh is refined (nSide=6, nZ=16) with CFL 0.9 + min-edge length
+ * (Radioss-like /DT scale) for stable full-integration hexes.
  * Acceptance bands are tightened against the OpenRadioss same-mesh oracle (see
  * `src/oracle/` and `docs/mvp-taylor-bar.md`).
  */
@@ -61,9 +62,10 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
     reference: { length0, radius0 },
     controls: {
       endTime: 80e-6,
-      cfl: 0.2,
+      cfl: 0.9,
       maxSteps: 2_000_000,
       runToEnd: true,
+      adaptiveDt: true,
     },
     output: {
       historyInterval: 2e-6,
@@ -72,9 +74,8 @@ export function createTaylorBarModel(options: TaylorFixtureOptions = {}): ModelI
 }
 
 /**
- * Layer-1 bands for the refined default mesh (6×6×16 hexes, CFL 0.2) after
- * aligning to Radioss H8C / LAW2 (kinematic RWALL, Icpre mean pressure, M2LAW
- * bulk EOS pressure). Shape sits next to the same-mesh OpenRadioss oracle.
+ * Layer-1 bands for the refined default mesh (6×6×16 hexes, CFL 0.9, min-edge).
+ * Shape sits next to the same-mesh OpenRadioss oracle after H8C/LAW2 alignment.
  */
 export const TAYLOR_ACCEPTANCE = {
   lengthRatio: { min: 0.65, max: 0.69 },

@@ -51,9 +51,21 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
   }
 
   const cd = dilatationalWaveSpeed(model.material);
-  const dtCrit = minH / cd;
-  let dt = model.controls.fixedDt ?? model.controls.cfl * dtCrit;
-  if (!(dt > 0) || dt > dtCrit) dt = model.controls.cfl * dtCrit;
+  const dtCrit0 = minH / cd;
+  let dt = model.controls.fixedDt ?? model.controls.cfl * dtCrit0;
+  if (!(dt > 0) || (!model.controls.fixedDt && dt > dtCrit0)) dt = model.controls.cfl * dtCrit0;
+  const adaptiveDt = model.controls.fixedDt === undefined && model.controls.adaptiveDt !== false;
+
+  const recomputeDt = (): void => {
+    if (!adaptiveDt) return;
+    let h = Infinity;
+    for (let e = 0; e < nHex; e++) {
+      gatherHex(x, hexConn[e]!, xScratch);
+      h = Math.min(h, characteristicLength(xScratch));
+    }
+    const dtNew = model.controls.cfl * (h / cd);
+    if (dtNew > 0 && Number.isFinite(dtNew)) dt = dtNew;
+  };
 
   const lameParams = lame(model.material.young, model.material.poisson);
   const bulk = lameParams.bulk;
@@ -196,6 +208,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     applyWallKinematics();
     for (let i = 0; i < v.length; i++) v[i]! += dt * acc[i]!;
     applyWallKinematics();
+    recomputeDt();
 
     let keAfter = 0;
     for (let i = 0; i < nNodes; i++) {
