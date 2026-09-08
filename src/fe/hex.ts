@@ -200,6 +200,10 @@ export function hexInternalForces(args: {
   }
 
   const cd = dilatationalWaveSpeed(mat);
+  let vol0Sum = 0;
+  for (let gp = 0; gp < 8; gp++) vol0Sum += states[gp]!.vol0;
+  const amuElem =
+    constantPressure && vol0Sum > 0 ? vol0Sum / Math.max(volSum, 1e-30) - 1 : undefined;
 
   for (let gp = 0; gp < 8; gp++) {
     const gpCache = cache[gp]!;
@@ -235,26 +239,7 @@ export function hexInternalForces(args: {
     sigma[4] = s5 + wxx * (s2 - s3) + wzz * s6 - wyy * s4;
     sigma[5] = s6 + wyy * (s3 - s1) + wxx * s4 - wzz * s5;
 
-    j2Update(mat, state, d, dt, vol);
-  }
-
-  // Icpre=1: replace per-GP pressure with the volume-weighted element mean.
-  if (constantPressure) {
-    let pVol = 0;
-    for (let gp = 0; gp < 8; gp++) {
-      const sigma = states[gp]!.stress;
-      const p = -(sigma[0]! + sigma[1]! + sigma[2]!) / 3;
-      pVol += p * cache[gp]!.vol;
-    }
-    const pBar = volSum > 0 ? pVol / volSum : 0;
-    for (let gp = 0; gp < 8; gp++) {
-      const sigma = states[gp]!.stress;
-      const p = -(sigma[0]! + sigma[1]! + sigma[2]!) / 3;
-      const dp = pBar - p;
-      sigma[0]! -= dp;
-      sigma[1]! -= dp;
-      sigma[2]! -= dp;
-    }
+    j2Update(mat, state, d, dt, vol, amuElem);
   }
 
   for (let gp = 0; gp < 8; gp++) {

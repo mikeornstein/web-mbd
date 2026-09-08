@@ -47,6 +47,7 @@ export function j2Update(
   d: Float64Array,
   dt: number,
   vol: number,
+  amuOverride?: number,
 ): void {
   const { mu, bulk } = lame(mat.young, mat.poisson);
   const s = state.stress;
@@ -90,7 +91,7 @@ export function j2Update(
   }
 
   const vol0 = state.vol0 > 0 ? state.vol0 : vol;
-  const amu = vol0 / Math.max(vol, 1e-30) - 1;
+  const amu = amuOverride ?? vol0 / Math.max(vol, 1e-30) - 1;
   const pNew = bulk * amu;
   s[0]! -= pNew;
   s[1]! -= pNew;
