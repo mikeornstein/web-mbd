@@ -103,3 +103,17 @@ C-----------------------------------------------
 C-----------------------------------------------
       RETURN
       END
+
+      SUBROUTINE WMBD_OR_SET_GROUP(NNOD, NELS)
+#include "implicit_f.inc"
+#include "com04_c.inc"
+#include "vect01_c.inc"
+      INTEGER NNOD, NELS
+      NUMNOD  = NNOD
+      NUMELS  = NELS
+      NUMELS8 = NELS
+      LFT     = 1
+      LLT     = NELS
+      NFT     = 0
+      RETURN
+      END

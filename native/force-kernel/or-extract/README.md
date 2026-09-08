@@ -17,6 +17,7 @@ behind the existing `wmbd_hex_internal_forces` ABI so the web-mbd CD loop can
 | TS ↔ C mirror `Object.is` | done (`force_kernel.c`, golden + solver FFI) |
 | Float64 OR state compare (`.sta`) | done (`shapeFromSta`, oracle runner) |
 | OR `s8eforc3`/`m2law` behind ABI | **libwmbd_or_hex.so** packs one-hex ELBUF/IPARG/PM/GEO via starter `WMBD_ALLOCBUF_AUTO`; default rc=`-2`; `WMBD_OR_CALL_S8E=1` calls `S8EFORC3` and returns forces (near-match vs C mirror on unit cube) |
+| Multi-NEL PoC (coarse 16 hex) | `wmbd_mesh_internal_forces_or` — one `S8EFORC3` for NEL=16; **Object.is with NEL=1**, still few-ulp vs live at step ≥3 (`scripts/mvsiz-nel16-probe.ts`) |
 
 ## Build SHARED extract (in progress)
 

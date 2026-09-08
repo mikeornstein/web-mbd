@@ -36,9 +36,10 @@ sed 's/SUBROUTINE ALLOCBUF_AUTO/SUBROUTINE WMBD_ALLOCBUF_AUTO/g; s/allocbuf_auto
 gfortran $FFLAGS $FINCS_STARTER -c -o "$OUT_DIR/wmbd_allocbuf_auto.o" "$OUT_DIR/wmbd_allocbuf_auto.F"
 
 gfortran $FFLAGS $FINCS -c -o "$OUT_DIR/or_hex_force.o" "$ROOT/or_hex_force.F90"
+gfortran $FFLAGS $FINCS -c -o "$OUT_DIR/or_mesh_force.o" "$ROOT/or_mesh_force.F90"
 cc -O2 -fPIC -c -o "$OUT_DIR/or_hex_pthread.o" "$ROOT/or_hex_pthread.c"
 
-echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack)"
+echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack + mesh)"
 (
   cd "$CBDIR"
   # shellcheck disable=SC2086
@@ -50,6 +51,7 @@ echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack)"
     "$OUT_DIR/or_hex_commons.o" \
     "$OUT_DIR/wmbd_allocbuf_auto.o" \
     "$OUT_DIR/or_hex_force.o" \
+    "$OUT_DIR/or_mesh_force.o" \
     "$OUT_DIR/or_hex_pthread.o" \
     -lrt -lpthread \
     "$OR_SRC/extlib/zlib/linux64/lib/libz.a" \
@@ -58,5 +60,5 @@ echo "relinking libwmbd_or_hex.so (OR objects + wrapper + pack)"
 )
 
 ls -la "$OUT_DIR/libwmbd_or_hex.so"
-nm -D "$OUT_DIR/libwmbd_or_hex.so" | grep -E 'wmbd_hex_internal_forces_or|wmbd_or_set_dt1|s8eforc3_' | head
+nm -D "$OUT_DIR/libwmbd_or_hex.so" | grep -E 'wmbd_hex_internal_forces_or|wmbd_mesh_internal_forces_or|wmbd_or_set_dt1|s8eforc3_' | head
 echo "OK: $OUT_DIR/libwmbd_or_hex.so"

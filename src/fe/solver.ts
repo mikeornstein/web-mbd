@@ -38,12 +38,27 @@ export interface SolveOptions {
    * Default: TypeScript `hexInternalForces`.
    */
   hexForce?: HexForceFn;
+  /**
+   * Optional mesh-level force assembly (replaces per-hex `hexForce` loop).
+   * Must fill `f` with the same nodal internal forces as element-major
+   * `f -= fHex` (i.e. −FORINT / +∫Bᵀσ convention already applied).
+   */
+  assembleForces?: (args: {
+    x: Float64Array;
+    v: Float64Array;
+    hexStates: J2State[][];
+    hexConn: number[][];
+    mat: MaterialJ2Linear;
+    dt: number;
+    f: Float64Array;
+  }) => void;
 }
 
 export function solveExplicit(model: ModelIR, options: SolveOptions = {}): SolveResult {
   assertModel(model);
   const wallClock0 = performance.now();
   const hexForce = options.hexForce ?? hexInternalForces;
+  const assembleForces = options.assembleForces;
 
   const nNodes = model.mesh.coords.length / 3;
   const nHex = model.mesh.hexes.length / 8;
@@ -151,6 +166,18 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
 
   const assembleInternal = (): void => {
     f.fill(0);
+    if (assembleForces) {
+      assembleForces({
+        x,
+        v,
+        hexStates,
+        hexConn,
+        mat: model.material,
+        dt,
+        f,
+      });
+      return;
+    }
     for (let e = 0; e < nHex; e++) {
       const conn = hexConn[e]!;
       gatherHex(x, conn, xScratch);

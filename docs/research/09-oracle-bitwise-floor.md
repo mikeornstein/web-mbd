@@ -150,8 +150,24 @@ First TS↔live break is a degree-2 cylinder-corner node. SCUMU3 vs
 element-major assemble cannot explain it (IEEE `a+b==b+a` for two terms).
 Live engine packs **NEL=min(128,NUMELS)** into one `S8EFORC3` (`forint.F` /
 `mvsiz_p.inc`); one-hex OR-ABI and TS share a **scalar** contraction order.
-**Production adaptive Object.is needs a FORINT-style multi-element force path**,
-not further SSP/DELTAX tweaks.
+
+### Multi-NEL PoC (`WMBD_OR_CALL_S8E=1`, coarse 2×2×4, fixed Δt=2.5e-8)
+
+`wmbd_mesh_internal_forces_or` packs all **16** hexes into one `S8EFORC3`
+(`or_mesh_force.F90`, probe `scripts/mvsiz-nel16-probe.ts`, results
+`docs/research/mvsiz-nel16-probe.json`):
+
+| Steps | TS ↔ live | OR NEL=1 ↔ live | OR NEL=16 ↔ live | OR NEL=1 ↔ NEL=16 |
+| --- | --- | --- | --- | --- |
+| 1–2 | Object.is | Object.is | Object.is | Object.is |
+| ≥3 | false (2 dofs, 1 ulp) | false (8 dofs, 1 ulp) | false (8 dofs, **same**) | **Object.is** |
+
+**Conclusion:** NEL=16 group evaluation is bit-identical to sixteen NEL=1
+calls on this mesh — the remaining few-ulp floor vs live is **not** explained
+by MVSIZ packet width alone. Suspect live-only differences outside the
+one-group extract (starter IXS/group ordering, IFRAME/JCVT effective state,
+wall/DT bookkeeping, or engine build flags). Production adaptive Object.is
+remains open.
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.
