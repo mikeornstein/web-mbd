@@ -1,10 +1,9 @@
 /**
- * OpenRadioss-backed hex force stub.
+ * OpenRadioss-backed hex force stub (C fallback).
  *
- * libor_h8c.so exposes s8eforc3_ / m2law_, but those entry points need a full
- * Radioss element group context (ELBUF_TAB, PM, GEO, IPARG, MVSIZ buffers,
- * timers, …). Until that packing lands, this returns -1 and callers must use
- * the C mirror (wmbd_hex_internal_forces).
+ * Prefer the BIND(C) symbol in libwmbd_or_hex.so (or_hex_force.F90), which
+ * shares /COM08/ with s8eforc3_. Both return -1 until ELBUF/IPARG/PM packing
+ * lands; callers must use the C mirror (wmbd_hex_internal_forces).
  */
 #include "or_bridge.h"
 

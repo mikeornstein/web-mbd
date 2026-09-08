@@ -16,23 +16,26 @@ behind the existing `wmbd_hex_internal_forces` ABI so the web-mbd CD loop can
 | --- | --- |
 | TS ↔ C mirror `Object.is` | done (`force_kernel.c`, golden + solver FFI) |
 | Float64 OR state compare (`.sta`) | done (`shapeFromSta`, oracle runner) |
-| OR `s8eforc3`/`m2law` behind ABI | **libor_h8c.so built** (PIC SHARED); symbols resolve via smoke test; MVSIZ packing TODO |
+| OR `s8eforc3`/`m2law` behind ABI | **libwmbd_or_hex.so** = PIC engine objects + BIND(C) wrapper; `/COM08/` DT1 shared; **ELBUF/IPARG/PM packing TODO** (entry returns `-1`) |
 
 ## Build SHARED extract (in progress)
 
 ```bash
 # One-time: OpenRadioss_extlib v75 under /tmp/OpenRadioss-src/extlib
 ./build-shared-engine.sh   # → libor_h8c.so (PIC), log in build/build.log
-cc -O2 -o smoke_symbols smoke_symbols.c -ldl
-./smoke_symbols build/libor_h8c.so   # verifies s8eforc3_ / m2law_ (preloads libgomp)
+./relink-or-hex.sh         # → libwmbd_or_hex.so (OR objects + BIND(C) wrapper)
+cc -O2 -o build/smoke_or_hex smoke_or_hex.c -ldl
+./build/smoke_or_hex build/libwmbd_or_hex.so   # BIND(C) + shared /COM08/ DT1
 ```
 
-`libor_h8c.so` leaves OpenMP unresolved (`omp_init_lock_`); the smoke test
-`dlopen`s `libgomp.so.1` with `RTLD_GLOBAL` first. Relink with `-lgomp` is a
-follow-up if we want a self-contained shared object.
+**Commons must be in the same `.so` as `s8eforc3_`.** A separate wrapper `.so`
+that `#include`s `com08_c.inc` gets its own BSS copy of `/COM08/` — `DT1` writes
+do not reach the engine. `relink-or-hex.sh` re-links the engine object list plus
+`or_hex_force.F90` / `wmbd_or_com08.c` into `libwmbd_or_hex.so`.
 
-Stock release `engine_linux64_gf` is ELF `EXEC` and cannot be `dlopen`ed; the
-shared rebuild is required.
+`libgomp.so.1` must still be `dlopen`ed with `RTLD_GLOBAL` before the hex lib
+(OpenMP symbols). Stock release `engine_linux64_gf` is ELF `EXEC` and cannot be
+`dlopen`ed.
 
 ## Extract options (preferred order)
 
@@ -67,8 +70,10 @@ Packing checklist for one Taylor hex group (`NEL=1`, `NPG=8`, LAW2, Isolid=17):
 6. Call `S8EFORC3` (or a thin Fortran wrapper that sets commons first)
 7. Scatter `FINT` / updated `SIG`/`PLA` back to `f_out` / `stress_io` / `eqps_io`
 
-Stub: `or_bridge.c` currently returns `-1`. Symbols in `libor_h8c.so` are verified
-by `smoke_symbols` / `tests/or-h8c-symbols.test.ts`.
+`wmbd_hex_internal_forces_or` is exported from `libwmbd_or_hex.so` (Fortran
+BIND(C) in `or_hex_force.F90`) and currently returns `-1` after setting `DT1`.
+Legacy C stub `or_bridge.c` remains for the mirror ABI. Smokes:
+`smoke_or_hex` / `tests/or-h8c-symbols.test.ts`.
 
 ## Dependency inventory
 
