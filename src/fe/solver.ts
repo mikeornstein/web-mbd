@@ -9,6 +9,17 @@ import {
   hexLumpedNodalMass,
 } from "./hex.js";
 import { dilatationalWaveSpeed, lame, type J2State } from "./materialJ2.js";
+import type { MaterialJ2Linear } from "../ir/types.js";
+
+/** Pluggable hex force eval (defaults to TypeScript `hexInternalForces`). */
+export type HexForceFn = (args: {
+  x: Float64Array;
+  v: Float64Array;
+  states: J2State[];
+  mat: MaterialJ2Linear;
+  dt: number;
+  fOut: Float64Array;
+}) => number;
 
 export interface SolveOptions {
   maxWallMs?: number;
@@ -18,11 +29,17 @@ export interface SolveOptions {
    * Useful for lockstep parity experiments against an OpenRadioss `.out`.
    */
   dtSchedule?: ArrayLike<number>;
+  /**
+   * Override hex force evaluation (e.g. native shared kernel from `cli/forceNative`).
+   * Default: TypeScript `hexInternalForces`.
+   */
+  hexForce?: HexForceFn;
 }
 
 export function solveExplicit(model: ModelIR, options: SolveOptions = {}): SolveResult {
   assertModel(model);
   const wallClock0 = performance.now();
+  const hexForce = options.hexForce ?? hexInternalForces;
 
   const nNodes = model.mesh.coords.length / 3;
   const nHex = model.mesh.hexes.length / 8;
@@ -134,7 +151,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
       const conn = hexConn[e]!;
       gatherHex(x, conn, xScratch);
       gatherHex(v, conn, vScratch);
-      hexInternalForces({
+      hexForce({
         x: xScratch,
         v: vScratch,
         states: hexStates[e]!,

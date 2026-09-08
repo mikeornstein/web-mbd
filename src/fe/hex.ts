@@ -1,11 +1,5 @@
 import type { MaterialJ2Linear } from "../ir/types.js";
-import {
-  createJ2State,
-  dilatationalWaveSpeed,
-  j2Update,
-  lame,
-  type J2State,
-} from "./materialJ2.js";
+import { createJ2State, j2Update, lame, type J2State } from "./materialJ2.js";
 import { mat3Det, mat3Inverse } from "./math3.js";
 
 /** Radioss `s8eprst_ini` PG=.577350269189625D0 (not 1/√3, which is ~1 ulp larger). */
@@ -479,7 +473,6 @@ export function hexInternalForces(args: {
     cache.push({ detJ, gN, L, d, vol, q: 0 });
   }
 
-  const cd = dilatationalWaveSpeed(mat);
   const { mu, bulk } = lame(mat.young, mat.poisson);
   // Radioss mqviscb / m2law: SSP = sqrt((4/3 G + K)/ρ₀)
   const ssp = Math.sqrt(((4 / 3) * mu + bulk) / mat.density);
