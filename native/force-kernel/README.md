@@ -24,14 +24,18 @@ IEEE bits.
 5. **Compare** — float64 restart / TH probes, not anim float32 VTK, for the
    final `Object.is` gate.
 
-## Verify TS ↔ C Object.is
+## OpenRadioss Fortran extract (next)
 
-```bash
-pnpm exec vitest run tests/force-kernel-golden.test.ts
-# or:
-make golden-test && ./force_kernel_golden goldens/hex0_step1.dbl
-```
+OpenRadioss engine is a single CMake Fortran/C/C++ glob of the whole tree — there is
+no prebuilt `libs8e.a`. A bitwise OR force backend needs one of:
 
-The vitest dumps a little-endian double golden from TypeScript `hexInternalForces`
-and asserts the C kernel matches with bit-identical (`Object.is`) forces, `dU`,
-stress, eqps, and vol0.
+1. **Thin engine object link** — build `engine_linux64_gf` from `/tmp/OpenRadioss-src`
+   with `-fPIC`, archive `s8eforc3` + `m2law` + deps into `libor_h8c.so`, and adapt
+   `wmbd_hex_internal_forces` to pack/unpack OR's MVSIZ element buffers (largest
+   effort: ELBUF / mat_param / common blocks).
+2. **Restart-step probe** — instrument a debug OR build to dump per-cycle nodal
+   `A` after FORINT for the Taylor deck; use as a regression oracle while (1) lands.
+3. **Keep C mirror** for TS↔native Object.is; treat OR float64 TH/restart compare
+   under shared fixed Δt as the interim production gate until (1) is done.
+
+Preferred order: (2) for visibility → (1) for true `Object.is`.
