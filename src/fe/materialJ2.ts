@@ -68,7 +68,7 @@ export function j2Update(
     s[3]! * s[3]! +
     s[4]! * s[4]! +
     s[5]! * s[5]!;
-  let seq = Math.sqrt(Math.max(0, 3 * j2));
+  const seq = Math.sqrt(Math.max(0, 3 * j2));
 
   const ca = mat.yieldStress;
   const cb = mat.hardeningModulus;
