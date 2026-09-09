@@ -2,8 +2,10 @@ import type { MaterialJ2Linear } from "../ir/types.js";
 
 /**
  * Per-Gauss-point state matching OpenRadioss LAW2 / M2LAW bookkeeping:
- * Cauchy stress in Voigt (xx,yy,zz,xy,yz,zx) with tensorial shear,
- * equivalent plastic strain, and reference Gauss volume for AMU = V0/V − 1.
+ * Cauchy stress in Voigt (xx,yy,zz,xy,yz,zx); shear components are true σ_xy
+ * (not doubled). Rate vector `d` uses Radioss engineering shear
+ * (D4=DXY+DYX). Equivalent plastic strain and reference Gauss volume for
+ * AMU = V0/V − 1.
  */
 export interface J2State {
   stress: Float64Array;
@@ -47,8 +49,8 @@ export function dilatationalWaveSpeed(mat: MaterialJ2Linear): number {
  * - Radial return with isotropic linear hardening (CN=1, CC=0)
  * - Pressure from bulk EOS: P = K * (ρ/ρ0 − 1) = K * (V0/V − 1)
  *
- * Shear components are tensorial (ε_xy); Radioss stores engineering rates D4=2ε_xy
- * and uses G*DT*D4 ≡ 2G*DT*ε_xy — same update.
+ * `d` matches `s8edefo3` / M2LAW: D1..D3 stretch rates, D4..D6 engineering
+ * shear (D4=DXY+DYX). Diagonals use G2=2G·DT; shear uses G1=G·DT (`m2law.F`).
  */
 export function j2Update(
   mat: MaterialJ2Linear,
@@ -69,9 +71,9 @@ export function j2Update(
   s[0]! += pOld + g2 * (d[0]! + dav);
   s[1]! += pOld + g2 * (d[1]! + dav);
   s[2]! += pOld + g2 * (d[2]! + dav);
-  s[3]! += g2 * d[3]!;
-  s[4]! += g2 * d[4]!;
-  s[5]! += g2 * d[5]!;
+  s[3]! += g1 * d[3]!;
+  s[4]! += g1 * d[4]!;
+  s[5]! += g1 * d[5]!;
 
   const j2 =
     0.5 * (s[0]! * s[0]! + s[1]! * s[1]! + s[2]! * s[2]!) +
@@ -107,13 +109,14 @@ export function j2Update(
   s[2]! -= pNew;
 }
 
+/** σ:D with Radioss engineering shear rates (no factor 2 on D4..D6). */
 export function stressPower(stress: Float64Array, d: Float64Array): number {
   return (
     stress[0]! * d[0]! +
     stress[1]! * d[1]! +
     stress[2]! * d[2]! +
-    2 * stress[3]! * d[3]! +
-    2 * stress[4]! * d[4]! +
-    2 * stress[5]! * d[5]!
+    stress[3]! * d[3]! +
+    stress[4]! * d[4]! +
+    stress[5]! * d[5]!
   );
 }

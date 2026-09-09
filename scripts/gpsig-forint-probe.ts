@@ -22,6 +22,7 @@ import {
   gatherHex,
   hexInternalForces,
   hexLumpedNodalMass,
+  s8edefo3Rates,
 } from "../src/fe/hex.js";
 import { applyRigidWallKinematic } from "../src/fe/contactWall.js";
 import { exportTaylorRadiossDecks, formatRadiossF20 } from "../src/oracle/exportRadioss.js";
@@ -348,32 +349,7 @@ function captureHexGp(
         Jinv[2]! * dn[0]! + Jinv[5]! * dn[1]! + Jinv[8]! * dn[2]!,
       ]);
     }
-    const L = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-    for (let a = 0; a < 8; a++) {
-      const gx = gN[a]![0]!,
-        gy = gN[a]![1]!,
-        gz = gN[a]![2]!;
-      const vx = v[a * 3]!,
-        vy = v[a * 3 + 1]!,
-        vz = v[a * 3 + 2]!;
-      L[0]! += vx * gx;
-      L[1]! += vx * gy;
-      L[2]! += vx * gz;
-      L[3]! += vy * gx;
-      L[4]! += vy * gy;
-      L[5]! += vy * gz;
-      L[6]! += vz * gx;
-      L[7]! += vz * gy;
-      L[8]! += vz * gz;
-    }
-    // Radioss engineering D4=2*ε̇_xy
-    const dEng = new Float64Array(6);
-    dEng[0] = L[0]!;
-    dEng[1] = L[4]!;
-    dEng[2] = L[8]!;
-    dEng[3] = L[1]! + L[3]!;
-    dEng[4] = L[5]! + L[7]!;
-    dEng[5] = L[2]! + L[6]!;
+    const { d: dEng } = s8edefo3Rates(gN, v);
     rates.push(dEng);
     vols.push(detJ);
   }

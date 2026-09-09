@@ -761,6 +761,124 @@ export interface HexForceOptions {
   jcvt?: 0 | 1;
 }
 
+/**
+ * Velocity gradient + rate at one GP, mirroring Radioss `s8edefo3`
+ * (`I_SH==0`, `ICP≠11`, `JCVT` path):
+ *
+ * 1. Off-diagonal Lij as separate left-to-right `P·V` sums (PY*VX, …)
+ * 2. Diagonal Lii likewise (PX*VX, …)
+ * 3. Engineering shear D4=DXY+DYX (not ½(Lxy+Lyx)) before M2LAW
+ *
+ * `L` layout matches prior TS: [∂vx/∂x, ∂vx/∂y, ∂vx/∂z, ∂vy/∂x, …].
+ * `d` is Radioss (DXX,DYY,DZZ,D4,D5,D6).
+ */
+export function s8edefo3Rates(
+  gN: number[][],
+  v: Float64Array,
+): { L: number[]; d: Float64Array } {
+  const px = [gN[0]![0]!, gN[1]![0]!, gN[2]![0]!, gN[3]![0]!, gN[4]![0]!, gN[5]![0]!, gN[6]![0]!, gN[7]![0]!];
+  const py = [gN[0]![1]!, gN[1]![1]!, gN[2]![1]!, gN[3]![1]!, gN[4]![1]!, gN[5]![1]!, gN[6]![1]!, gN[7]![1]!];
+  const pz = [gN[0]![2]!, gN[1]![2]!, gN[2]![2]!, gN[3]![2]!, gN[4]![2]!, gN[5]![2]!, gN[6]![2]!, gN[7]![2]!];
+  const vx = [v[0]!, v[3]!, v[6]!, v[9]!, v[12]!, v[15]!, v[18]!, v[21]!];
+  const vy = [v[1]!, v[4]!, v[7]!, v[10]!, v[13]!, v[16]!, v[19]!, v[22]!];
+  const vz = [v[2]!, v[5]!, v[8]!, v[11]!, v[14]!, v[17]!, v[20]!, v[23]!];
+
+  // Off-diagonals first (s8edefo3 I_SH==0 block), left-assoc P*V.
+  const dxy =
+    py[0]! * vx[0]! +
+    py[1]! * vx[1]! +
+    py[2]! * vx[2]! +
+    py[3]! * vx[3]! +
+    py[4]! * vx[4]! +
+    py[5]! * vx[5]! +
+    py[6]! * vx[6]! +
+    py[7]! * vx[7]!;
+  const dxz =
+    pz[0]! * vx[0]! +
+    pz[1]! * vx[1]! +
+    pz[2]! * vx[2]! +
+    pz[3]! * vx[3]! +
+    pz[4]! * vx[4]! +
+    pz[5]! * vx[5]! +
+    pz[6]! * vx[6]! +
+    pz[7]! * vx[7]!;
+  const dyx =
+    px[0]! * vy[0]! +
+    px[1]! * vy[1]! +
+    px[2]! * vy[2]! +
+    px[3]! * vy[3]! +
+    px[4]! * vy[4]! +
+    px[5]! * vy[5]! +
+    px[6]! * vy[6]! +
+    px[7]! * vy[7]!;
+  const dyz =
+    pz[0]! * vy[0]! +
+    pz[1]! * vy[1]! +
+    pz[2]! * vy[2]! +
+    pz[3]! * vy[3]! +
+    pz[4]! * vy[4]! +
+    pz[5]! * vy[5]! +
+    pz[6]! * vy[6]! +
+    pz[7]! * vy[7]!;
+  const dzx =
+    px[0]! * vz[0]! +
+    px[1]! * vz[1]! +
+    px[2]! * vz[2]! +
+    px[3]! * vz[3]! +
+    px[4]! * vz[4]! +
+    px[5]! * vz[5]! +
+    px[6]! * vz[6]! +
+    px[7]! * vz[7]!;
+  const dzy =
+    py[0]! * vz[0]! +
+    py[1]! * vz[1]! +
+    py[2]! * vz[2]! +
+    py[3]! * vz[3]! +
+    py[4]! * vz[4]! +
+    py[5]! * vz[5]! +
+    py[6]! * vz[6]! +
+    py[7]! * vz[7]!;
+
+  const dxx =
+    px[0]! * vx[0]! +
+    px[1]! * vx[1]! +
+    px[2]! * vx[2]! +
+    px[3]! * vx[3]! +
+    px[4]! * vx[4]! +
+    px[5]! * vx[5]! +
+    px[6]! * vx[6]! +
+    px[7]! * vx[7]!;
+  const dyy =
+    py[0]! * vy[0]! +
+    py[1]! * vy[1]! +
+    py[2]! * vy[2]! +
+    py[3]! * vy[3]! +
+    py[4]! * vy[4]! +
+    py[5]! * vy[5]! +
+    py[6]! * vy[6]! +
+    py[7]! * vy[7]!;
+  const dzz =
+    pz[0]! * vz[0]! +
+    pz[1]! * vz[1]! +
+    pz[2]! * vz[2]! +
+    pz[3]! * vz[3]! +
+    pz[4]! * vz[4]! +
+    pz[5]! * vz[5]! +
+    pz[6]! * vz[6]! +
+    pz[7]! * vz[7]!;
+
+  const L = [dxx, dxy, dxz, dyx, dyy, dyz, dzx, dzy, dzz];
+  const d = new Float64Array(6);
+  d[0] = dxx;
+  d[1] = dyy;
+  d[2] = dzz;
+  // s8edefo3 JCVT≠0 / ISMDISP: D4=DXY+DYX (engineering), not ½(·).
+  d[3] = dxy + dyx;
+  d[4] = dyz + dzy;
+  d[5] = dxz + dzx;
+  return { L, d };
+}
+
 /** Returns ∫σ:D dV dt. `fOut` accumulates +∫Bᵀσ dV. */
 export function hexInternalForces(args: {
   x: Float64Array;
@@ -820,32 +938,7 @@ export function hexInternalForces(args: {
     if (detJ <= 0) throw new Error("hex inversion");
     const gN = gradN(dN, mat3Inverse(J));
 
-    const L: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-    for (let a = 0; a < 8; a++) {
-      const gx = gN[a]![0]!;
-      const gy = gN[a]![1]!;
-      const gz = gN[a]![2]!;
-      const vx = v[a * 3]!;
-      const vy = v[a * 3 + 1]!;
-      const vz = v[a * 3 + 2]!;
-      L[0]! += vx * gx;
-      L[1]! += vx * gy;
-      L[2]! += vx * gz;
-      L[3]! += vy * gx;
-      L[4]! += vy * gy;
-      L[5]! += vy * gz;
-      L[6]! += vz * gx;
-      L[7]! += vz * gy;
-      L[8]! += vz * gz;
-    }
-
-    const d = new Float64Array(6);
-    d[0] = L[0]!;
-    d[1] = L[4]!;
-    d[2] = L[8]!;
-    d[3] = 0.5 * (L[1]! + L[3]!);
-    d[4] = 0.5 * (L[5]! + L[7]!);
-    d[5] = 0.5 * (L[2]! + L[6]!);
+    const { L, d } = s8edefo3Rates(gN, v);
 
     const vol = detJ * W1 * W1 * W1;
     volSum += vol;
@@ -927,11 +1020,14 @@ export function hexInternalForces(args: {
     const s4 = sigma[4]!;
     const s5 = sigma[5]!;
 
+    // M2LAW EINC uses D4*σ4 with engineering D (no factor 2).
     dU +=
       ((s0 - q) * d[0]! +
         (s1 - q) * d[1]! +
         (s2 - q) * d[2]! +
-        2 * (s3 * d[3]! + s4 * d[4]! + s5 * d[5]!)) *
+        s3 * d[3]! +
+        s4 * d[4]! +
+        s5 * d[5]!) *
       vol *
       dt;
 

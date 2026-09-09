@@ -144,9 +144,10 @@ static void j2_update(
   stress[0] += pOld + g2 * (d[0] + dav);
   stress[1] += pOld + g2 * (d[1] + dav);
   stress[2] += pOld + g2 * (d[2] + dav);
-  stress[3] += g2 * d[3];
-  stress[4] += g2 * d[4];
-  stress[5] += g2 * d[5];
+  /* Engineering D4..D6: M2LAW uses G1*D4, not G2*ε_xy */
+  stress[3] += g1 * d[3];
+  stress[4] += g1 * d[4];
+  stress[5] += g1 * d[5];
 
   j2 = 0.5 * (stress[0] * stress[0] + stress[1] * stress[1] + stress[2] * stress[2]) +
        stress[3] * stress[3] + stress[4] * stress[4] + stress[5] * stress[5];
@@ -368,6 +369,54 @@ static void rotate_nodes8(const double R[9], const double src[24], double dst[24
   }
 }
 
+static void s8edefo3_rates(const double gN[8][3], const double v[24], double L[9], double d[6]) {
+  /* Mirror Radioss s8edefo3: off-diagonals then diagonals, left-assoc P*V. */
+  double px[8], py[8], pz[8], vx[8], vy[8], vz[8];
+  double dxy, dxz, dyx, dyz, dzx, dzy, dxx, dyy, dzz;
+  int a;
+  for (a = 0; a < 8; a++) {
+    px[a] = gN[a][0];
+    py[a] = gN[a][1];
+    pz[a] = gN[a][2];
+    vx[a] = v[a * 3];
+    vy[a] = v[a * 3 + 1];
+    vz[a] = v[a * 3 + 2];
+  }
+  dxy = py[0] * vx[0] + py[1] * vx[1] + py[2] * vx[2] + py[3] * vx[3] +
+        py[4] * vx[4] + py[5] * vx[5] + py[6] * vx[6] + py[7] * vx[7];
+  dxz = pz[0] * vx[0] + pz[1] * vx[1] + pz[2] * vx[2] + pz[3] * vx[3] +
+        pz[4] * vx[4] + pz[5] * vx[5] + pz[6] * vx[6] + pz[7] * vx[7];
+  dyx = px[0] * vy[0] + px[1] * vy[1] + px[2] * vy[2] + px[3] * vy[3] +
+        px[4] * vy[4] + px[5] * vy[5] + px[6] * vy[6] + px[7] * vy[7];
+  dyz = pz[0] * vy[0] + pz[1] * vy[1] + pz[2] * vy[2] + pz[3] * vy[3] +
+        pz[4] * vy[4] + pz[5] * vy[5] + pz[6] * vy[6] + pz[7] * vy[7];
+  dzx = px[0] * vz[0] + px[1] * vz[1] + px[2] * vz[2] + px[3] * vz[3] +
+        px[4] * vz[4] + px[5] * vz[5] + px[6] * vz[6] + px[7] * vz[7];
+  dzy = py[0] * vz[0] + py[1] * vz[1] + py[2] * vz[2] + py[3] * vz[3] +
+        py[4] * vz[4] + py[5] * vz[5] + py[6] * vz[6] + py[7] * vz[7];
+  dxx = px[0] * vx[0] + px[1] * vx[1] + px[2] * vx[2] + px[3] * vx[3] +
+        px[4] * vx[4] + px[5] * vx[5] + px[6] * vx[6] + px[7] * vx[7];
+  dyy = py[0] * vy[0] + py[1] * vy[1] + py[2] * vy[2] + py[3] * vy[3] +
+        py[4] * vy[4] + py[5] * vy[5] + py[6] * vy[6] + py[7] * vy[7];
+  dzz = pz[0] * vz[0] + pz[1] * vz[1] + pz[2] * vz[2] + pz[3] * vz[3] +
+        pz[4] * vz[4] + pz[5] * vz[5] + pz[6] * vz[6] + pz[7] * vz[7];
+  L[0] = dxx;
+  L[1] = dxy;
+  L[2] = dxz;
+  L[3] = dyx;
+  L[4] = dyy;
+  L[5] = dyz;
+  L[6] = dzx;
+  L[7] = dzy;
+  L[8] = dzz;
+  d[0] = dxx;
+  d[1] = dyy;
+  d[2] = dzz;
+  d[3] = dxy + dyx;
+  d[4] = dyz + dzy;
+  d[5] = dxz + dzx;
+}
+
 double wmbd_hex_internal_forces(
     const double x0[24],
     const double v0[24],
@@ -431,31 +480,7 @@ double wmbd_hex_internal_forces(
     mat3_inverse(J, Jinv);
     grad_N(SHAPES_DN[gp], Jinv, c->gN);
 
-    for (a = 0; a < 9; a++) c->L[a] = 0.0;
-    for (a = 0; a < 8; a++) {
-      double gx = c->gN[a][0];
-      double gy = c->gN[a][1];
-      double gz = c->gN[a][2];
-      double vx = v[a * 3];
-      double vy = v[a * 3 + 1];
-      double vz = v[a * 3 + 2];
-      c->L[0] += vx * gx;
-      c->L[1] += vx * gy;
-      c->L[2] += vx * gz;
-      c->L[3] += vy * gx;
-      c->L[4] += vy * gy;
-      c->L[5] += vy * gz;
-      c->L[6] += vz * gx;
-      c->L[7] += vz * gy;
-      c->L[8] += vz * gz;
-    }
-
-    c->d[0] = c->L[0];
-    c->d[1] = c->L[4];
-    c->d[2] = c->L[8];
-    c->d[3] = 0.5 * (c->L[1] + c->L[3]);
-    c->d[4] = 0.5 * (c->L[5] + c->L[7]);
-    c->d[5] = 0.5 * (c->L[2] + c->L[6]);
+    s8edefo3_rates(c->gN, v, c->L, c->d);
 
     c->vol = detJ * W1 * W1 * W1;
     c->detJ = detJ;
@@ -526,8 +551,8 @@ double wmbd_hex_internal_forces(
     double s4 = sigma[4];
     double s5 = sigma[5];
 
-    dU += ((s0 - q) * d[0] + (s1 - q) * d[1] + (s2 - q) * d[2] +
-           2.0 * (s3 * d[3] + s4 * d[4] + s5 * d[5])) *
+    dU += ((s0 - q) * d[0] + (s1 - q) * d[1] + (s2 - q) * d[2] + s3 * d[3] +
+           s4 * d[4] + s5 * d[5]) *
           vol * dt;
 
     if (CONSTANT_PRESSURE && have_pxc) {
