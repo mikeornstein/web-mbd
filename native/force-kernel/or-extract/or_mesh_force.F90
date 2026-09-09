@@ -578,11 +578,11 @@ contains
   end subroutine pack_mesh
 
   ! Pack one MVSIZ packet starting at global element ie0 (0-based) into
-  ! ELBUF slots 1..buf_nel. Real elements fill 1..pnel; pads pnel+1..buf_nel
-  ! get OFF=0 so SCUMU3 contributes nothing (stride must equal buf_nel).
-  subroutine pack_packet(ie0, pnel, buf_nel, n_hex, n_nodes, x, v, conn, &
+  ! ELBUF slots 1..pnel with stride=pnel (must match S8EFORC3 NEL). Buffer may
+  ! be allocated larger (max_nel_c); unused tail is ignored.
+  subroutine pack_packet(ie0, pnel, n_hex, n_nodes, x, v, conn, &
        stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, zero_anod)
-    integer, intent(in) :: ie0, pnel, buf_nel, n_hex, n_nodes
+    integer, intent(in) :: ie0, pnel, n_hex, n_nodes
     real(c_double), intent(in) :: x(3 * n_nodes), v(3 * n_nodes)
     integer(c_int), intent(in) :: conn(8 * n_hex)
     real(c_double), intent(in) :: stress_io(48 * n_hex), eqps_io(8 * n_hex), vol0_io(8 * n_hex)
@@ -606,106 +606,68 @@ contains
       wnod = zero
     end if
 
-    do ie = 1, buf_nel
-      if (ie <= pnel) then
-        ig = ie0 + ie
-        do a = 1, 8
-          ixs(1 + a, ie) = conn(8 * (ig - 1) + a) + 1
-        end do
-        ixs(1, ie) = 1
-        ixs(10, ie) = 1
-        ixs(11, ie) = ig
-        elbuf_tab(1)%gbuf%off(ie) = offg_io(ig)
-        do k = 1, 21
-          elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * buf_nel) = smstr_io(21 * (ig - 1) + k)
-        end do
-      else
-        ! Pad: OFF=0, connect to node 1 — SCUMU3 skips OFF≤0.
-        do a = 1, 8
-          ixs(1 + a, ie) = 1
-        end do
-        ixs(1, ie) = 1
-        ixs(10, ie) = 1
-        ixs(11, ie) = 0
-        elbuf_tab(1)%gbuf%off(ie) = zero
-        do k = 1, 21
-          elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * buf_nel) = zero
-        end do
-      end if
+    do ie = 1, pnel
+      ig = ie0 + ie
+      do a = 1, 8
+        ixs(1 + a, ie) = conn(8 * (ig - 1) + a) + 1
+      end do
+      ixs(1, ie) = 1
+      ixs(10, ie) = 1
+      ixs(11, ie) = ig
+      elbuf_tab(1)%gbuf%off(ie) = offg_io(ig)
+      do k = 1, 21
+        elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * pnel) = smstr_io(21 * (ig - 1) + k)
+      end do
       if (associated(elbuf_tab(1)%gbuf%pla)) elbuf_tab(1)%gbuf%pla(ie) = zero
       if (associated(elbuf_tab(1)%gbuf%sig)) then
         do k = 1, 6
-          elbuf_tab(1)%gbuf%sig(ie + (k - 1) * buf_nel) = zero
+          elbuf_tab(1)%gbuf%sig(ie + (k - 1) * pnel) = zero
         end do
       end if
     end do
 
-    do ie = 1, buf_nel
+    do ie = 1, pnel
+      ig = ie0 + ie
+      base = 48 * (ig - 1)
       eint_sum = zero
       rho_sum = zero
-      if (ie <= pnel) then
-        ig = ie0 + ie
-        base = 48 * (ig - 1)
-      else
-        ig = 0
-        base = 0
-      end if
       do it = 1, 2
         do is = 1, 2
           do ir = 1, 2
             ip = ir + ((is - 1) + (it - 1) * 2) * 2
             lbuf => elbuf_tab(1)%bufly(1)%lbuf(ir, is, it)
-            if (ie <= pnel) then
-              do k = 1, 6
-                lbuf%sig(ie + (k - 1) * buf_nel) = stress_io(base + 6 * (ip - 1) + k)
-              end do
-              lbuf%pla(ie) = eqps_io(8 * (ig - 1) + ip)
-              lbuf%vol(ie) = vol0_io(8 * (ig - 1) + ip)
-              lbuf%vol0dp(ie) = vol0_io(8 * (ig - 1) + ip)
-              lbuf%eint(ie) = hist_io(32 * (ig - 1) + ip)
-              lbuf%epsd(ie) = hist_io(32 * (ig - 1) + 8 + ip)
-              lbuf%qvis(ie) = hist_io(32 * (ig - 1) + 16 + ip)
-              lbuf%rho(ie) = hist_io(32 * (ig - 1) + 24 + ip)
-              lbuf%off(ie) = one
-              eint_sum = eint_sum + lbuf%eint(ie)
-              rho_sum = rho_sum + lbuf%rho(ie)
-            else
-              do k = 1, 6
-                lbuf%sig(ie + (k - 1) * buf_nel) = zero
-              end do
-              lbuf%pla(ie) = zero
-              lbuf%vol(ie) = one
-              lbuf%vol0dp(ie) = one
-              lbuf%eint(ie) = zero
-              lbuf%epsd(ie) = zero
-              lbuf%qvis(ie) = zero
-              lbuf%rho(ie) = one
-              lbuf%off(ie) = zero
-            end if
+            do k = 1, 6
+              lbuf%sig(ie + (k - 1) * pnel) = stress_io(base + 6 * (ip - 1) + k)
+            end do
+            lbuf%pla(ie) = eqps_io(8 * (ig - 1) + ip)
+            lbuf%vol(ie) = vol0_io(8 * (ig - 1) + ip)
+            lbuf%vol0dp(ie) = vol0_io(8 * (ig - 1) + ip)
+            lbuf%eint(ie) = hist_io(32 * (ig - 1) + ip)
+            lbuf%epsd(ie) = hist_io(32 * (ig - 1) + 8 + ip)
+            lbuf%qvis(ie) = hist_io(32 * (ig - 1) + 16 + ip)
+            lbuf%rho(ie) = hist_io(32 * (ig - 1) + 24 + ip)
+            lbuf%off(ie) = one
+            eint_sum = eint_sum + lbuf%eint(ie)
+            rho_sum = rho_sum + lbuf%rho(ie)
             if (associated(lbuf%sigb)) then
               do k = 1, 6
-                lbuf%sigb(ie + (k - 1) * buf_nel) = zero
+                lbuf%sigb(ie + (k - 1) * pnel) = zero
               end do
             end if
             if (associated(lbuf%stra)) then
               do k = 1, 6
-                lbuf%stra(ie + (k - 1) * buf_nel) = zero
+                lbuf%stra(ie + (k - 1) * pnel) = zero
               end do
             end if
           end do
         end do
       end do
-      if (ie <= pnel) then
-        elbuf_tab(1)%gbuf%eint(ie) = eint_sum * 0.125d0
-        elbuf_tab(1)%gbuf%rho(ie) = rho_sum * 0.125d0
-      else
-        elbuf_tab(1)%gbuf%eint(ie) = zero
-        elbuf_tab(1)%gbuf%rho(ie) = one
-      end if
+      elbuf_tab(1)%gbuf%eint(ie) = eint_sum * 0.125d0
+      elbuf_tab(1)%gbuf%rho(ie) = rho_sum * 0.125d0
       elbuf_tab(1)%gbuf%qvis(ie) = zero
       elbuf_tab(1)%gbuf%epsd(ie) = zero
     end do
-    iparg(2, 1) = buf_nel
+    iparg(2, 1) = pnel
   end subroutine pack_packet
 
   subroutine scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
@@ -742,8 +704,8 @@ contains
     end do
   end subroutine scatter_mesh
 
-  subroutine scatter_packet(ie0, pnel, buf_nel, n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
-    integer, intent(in) :: ie0, pnel, buf_nel, n_hex
+  subroutine scatter_packet(ie0, pnel, n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
+    integer, intent(in) :: ie0, pnel, n_hex
     real(c_double), intent(inout) :: stress_io(48 * n_hex), eqps_io(8 * n_hex), vol0_io(8 * n_hex)
     real(c_double), intent(inout) :: smstr_io(21 * n_hex), offg_io(n_hex), hist_io(32 * n_hex)
     integer :: ie, ig, ir, is, it, ip, k, base
@@ -758,7 +720,7 @@ contains
             ip = ir + ((is - 1) + (it - 1) * 2) * 2
             lbuf => elbuf_tab(1)%bufly(1)%lbuf(ir, is, it)
             do k = 1, 6
-              stress_io(base + 6 * (ip - 1) + k) = lbuf%sig(ie + (k - 1) * buf_nel)
+              stress_io(base + 6 * (ip - 1) + k) = lbuf%sig(ie + (k - 1) * pnel)
             end do
             eqps_io(8 * (ig - 1) + ip) = lbuf%pla(ie)
             vol0_io(8 * (ig - 1) + ip) = lbuf%vol(ie)
@@ -771,7 +733,7 @@ contains
       end do
       offg_io(ig) = elbuf_tab(1)%gbuf%off(ie)
       do k = 1, 21
-        smstr_io(21 * (ig - 1) + k) = elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * buf_nel)
+        smstr_io(21 * (ig - 1) + k) = elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * pnel)
       end do
     end do
   end subroutine scatter_packet
@@ -913,11 +875,11 @@ contains
       ie0 = 0
       do while (ie0 < n_hex)
         pnel = min(max_nel_c, n_hex - ie0)
-        call wmbd_or_set_group(n_nodes, buf_nel)
-        call pack_packet(ie0, pnel, buf_nel, n_hex, n_nodes, x, v, conn, &
+        call wmbd_or_set_group(n_nodes, pnel)
+        call pack_packet(ie0, pnel, n_hex, n_nodes, x, v, conn, &
              stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, ie0 == 0)
-        call call_s8e_packet(buf_nel)
-        call scatter_packet(ie0, pnel, buf_nel, n_hex, stress_io, eqps_io, vol0_io, &
+        call call_s8e_packet(pnel)
+        call scatter_packet(ie0, pnel, n_hex, stress_io, eqps_io, vol0_io, &
              smstr_io, offg_io, hist_io)
         ie0 = ie0 + pnel
       end do
