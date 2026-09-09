@@ -275,12 +275,28 @@ differed from live by 1 ulp on 2 huge DOFs. Root cause: live IPARIT=0 uses
 Mesh ABI now returns `anod` (3×n_nodes); one-hex returns `-anod` (+∫Bᵀσ ABI).
 `wmbd_postforint_*` dump (right after ASSPAR) ≡ pre-ACCELE F; OR mesh F/A vs
 live are Object.is at NCYCLE=1. GEO QA/QB set to deck `1e-20`/`1e-21` (was 0).
-TS force path still has a larger gap; production adaptive metrics Object.is
-remains open (~few×10⁻¹⁵ Lf/Rf).
 
-**Conclusion:** NCYCLE=0 VOL/GradN floor, fixed-Δt ≥10-step Object.is, and
-cycle-1 OR-ABI FORINT nodal F Object.is (mesh/SCUMU3) are closed. Production
-adaptive Object.is remains open (TS force path under CFL).
+**OR mesh MVSIZ packets + adaptive (landed):** `or_mesh_force.F90` supports
+NEL>128 via consecutive packets of ≤128 (exact last `pnel`, no collapsed
+padding — pads tripped S8EDERIC3 MSG 173). SCUMU3 `anod` is not zeroed between
+packets. Evidence (`scripts/or-mesh-adaptive-vs-live.ts`):
+
+| Mesh | Path | 80μs adaptive vs live `.f64bin` |
+|------|------|----------------------------------|
+| Coarse 2×2×4 (16 hex) | OR mesh SCUMU3 | **metrics+coords Object.is** |
+| Production 6×6×16 (576) | OR mesh + default TS mass | ~1e-15 Lf/Rf; coords max ~3e-16 (mass ulps) |
+| Production 6×6×16 | OR mesh + `WMBD_OR_LIVE_MS=1` | **metrics+coords Object.is** |
+
+Cycle-0/1 OR mesh F vs `wmbd_postforint_*` is Object.is on production (packet
+path). Default mass still differs on ~331/833 nodes by 1 ulp (global-center
+`S8ZDERIC3` vs starter JCVT=1 local-frame DET); live-MS inject closes adaptive
+Object.is. Vitest: `tests/or-mesh-adaptive-object-is.test.ts` (coarse).
+Oracle runner: `WMBD_OR_MESH=1` uses `assembleInternalForcesOrMesh`.
+
+**Conclusion:** NCYCLE=0 VOL/GradN floor, fixed-Δt ≥10-step Object.is, cycle-1
+OR mesh FORINT Object.is, and coarse adaptive OR-mesh Object.is are closed.
+Production adaptive Object.is is closed when nodal MS matches live; default
+TS mass residual remains (~1 ulp/node).
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.

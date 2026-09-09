@@ -57,6 +57,8 @@ export interface SolveOptions {
     dt: number;
     f: Float64Array;
   }) => void;
+  /** Override lumped nodal masses (e.g. live NODES%MS for parity probes). */
+  nodalMasses?: Float64Array;
 }
 
 export function solveExplicit(model: ModelIR, options: SolveOptions = {}): SolveResult {
@@ -87,10 +89,19 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     const conn = model.mesh.hexes.slice(e * 8, e * 8 + 8);
     hexConn.push(conn);
     gatherHex(x, conn, xScratch);
-    const m = hexLumpedNodalMass(xScratch, model.material.density);
-    for (let a = 0; a < 8; a++) masses[conn[a]!]! += m[a]!;
+    if (!options.nodalMasses) {
+      const m = hexLumpedNodalMass(xScratch, model.material.density);
+      for (let a = 0; a < 8; a++) masses[conn[a]!]! += m[a]!;
+    }
     hexStates.push(createHexGpStates(Float64Array.from(xScratch)));
     minH = Math.min(minH, characteristicLength(xScratch, model.material.poisson));
+  }
+
+  if (options.nodalMasses) {
+    if (options.nodalMasses.length !== nNodes) {
+      throw new Error(`nodalMasses length ${options.nodalMasses.length} != nNodes ${nNodes}`);
+    }
+    masses.set(options.nodalMasses);
   }
 
   for (let a = 0; a < nNodes; a++) {

@@ -512,7 +512,11 @@ export function hexVolumeRadiossCenter(x: Float64Array): number {
 }
 
 export function hexLumpedNodalMass(x0: Float64Array, density: number): Float64Array {
-  // ONE_OVER_8 = 1/8 exact; VOLU from S8ZDERIC3 center Jacobian.
+  // ONE_OVER_8 = 1/8 exact; VOLU from S8ZDERIC3 center Jacobian (global coords).
+  // Coarse Taylor MS is Object.is with this path; production 6×6×16 still has
+  // ~1 ulp/node residual vs live (JCVT=1 SRCOOR3 local-frame DET) — see
+  // docs/research/09-oracle-bitwise-floor.md. Live-MS inject + OR mesh FORINT
+  // recovers full adaptive Object.is on production.
   const share = density * hexVolumeRadiossCenter(x0) * (1 / 8);
   return Float64Array.from({ length: 8 }, () => share);
 }
@@ -863,7 +867,8 @@ export function hexEdgeVectors(x: Float64Array): {
 }
 
 function normalize3(v: [number, number, number]): [number, number, number] {
-  const n = Math.hypot(v[0], v[1], v[2]);
+  // Radioss SORTHO3: aa = sqrt(x*x+y*y+z*z); NOT Math.hypot (1 ulp drift → mass).
+  const n = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
   if (n === 0) return [0, 0, 0];
   const inv = 1 / n;
   return [v[0] * inv, v[1] * inv, v[2] * inv];

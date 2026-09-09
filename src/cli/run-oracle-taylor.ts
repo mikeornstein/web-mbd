@@ -5,6 +5,11 @@ import { solveExplicit } from "../fe/solver.js";
 import { alignedCoordGap, compareToOracle, nearestNeighborGap } from "../oracle/compare.js";
 import { scrubNearZeros } from "../oracle/shapeFromF64bin.js";
 import { metricsPassAcceptance } from "../research/catalog.js";
+import {
+  assembleInternalForcesOrMesh,
+  loadOrForceKernel,
+  resetOrElementState,
+} from "./forceNative.js";
 import { openRadiossAvailable, runOpenRadiossTaylorOracle } from "./openRadiossRunner.js";
 
 function main(): void {
@@ -13,14 +18,34 @@ function main(): void {
     process.exit(2);
   }
 
+  const useOrMesh = process.env["WMBD_OR_MESH"] === "1";
+  if (useOrMesh) {
+    process.env["WMBD_OR_CALL_S8E"] = "1";
+    if (!loadOrForceKernel()) {
+      console.error("WMBD_OR_MESH=1 but libwmbd_or_hex.so failed to load");
+      process.exit(2);
+    }
+    resetOrElementState();
+  }
+
   const model = createTaylorBarModel();
   const workDir = join(process.cwd(), "artifacts", "oracle-taylor");
   mkdirSync(workDir, { recursive: true });
 
   console.log(
-    `web-mbd Taylor: ${model.mesh.hexes.length / 8} hexes, ${model.mesh.coords.length / 3} nodes`,
+    `web-mbd Taylor: ${model.mesh.hexes.length / 8} hexes, ${model.mesh.coords.length / 3} nodes` +
+      (useOrMesh ? " [OR mesh SCUMU3]" : ""),
   );
-  const ours = solveExplicit(model, { maxWallMs: 600_000 });
+  const ours = solveExplicit(model, {
+    maxWallMs: 600_000,
+    ...(useOrMesh
+      ? {
+          assembleForces: (
+            a: Parameters<typeof assembleInternalForcesOrMesh>[0],
+          ) => assembleInternalForcesOrMesh(a),
+        }
+      : {}),
+  });
   console.log("web-mbd metrics", {
     lengthRatio: ours.metrics.lengthRatio,
     radiusRatio: ours.metrics.radiusRatio,
@@ -54,6 +79,7 @@ function main(): void {
       maxEqPlasticStrain: ours.metrics.maxEqPlasticStrain,
       energyErrorPct: ours.metrics.energyErrorPct,
       nSteps: ours.metrics.nSteps,
+      forceBackend: useOrMesh ? "or-mesh-scumu3" : "ts",
     },
     oracle: oracle.metrics,
     compare: {
