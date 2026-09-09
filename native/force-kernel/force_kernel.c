@@ -9,6 +9,7 @@ static const double W1 = 1.0;
 /* Radioss constant.inc ZEP3 = 3/10 used in Icpre=1 force splitting. */
 static const double ZEP3 = 0.3;
 static const double ONE_OVER_64 = 1.0 / 64.0;
+static const double ONE_OVER_512 = 1.0 / 512.0;
 
 /* Defaults matching hexInternalForces options. */
 static const int CONSTANT_PRESSURE = 1;
@@ -369,6 +370,182 @@ static void rotate_nodes8(const double R[9], const double src[24], double dst[24
   }
 }
 
+
+/* Radioss s8eprst_ini PR/PS/PT at 8 GPs (RADIOSS_GAUSS order). */
+static void fill_prst(double pr[8][8], double ps[8][8], double pt[8][8]) {
+  static const double GAUSS[8][3] = {
+      {-PG, -PG, -PG}, {PG, -PG, -PG}, {-PG, PG, -PG}, {PG, PG, -PG},
+      {-PG, -PG, PG},  {PG, -PG, PG},  {-PG, PG, PG},  {PG, PG, PG},
+  };
+  int ip, a;
+  for (ip = 0; ip < 8; ip++) {
+    double ksi = GAUSS[ip][0], eta = GAUSS[ip][1], zeta = GAUSS[ip][2];
+    double etazeta = eta * zeta, ksizeta = ksi * zeta, ksieta = ksi * eta;
+    pr[ip][0] = -(1.0 - eta - zeta + etazeta);
+    pr[ip][1] = -pr[ip][0];
+    pr[ip][2] = 1.0 + eta - zeta - etazeta;
+    pr[ip][3] = -pr[ip][2];
+    pr[ip][4] = -(1.0 - eta + zeta - etazeta);
+    pr[ip][5] = -pr[ip][4];
+    pr[ip][6] = 1.0 + eta + zeta + etazeta;
+    pr[ip][7] = -pr[ip][6];
+    ps[ip][0] = -(1.0 - ksi - zeta + ksizeta);
+    ps[ip][1] = -(1.0 + ksi - zeta - ksizeta);
+    ps[ip][2] = -ps[ip][1];
+    ps[ip][3] = -ps[ip][0];
+    ps[ip][4] = -(1.0 - ksi + zeta - ksizeta);
+    ps[ip][5] = -(1.0 + ksi + zeta + ksizeta);
+    ps[ip][6] = -ps[ip][5];
+    ps[ip][7] = -ps[ip][4];
+    pt[ip][0] = -(1.0 - ksi - eta + ksieta);
+    pt[ip][1] = -(1.0 + ksi - eta - ksieta);
+    pt[ip][2] = -(1.0 + ksi + eta + ksieta);
+    pt[ip][3] = -(1.0 - ksi + eta - ksieta);
+    pt[ip][4] = -pt[ip][0];
+    pt[ip][5] = -pt[ip][1];
+    pt[ip][6] = -pt[ip][2];
+    pt[ip][7] = -pt[ip][3];
+  }
+  (void)a;
+}
+
+/* s8ejacip3 hierarchical GP AJ (9 components × 8 GPs). */
+static void hierarchical_gp_aj(const double x[24], double aj[8][9]) {
+  double x1 = x[0], y1 = x[1], z1 = x[2];
+  double x2 = x[3], y2 = x[4], z2 = x[5];
+  double x3 = x[6], y3 = x[7], z3 = x[8];
+  double x4 = x[9], y4 = x[10], z4 = x[11];
+  double x5 = x[12], y5 = x[13], z5 = x[14];
+  double x6 = x[15], y6 = x[16], z6 = x[17];
+  double x7 = x[18], y7 = x[19], z7 = x[20];
+  double x8 = x[21], y8 = x[22], z8 = x[23];
+  double x17 = x7 - x1, x28 = x8 - x2, x35 = x5 - x3, x46 = x6 - x4;
+  double y17 = y7 - y1, y28 = y8 - y2, y35 = y5 - y3, y46 = y6 - y4;
+  double z17 = z7 - z1, z28 = z8 - z2, z35 = z5 - z3, z46 = z6 - z4;
+  double aj4 = x17 + x28 - x35 - x46;
+  double aj5 = y17 + y28 - y35 - y46;
+  double aj6 = z17 + z28 - z35 - z46;
+  double a17 = x17 + x46, a28 = x28 + x35;
+  double b17 = y17 + y46, b28 = y28 + y35;
+  double c17 = z17 + z46, c28 = z28 + z35;
+  double cj7 = a17 + a28, cj8 = b17 + b28, cj9 = c17 + c28;
+  double cj1 = a17 - a28, cj2 = b17 - b28, cj3 = c17 - c28;
+  double hx1 = x1 + x2 - x3 - x4 - x5 - x6 + x7 + x8;
+  double hy1 = y1 + y2 - y3 - y4 - y5 - y6 + y7 + y8;
+  double hz1 = z1 + z2 - z3 - z4 - z5 - z6 + z7 + z8;
+  double hx2 = x1 - x2 - x3 + x4 - x5 + x6 + x7 - x8;
+  double hy2 = y1 - y2 - y3 + y4 - y5 + y6 + y7 - y8;
+  double hz2 = z1 - z2 - z3 + z4 - z5 + z6 + z7 - z8;
+  double hx3 = x1 - x2 + x3 - x4 + x5 - x6 + x7 - x8;
+  double hy3 = y1 - y2 + y3 - y4 + y5 - y6 + y7 - y8;
+  double hz3 = z1 - z2 + z3 - z4 + z5 - z6 + z7 - z8;
+  double hx4 = -x1 + x2 - x3 + x4 + x5 - x6 + x7 - x8;
+  double hy4 = -y1 + y2 - y3 + y4 + y5 - y6 + y7 - y8;
+  double hz4 = -z1 + z2 - z3 + z4 + z5 - z6 + z7 - z8;
+  double pg2 = PG * PG;
+  double hx1pg = hx1 * PG, hx2pg = hx2 * PG, hx3pg = hx3 * PG, hx4pg2 = hx4 * pg2;
+  double hy1pg = hy1 * PG, hy2pg = hy2 * PG, hy3pg = hy3 * PG, hy4pg2 = hy4 * pg2;
+  double hz1pg = hz1 * PG, hz2pg = hz2 * PG, hz3pg = hz3 * PG, hz4pg2 = hz4 * pg2;
+  /* IP=1..8 signs match s8ejacip3 / hex.ts hierarchicalGpAj */
+  #define SETAJ(ip, s1,s2,s3, s4,s5,s6, s7,s8,s9) do { \
+    aj[ip][0]=cj1+(s1); aj[ip][1]=cj2+(s2); aj[ip][2]=cj3+(s3); \
+    aj[ip][3]=aj4+(s4); aj[ip][4]=aj5+(s5); aj[ip][5]=aj6+(s6); \
+    aj[ip][6]=cj7+(s7); aj[ip][7]=cj8+(s8); aj[ip][8]=cj9+(s9); \
+  } while (0)
+  SETAJ(0, -hx3pg-hx2pg+hx4pg2, -hy3pg-hy2pg+hy4pg2, -hz3pg-hz2pg+hz4pg2,
+           -hx1pg-hx3pg+hx4pg2, -hy1pg-hy3pg+hy4pg2, -hz1pg-hz3pg+hz4pg2,
+           -hx2pg-hx1pg+hx4pg2, -hy2pg-hy1pg+hy4pg2, -hz2pg-hz1pg+hz4pg2);
+  SETAJ(1, -hx3pg-hx2pg+hx4pg2, -hy3pg-hy2pg+hy4pg2, -hz3pg-hz2pg+hz4pg2,
+           -hx1pg+hx3pg-hx4pg2, -hy1pg+hy3pg-hy4pg2, -hz1pg+hz3pg-hz4pg2,
+           +hx2pg-hx1pg-hx4pg2, +hy2pg-hy1pg-hy4pg2, +hz2pg-hz1pg-hz4pg2);
+  SETAJ(2, +hx3pg-hx2pg-hx4pg2, +hy3pg-hy2pg-hy4pg2, +hz3pg-hz2pg-hz4pg2,
+           -hx1pg-hx3pg+hx4pg2, -hy1pg-hy3pg+hy4pg2, -hz1pg-hz3pg+hz4pg2,
+           -hx2pg+hx1pg-hx4pg2, -hy2pg+hy1pg-hy4pg2, -hz2pg+hz1pg-hz4pg2);
+  SETAJ(3, +hx3pg-hx2pg-hx4pg2, +hy3pg-hy2pg-hy4pg2, +hz3pg-hz2pg-hz4pg2,
+           -hx1pg+hx3pg-hx4pg2, -hy1pg+hy3pg-hy4pg2, -hz1pg+hz3pg-hz4pg2,
+           +hx2pg+hx1pg+hx4pg2, +hy2pg+hy1pg+hy4pg2, +hz2pg+hz1pg+hz4pg2);
+  SETAJ(4, -hx3pg+hx2pg-hx4pg2, -hy3pg+hy2pg-hy4pg2, -hz3pg+hz2pg-hz4pg2,
+           +hx1pg-hx3pg-hx4pg2, +hy1pg-hy3pg-hy4pg2, +hz1pg-hz3pg-hz4pg2,
+           -hx2pg-hx1pg+hx4pg2, -hy2pg-hy1pg+hy4pg2, -hz2pg-hz1pg+hz4pg2);
+  SETAJ(5, -hx3pg+hx2pg-hx4pg2, -hy3pg+hy2pg-hy4pg2, -hz3pg+hz2pg-hz4pg2,
+           +hx1pg+hx3pg+hx4pg2, +hy1pg+hy3pg+hy4pg2, +hz1pg+hz3pg+hz4pg2,
+           +hx2pg-hx1pg-hx4pg2, +hy2pg-hy1pg-hy4pg2, +hz2pg-hz1pg-hz4pg2);
+  SETAJ(6, +hx3pg+hx2pg+hx4pg2, +hy3pg+hy2pg+hy4pg2, +hz3pg+hz2pg+hz4pg2,
+           +hx1pg-hx3pg-hx4pg2, +hy1pg-hy3pg-hy4pg2, +hz1pg-hz3pg-hz4pg2,
+           -hx2pg+hx1pg-hx4pg2, -hy2pg+hy1pg-hy4pg2, -hz2pg+hz1pg-hz4pg2);
+  SETAJ(7, +hx3pg+hx2pg+hx4pg2, +hy3pg+hy2pg+hy4pg2, +hz3pg+hz2pg+hz4pg2,
+           +hx1pg+hx3pg+hx4pg2, +hy1pg+hy3pg+hy4pg2, +hz1pg+hz3pg+hz4pg2,
+           +hx2pg+hx1pg+hx4pg2, +hy2pg+hy1pg+hy4pg2, +hz2pg+hz1pg+hz4pg2);
+  #undef SETAJ
+}
+
+static int s8ederipr3(const double aj[9], double *detdp, double *vol, double aji[9]) {
+  double a1=aj[0],a2=aj[1],a3=aj[2],a4=aj[3],a5=aj[4],a6=aj[5],a7=aj[6],a8=aj[7],a9=aj[8];
+  double jac_59_68=a5*a9-a6*a8;
+  double jac_67_49=a6*a7-a4*a9;
+  double jac_38_29=-a2*a9+a3*a8;
+  double jac_19_37=a1*a9-a3*a7;
+  double jac_27_18=-a1*a8+a2*a7;
+  double jac_26_35=a2*a6-a3*a5;
+  double jac_34_16=-a1*a6+a3*a4;
+  double jac_15_24=a1*a5-a2*a4;
+  double jac_48_57=a4*a8-a5*a7;
+  double det = ONE_OVER_512 * (a1*jac_59_68 + a2*jac_67_49 + a3*jac_48_57);
+  double dett;
+  if (!(det > 0.0)) return 0;
+  dett = ONE_OVER_512 / det;
+  aji[0]=dett*jac_59_68; aji[1]=dett*jac_38_29; aji[2]=dett*jac_26_35;
+  aji[3]=dett*jac_67_49; aji[4]=dett*jac_19_37; aji[5]=dett*jac_34_16;
+  aji[6]=dett*jac_48_57; aji[7]=dett*jac_27_18; aji[8]=dett*jac_15_24;
+  *detdp = det;
+  *vol = W1 * det;
+  return 1;
+}
+
+static void s8ederig3(const double aji[9], int gp, double gN[8][3],
+                      const double pr[8][8], const double ps[8][8], const double pt[8][8]) {
+  double aji1=aji[0],aji2=aji[1],aji3=aji[2],aji4=aji[3],aji5=aji[4];
+  double aji6=aji[5],aji7=aji[6],aji8=aji[7],aji9=aji[8];
+  const double *PR=pr[gp], *PS=ps[gp], *PT=pt[gp];
+  double a1pr1=aji1*PR[0], a1pr3=aji1*PR[2], a1pr5=aji1*PR[4], a1pr7=aji1*PR[6];
+  double a2ps1=aji2*PS[0], a2ps2=aji2*PS[1], a2ps5=aji2*PS[4], a2ps6=aji2*PS[5];
+  double a3pt1=aji3*PT[0], a3pt2=aji3*PT[1], a3pt3=aji3*PT[2], a3pt4=aji3*PT[3];
+  gN[0][0]= a1pr1+a2ps1+a3pt1;
+  gN[1][0]=-a1pr1+a2ps2+a3pt2;
+  gN[2][0]= a1pr3-a2ps2+a3pt3;
+  gN[3][0]=-a1pr3-a2ps1+a3pt4;
+  gN[4][0]= a1pr5+a2ps5-a3pt1;
+  gN[5][0]=-a1pr5+a2ps6-a3pt2;
+  gN[6][0]= a1pr7-a2ps6-a3pt3;
+  gN[7][0]=-a1pr7-a2ps5-a3pt4;
+  {
+    double a4pr1=aji4*PR[0], a4pr3=aji4*PR[2], a4pr5=aji4*PR[4], a4pr7=aji4*PR[6];
+    double a5ps1=aji5*PS[0], a5ps2=aji5*PS[1], a5ps5=aji5*PS[4], a5ps6=aji5*PS[5];
+    double a6pt1=aji6*PT[0], a6pt2=aji6*PT[1], a6pt3=aji6*PT[2], a6pt4=aji6*PT[3];
+    gN[0][1]= a4pr1+a5ps1+a6pt1;
+    gN[1][1]=-a4pr1+a5ps2+a6pt2;
+    gN[2][1]= a4pr3-a5ps2+a6pt3;
+    gN[3][1]=-a4pr3-a5ps1+a6pt4;
+    gN[4][1]= a4pr5+a5ps5-a6pt1;
+    gN[5][1]=-a4pr5+a5ps6-a6pt2;
+    gN[6][1]= a4pr7-a5ps6-a6pt3;
+    gN[7][1]=-a4pr7-a5ps5-a6pt4;
+  }
+  {
+    double a7pr1=aji7*PR[0], a7pr3=aji7*PR[2], a7pr5=aji7*PR[4], a7pr7=aji7*PR[6];
+    double a8ps1=aji8*PS[0], a8ps2=aji8*PS[1], a8ps5=aji8*PS[4], a8ps6=aji8*PS[5];
+    double a9pt1=aji9*PT[0], a9pt2=aji9*PT[1], a9pt3=aji9*PT[2], a9pt4=aji9*PT[3];
+    gN[0][2]= a7pr1+a8ps1+a9pt1;
+    gN[1][2]=-a7pr1+a8ps2+a9pt2;
+    gN[2][2]= a7pr3-a8ps2+a9pt3;
+    gN[3][2]=-a7pr3-a8ps1+a9pt4;
+    gN[4][2]= a7pr5+a8ps5-a9pt1;
+    gN[5][2]=-a7pr5+a8ps6-a9pt2;
+    gN[6][2]= a7pr7-a8ps6-a9pt3;
+    gN[7][2]=-a7pr7-a8ps5-a9pt4;
+  }
+}
+
 static void s8edefo3_rates(const double gN[8][3], const double v[24], double L[9], double d[6]) {
   /* Mirror Radioss s8edefo3: off-diagonals then diagonals, left-assoc P*V. */
   double px[8], py[8], pz[8], vx[8], vy[8], vz[8];
@@ -468,24 +645,24 @@ double wmbd_hex_internal_forces(
     dsv = mean_dilatation_rate(&pxcOps, v);
   }
 
-  for (gp = 0; gp < 8; gp++) {
-    double J[9], Jinv[9], detJ;
-    GpCache *c = &cache[gp];
-
-    jacobian(SHAPES_DN[gp], x, J);
-    detJ = mat3_det(J);
-    if (detJ <= 0.0) {
-      return NAN;
+  {
+    double aj[8][9];
+    double pr[8][8], ps[8][8], pt[8][8];
+    fill_prst(pr, ps, pt);
+    hierarchical_gp_aj(x, aj);
+    for (gp = 0; gp < 8; gp++) {
+      double detdp, vol, aji[9];
+      GpCache *c = &cache[gp];
+      if (!s8ederipr3(aj[gp], &detdp, &vol, aji)) {
+        return NAN;
+      }
+      s8ederig3(aji, gp, c->gN, pr, ps, pt);
+      s8edefo3_rates(c->gN, v, c->L, c->d);
+      c->vol = vol;
+      c->detJ = detdp;
+      c->q = 0.0;
+      volSum += c->vol;
     }
-    mat3_inverse(J, Jinv);
-    grad_N(SHAPES_DN[gp], Jinv, c->gN);
-
-    s8edefo3_rates(c->gN, v, c->L, c->d);
-
-    c->vol = detJ * W1 * W1 * W1;
-    c->detJ = detJ;
-    c->q = 0.0;
-    volSum += c->vol;
   }
 
   lame(mat->young, mat->poisson, &lam, &mu, &bulk);

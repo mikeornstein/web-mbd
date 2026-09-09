@@ -22,6 +22,7 @@ import {
   gatherHex,
   hexInternalForces,
   hexLumpedNodalMass,
+  hierarchicalGpGeometry,
   s8edefo3Rates,
 } from "../src/fe/hex.js";
 import { applyRigidWallKinematic } from "../src/fe/contactWall.js";
@@ -292,66 +293,15 @@ function captureHexGp(
   const out: Omit<TsGp, "eid">[] = [];
   // Call hexInternalForces on clone to get post SIG; compute D in parallel.
   const fOut = new Float64Array(24);
-  // Precompute D from x,v (jcvt=0 global)
+  // Hierarchical GradN + VOL (same as FORINT / live S8E).
   const rates: Float64Array[] = [];
   const vols: number[] = [];
-  // (dead require removed — Jacobian inlined below)
+  const hier = hierarchicalGpGeometry(x);
   for (let gp = 0; gp < 8; gp++) {
-    const [xi, eta, zeta] = RADIOSS_GAUSS[gp]!;
-    const dN: number[][] = [];
-    for (const c of CORNERS) {
-      dN.push([
-        0.125 * c[0] * (1 + c[1] * eta) * (1 + c[2] * zeta),
-        0.125 * c[1] * (1 + c[0] * xi) * (1 + c[2] * zeta),
-        0.125 * c[2] * (1 + c[0] * xi) * (1 + c[1] * eta),
-      ]);
-    }
-    // jacobian
-    const J = new Array<number>(9).fill(0);
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        let s = 0;
-        for (let a = 0; a < 8; a++) s += x[a * 3 + i]! * dN[a]![j]!;
-        J[i * 3 + j] = s;
-      }
-    }
-    const detJ =
-      J[0]! * (J[4]! * J[8]! - J[5]! * J[7]!) -
-      J[1]! * (J[3]! * J[8]! - J[5]! * J[6]!) +
-      J[2]! * (J[3]! * J[7]! - J[4]! * J[6]!);
-    const a00 = J[4]! * J[8]! - J[5]! * J[7]!;
-    const a01 = J[2]! * J[7]! - J[1]! * J[8]!;
-    const a02 = J[1]! * J[5]! - J[2]! * J[4]!;
-    const a10 = J[5]! * J[6]! - J[3]! * J[8]!;
-    const a11 = J[0]! * J[8]! - J[2]! * J[6]!;
-    const a12 = J[2]! * J[3]! - J[0]! * J[5]!;
-    const a20 = J[3]! * J[7]! - J[4]! * J[6]!;
-    const a21 = J[1]! * J[6]! - J[0]! * J[7]!;
-    const a22 = J[0]! * J[4]! - J[1]! * J[3]!;
-    const invDet = 1 / detJ;
-    const Jinv = [
-      a00 * invDet,
-      a01 * invDet,
-      a02 * invDet,
-      a10 * invDet,
-      a11 * invDet,
-      a12 * invDet,
-      a20 * invDet,
-      a21 * invDet,
-      a22 * invDet,
-    ];
-    const gN: number[][] = [];
-    for (let a = 0; a < 8; a++) {
-      const dn = dN[a]!;
-      gN.push([
-        Jinv[0]! * dn[0]! + Jinv[3]! * dn[1]! + Jinv[6]! * dn[2]!,
-        Jinv[1]! * dn[0]! + Jinv[4]! * dn[1]! + Jinv[7]! * dn[2]!,
-        Jinv[2]! * dn[0]! + Jinv[5]! * dn[1]! + Jinv[8]! * dn[2]!,
-      ]);
-    }
+    const { gN, vol } = hier[gp]!;
     const { d: dEng } = s8edefo3Rates(gN, v);
     rates.push(dEng);
-    vols.push(detJ);
+    vols.push(vol);
   }
 
   hexInternalForces({

@@ -48,6 +48,372 @@ for (const [xi, eta, zeta] of RADIOSS_GAUSS) {
   SHAPES.push({ dN });
 }
 
+/** Radioss `ONE_OVER_512` — hierarchical DETDP scale (`s8ederipr3`). */
+const ONE_OVER_512 = 1 / 512;
+
+/**
+ * Radioss `s8eprst_ini` natural derivatives PR/PS/PT (×8 vs isoparametric dN).
+ * Layout: PRST[gp][axis][node], axis 0=ξ 1=η 2=ζ, node order matches CORNERS.
+ */
+const PRST: number[][][] = (() => {
+  const out: number[][][] = [];
+  for (let ip = 0; ip < 8; ip++) {
+    const ksi = RADIOSS_GAUSS[ip]![0]!;
+    const eta = RADIOSS_GAUSS[ip]![1]!;
+    const zeta = RADIOSS_GAUSS[ip]![2]!;
+    const etazeta = eta * zeta;
+    const ksizeta = ksi * zeta;
+    const ksieta = ksi * eta;
+    const pr = [
+      -(1 - eta - zeta + etazeta),
+      1 - eta - zeta + etazeta,
+      1 + eta - zeta - etazeta,
+      -(1 + eta - zeta - etazeta),
+      -(1 - eta + zeta - etazeta),
+      1 - eta + zeta - etazeta,
+      1 + eta + zeta + etazeta,
+      -(1 + eta + zeta + etazeta),
+    ];
+    const ps = [
+      -(1 - ksi - zeta + ksizeta),
+      -(1 + ksi - zeta - ksizeta),
+      1 + ksi - zeta - ksizeta,
+      1 - ksi - zeta + ksizeta,
+      -(1 - ksi + zeta - ksizeta),
+      -(1 + ksi + zeta + ksizeta),
+      1 + ksi + zeta + ksizeta,
+      1 - ksi + zeta - ksizeta,
+    ];
+    const pt = [
+      -(1 - ksi - eta + ksieta),
+      -(1 + ksi - eta - ksieta),
+      -(1 + ksi + eta + ksieta),
+      -(1 - ksi + eta - ksieta),
+      1 - ksi - eta + ksieta,
+      1 + ksi - eta - ksieta,
+      1 + ksi + eta + ksieta,
+      1 - ksi + eta - ksieta,
+    ];
+    out.push([pr, ps, pt]);
+  }
+  return out;
+})();
+
+export type Aj9 = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+];
+
+/**
+ * Hierarchical GP Jacobians (`s8ederic3` center CJ + hourglass → `s8ejacip3`).
+ * Same construction as `characteristicLengthSmax`; IP order = RADIOSS_GAUSS.
+ */
+export function hierarchicalGpAj(x: Float64Array): Aj9[] {
+  const x1 = x[0]!,
+    y1 = x[1]!,
+    z1 = x[2]!;
+  const x2 = x[3]!,
+    y2 = x[4]!,
+    z2 = x[5]!;
+  const x3 = x[6]!,
+    y3 = x[7]!,
+    z3 = x[8]!;
+  const x4 = x[9]!,
+    y4 = x[10]!,
+    z4 = x[11]!;
+  const x5 = x[12]!,
+    y5 = x[13]!,
+    z5 = x[14]!;
+  const x6 = x[15]!,
+    y6 = x[16]!,
+    z6 = x[17]!;
+  const x7 = x[18]!,
+    y7 = x[19]!,
+    z7 = x[20]!;
+  const x8 = x[21]!,
+    y8 = x[22]!,
+    z8 = x[23]!;
+
+  const x17 = x7 - x1,
+    x28 = x8 - x2,
+    x35 = x5 - x3,
+    x46 = x6 - x4;
+  const y17 = y7 - y1,
+    y28 = y8 - y2,
+    y35 = y5 - y3,
+    y46 = y6 - y4;
+  const z17 = z7 - z1,
+    z28 = z8 - z2,
+    z35 = z5 - z3,
+    z46 = z6 - z4;
+
+  const aj4 = x17 + x28 - x35 - x46;
+  const aj5 = y17 + y28 - y35 - y46;
+  const aj6 = z17 + z28 - z35 - z46;
+  const a17 = x17 + x46,
+    a28 = x28 + x35;
+  const b17 = y17 + y46,
+    b28 = y28 + y35;
+  const c17 = z17 + z46,
+    c28 = z28 + z35;
+  const aj7 = a17 + a28,
+    aj8 = b17 + b28,
+    aj9 = c17 + c28;
+  const aj1 = a17 - a28,
+    aj2 = b17 - b28,
+    aj3 = c17 - c28;
+
+  const hx1 = x1 + x2 - x3 - x4 - x5 - x6 + x7 + x8;
+  const hy1 = y1 + y2 - y3 - y4 - y5 - y6 + y7 + y8;
+  const hz1 = z1 + z2 - z3 - z4 - z5 - z6 + z7 + z8;
+  const hx2 = x1 - x2 - x3 + x4 - x5 + x6 + x7 - x8;
+  const hy2 = y1 - y2 - y3 + y4 - y5 + y6 + y7 - y8;
+  const hz2 = z1 - z2 - z3 + z4 - z5 + z6 + z7 - z8;
+  const hx3 = x1 - x2 + x3 - x4 + x5 - x6 + x7 - x8;
+  const hy3 = y1 - y2 + y3 - y4 + y5 - y6 + y7 - y8;
+  const hz3 = z1 - z2 + z3 - z4 + z5 - z6 + z7 - z8;
+  const hx4 = -x1 + x2 - x3 + x4 + x5 - x6 + x7 - x8;
+  const hy4 = -y1 + y2 - y3 + y4 + y5 - y6 + y7 - y8;
+  const hz4 = -z1 + z2 - z3 + z4 + z5 - z6 + z7 - z8;
+
+  const pg2 = G * G;
+  const hx1pg = hx1 * G,
+    hx2pg = hx2 * G,
+    hx3pg = hx3 * G,
+    hx4pg2 = hx4 * pg2;
+  const hy1pg = hy1 * G,
+    hy2pg = hy2 * G,
+    hy3pg = hy3 * G,
+    hy4pg2 = hy4 * pg2;
+  const hz1pg = hz1 * G,
+    hz2pg = hz2 * G,
+    hz3pg = hz3 * G,
+    hz4pg2 = hz4 * pg2;
+
+  return [
+    [
+      aj1 - hx3pg - hx2pg + hx4pg2,
+      aj2 - hy3pg - hy2pg + hy4pg2,
+      aj3 - hz3pg - hz2pg + hz4pg2,
+      aj4 - hx1pg - hx3pg + hx4pg2,
+      aj5 - hy1pg - hy3pg + hy4pg2,
+      aj6 - hz1pg - hz3pg + hz4pg2,
+      aj7 - hx2pg - hx1pg + hx4pg2,
+      aj8 - hy2pg - hy1pg + hy4pg2,
+      aj9 - hz2pg - hz1pg + hz4pg2,
+    ],
+    [
+      aj1 - hx3pg - hx2pg + hx4pg2,
+      aj2 - hy3pg - hy2pg + hy4pg2,
+      aj3 - hz3pg - hz2pg + hz4pg2,
+      aj4 - hx1pg + hx3pg - hx4pg2,
+      aj5 - hy1pg + hy3pg - hy4pg2,
+      aj6 - hz1pg + hz3pg - hz4pg2,
+      aj7 + hx2pg - hx1pg - hx4pg2,
+      aj8 + hy2pg - hy1pg - hy4pg2,
+      aj9 + hz2pg - hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg - hx2pg - hx4pg2,
+      aj2 + hy3pg - hy2pg - hy4pg2,
+      aj3 + hz3pg - hz2pg - hz4pg2,
+      aj4 - hx1pg - hx3pg + hx4pg2,
+      aj5 - hy1pg - hy3pg + hy4pg2,
+      aj6 - hz1pg - hz3pg + hz4pg2,
+      aj7 - hx2pg + hx1pg - hx4pg2,
+      aj8 - hy2pg + hy1pg - hy4pg2,
+      aj9 - hz2pg + hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg - hx2pg - hx4pg2,
+      aj2 + hy3pg - hy2pg - hy4pg2,
+      aj3 + hz3pg - hz2pg - hz4pg2,
+      aj4 - hx1pg + hx3pg - hx4pg2,
+      aj5 - hy1pg + hy3pg - hy4pg2,
+      aj6 - hz1pg + hz3pg - hz4pg2,
+      aj7 + hx2pg + hx1pg + hx4pg2,
+      aj8 + hy2pg + hy1pg + hy4pg2,
+      aj9 + hz2pg + hz1pg + hz4pg2,
+    ],
+    [
+      aj1 - hx3pg + hx2pg - hx4pg2,
+      aj2 - hy3pg + hy2pg - hy4pg2,
+      aj3 - hz3pg + hz2pg - hz4pg2,
+      aj4 + hx1pg - hx3pg - hx4pg2,
+      aj5 + hy1pg - hy3pg - hy4pg2,
+      aj6 + hz1pg - hz3pg - hz4pg2,
+      aj7 - hx2pg - hx1pg + hx4pg2,
+      aj8 - hy2pg - hy1pg + hy4pg2,
+      aj9 - hz2pg - hz1pg + hz4pg2,
+    ],
+    [
+      aj1 - hx3pg + hx2pg - hx4pg2,
+      aj2 - hy3pg + hy2pg - hy4pg2,
+      aj3 - hz3pg + hz2pg - hz4pg2,
+      aj4 + hx1pg + hx3pg + hx4pg2,
+      aj5 + hy1pg + hy3pg + hy4pg2,
+      aj6 + hz1pg + hz3pg + hz4pg2,
+      aj7 + hx2pg - hx1pg - hx4pg2,
+      aj8 + hy2pg - hy1pg - hy4pg2,
+      aj9 + hz2pg - hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg + hx2pg + hx4pg2,
+      aj2 + hy3pg + hy2pg + hy4pg2,
+      aj3 + hz3pg + hz2pg + hz4pg2,
+      aj4 + hx1pg - hx3pg - hx4pg2,
+      aj5 + hy1pg - hy3pg - hy4pg2,
+      aj6 + hz1pg - hz3pg - hz4pg2,
+      aj7 - hx2pg + hx1pg - hx4pg2,
+      aj8 - hy2pg + hy1pg - hy4pg2,
+      aj9 - hz2pg + hz1pg - hz4pg2,
+    ],
+    [
+      aj1 + hx3pg + hx2pg + hx4pg2,
+      aj2 + hy3pg + hy2pg + hy4pg2,
+      aj3 + hz3pg + hz2pg + hz4pg2,
+      aj4 + hx1pg + hx3pg + hx4pg2,
+      aj5 + hy1pg + hy3pg + hy4pg2,
+      aj6 + hz1pg + hz3pg + hz4pg2,
+      aj7 + hx2pg + hx1pg + hx4pg2,
+      aj8 + hy2pg + hy1pg + hy4pg2,
+      aj9 + hz2pg + hz1pg + hz4pg2,
+    ],
+  ];
+}
+
+/** Radioss `s8ederipr3`: DETDP, VOL=WI·DETDP (WI=1), AJI inverse. */
+export function s8ederipr3(aj: Aj9): { detdp: number; vol: number; aji: number[] } {
+  const [a1, a2, a3, a4, a5, a6, a7, a8, a9] = aj;
+  const jac_59_68 = a5 * a9 - a6 * a8;
+  const jac_67_49 = a6 * a7 - a4 * a9;
+  const jac_38_29 = -a2 * a9 + a3 * a8;
+  const jac_19_37 = a1 * a9 - a3 * a7;
+  const jac_27_18 = -a1 * a8 + a2 * a7;
+  const jac_26_35 = a2 * a6 - a3 * a5;
+  const jac_34_16 = -a1 * a6 + a3 * a4;
+  const jac_15_24 = a1 * a5 - a2 * a4;
+  const jac_48_57 = a4 * a8 - a5 * a7;
+  const detdp = ONE_OVER_512 * (a1 * jac_59_68 + a2 * jac_67_49 + a3 * jac_48_57);
+  const dett = ONE_OVER_512 / detdp;
+  const aji = [
+    dett * jac_59_68,
+    dett * jac_38_29,
+    dett * jac_26_35,
+    dett * jac_67_49,
+    dett * jac_19_37,
+    dett * jac_34_16,
+    dett * jac_48_57,
+    dett * jac_27_18,
+    dett * jac_15_24,
+  ];
+  return { detdp, vol: W1 * detdp, aji };
+}
+
+/**
+ * Radioss `s8ederig3`: Cartesian GradN from AJI × PR/PS/PT at one GP.
+ * Returns gN[node][xyz] with node order matching CORNERS / IXS.
+ */
+export function s8ederig3(aji: number[], gp: number): number[][] {
+  const pr = PRST[gp]![0]!;
+  const ps = PRST[gp]![1]!;
+  const pt = PRST[gp]![2]!;
+  const aji1 = aji[0]!,
+    aji2 = aji[1]!,
+    aji3 = aji[2]!,
+    aji4 = aji[3]!,
+    aji5 = aji[4]!,
+    aji6 = aji[5]!,
+    aji7 = aji[6]!,
+    aji8 = aji[7]!,
+    aji9 = aji[8]!;
+
+  const px = new Array<number>(8);
+  const py = new Array<number>(8);
+  const pz = new Array<number>(8);
+
+  const a1pr1 = aji1 * pr[0]!,
+    a1pr3 = aji1 * pr[2]!,
+    a1pr5 = aji1 * pr[4]!,
+    a1pr7 = aji1 * pr[6]!;
+  const a2ps1 = aji2 * ps[0]!,
+    a2ps2 = aji2 * ps[1]!,
+    a2ps5 = aji2 * ps[4]!,
+    a2ps6 = aji2 * ps[5]!;
+  const a3pt1 = aji3 * pt[0]!,
+    a3pt2 = aji3 * pt[1]!,
+    a3pt3 = aji3 * pt[2]!,
+    a3pt4 = aji3 * pt[3]!;
+  px[0] = a1pr1 + a2ps1 + a3pt1;
+  px[1] = -a1pr1 + a2ps2 + a3pt2;
+  px[2] = a1pr3 - a2ps2 + a3pt3;
+  px[3] = -a1pr3 - a2ps1 + a3pt4;
+  px[4] = a1pr5 + a2ps5 - a3pt1;
+  px[5] = -a1pr5 + a2ps6 - a3pt2;
+  px[6] = a1pr7 - a2ps6 - a3pt3;
+  px[7] = -a1pr7 - a2ps5 - a3pt4;
+
+  const a4pr1 = aji4 * pr[0]!,
+    a4pr3 = aji4 * pr[2]!,
+    a4pr5 = aji4 * pr[4]!,
+    a4pr7 = aji4 * pr[6]!;
+  const a5ps1 = aji5 * ps[0]!,
+    a5ps2 = aji5 * ps[1]!,
+    a5ps5 = aji5 * ps[4]!,
+    a5ps6 = aji5 * ps[5]!;
+  const a6pt1 = aji6 * pt[0]!,
+    a6pt2 = aji6 * pt[1]!,
+    a6pt3 = aji6 * pt[2]!,
+    a6pt4 = aji6 * pt[3]!;
+  py[0] = a4pr1 + a5ps1 + a6pt1;
+  py[1] = -a4pr1 + a5ps2 + a6pt2;
+  py[2] = a4pr3 - a5ps2 + a6pt3;
+  py[3] = -a4pr3 - a5ps1 + a6pt4;
+  py[4] = a4pr5 + a5ps5 - a6pt1;
+  py[5] = -a4pr5 + a5ps6 - a6pt2;
+  py[6] = a4pr7 - a5ps6 - a6pt3;
+  py[7] = -a4pr7 - a5ps5 - a6pt4;
+
+  const a7pr1 = aji7 * pr[0]!,
+    a7pr3 = aji7 * pr[2]!,
+    a7pr5 = aji7 * pr[4]!,
+    a7pr7 = aji7 * pr[6]!;
+  const a8ps1 = aji8 * ps[0]!,
+    a8ps2 = aji8 * ps[1]!,
+    a8ps5 = aji8 * ps[4]!,
+    a8ps6 = aji8 * ps[5]!;
+  const a9pt1 = aji9 * pt[0]!,
+    a9pt2 = aji9 * pt[1]!,
+    a9pt3 = aji9 * pt[2]!,
+    a9pt4 = aji9 * pt[3]!;
+  pz[0] = a7pr1 + a8ps1 + a9pt1;
+  pz[1] = -a7pr1 + a8ps2 + a9pt2;
+  pz[2] = a7pr3 - a8ps2 + a9pt3;
+  pz[3] = -a7pr3 - a8ps1 + a9pt4;
+  pz[4] = a7pr5 + a8ps5 - a9pt1;
+  pz[5] = -a7pr5 + a8ps6 - a9pt2;
+  pz[6] = a7pr7 - a8ps6 - a9pt3;
+  pz[7] = -a7pr7 - a8ps5 - a9pt4;
+
+  return Array.from({ length: 8 }, (_, a) => [px[a]!, py[a]!, pz[a]!]);
+}
+
+/** Per-GP hierarchical GradN + VOL for FORINT (`s8ejacip3`→`s8ederipr3`→`s8ederig3`). */
+export function hierarchicalGpGeometry(x: Float64Array): { gN: number[][]; vol: number; detdp: number }[] {
+  return hierarchicalGpAj(x).map((aj, gp) => {
+    const { detdp, vol, aji } = s8ederipr3(aj);
+    if (!(detdp > 0)) throw new Error("hex inversion (hierarchical DETDP)");
+    return { gN: s8ederig3(aji, gp), vol, detdp };
+  });
+}
+
 function jacobian(dN: number[][], x: Float64Array): number[] {
   const J = new Array<number>(9).fill(0);
   for (let i = 0; i < 3; i++) {
@@ -166,10 +532,8 @@ export function hexLumpedNodalMass(x0: Float64Array, density: number): Float64Ar
 
 export function createHexGpStates(x0?: Float64Array): J2State[] {
   if (!x0) return Array.from({ length: 8 }, () => createJ2State());
-  return Array.from({ length: 8 }, (_, gp) => {
-    const detJ = mat3Det(jacobian(SHAPES[gp]!.dN, x0));
-    return createJ2State(detJ * W1 * W1 * W1);
-  });
+  // Live VOLO from hierarchical DETDP (`s8ederipr3`), not iso det(J).
+  return hierarchicalGpGeometry(x0).map((gp) => createJ2State(gp.vol));
 }
 
 export function characteristicLength(x0: Float64Array, poisson = 0.35): number {
@@ -292,144 +656,15 @@ export function characteristicLengthSmax(x: Float64Array): number {
   if (!(s2 > 0)) return 0;
   const smax = 1 / Math.sqrt(s2);
 
-  // Hourglass modes HX/HY/HZ (s8ederic3) → GP AJ via s8ejacip3 → DETDP.
-  const hx1 = x1 + x2 - x3 - x4 - x5 - x6 + x7 + x8;
-  const hy1 = y1 + y2 - y3 - y4 - y5 - y6 + y7 + y8;
-  const hz1 = z1 + z2 - z3 - z4 - z5 - z6 + z7 + z8;
-  const hx2 = x1 - x2 - x3 + x4 - x5 + x6 + x7 - x8;
-  const hy2 = y1 - y2 - y3 + y4 - y5 + y6 + y7 - y8;
-  const hz2 = z1 - z2 - z3 + z4 - z5 + z6 + z7 - z8;
-  const hx3 = x1 - x2 + x3 - x4 + x5 - x6 + x7 - x8;
-  const hy3 = y1 - y2 + y3 - y4 + y5 - y6 + y7 - y8;
-  const hz3 = z1 - z2 + z3 - z4 + z5 - z6 + z7 - z8;
-  const hx4 = -x1 + x2 - x3 + x4 + x5 - x6 + x7 - x8;
-  const hy4 = -y1 + y2 - y3 + y4 + y5 - y6 + y7 - y8;
-  const hz4 = -z1 + z2 - z3 + z4 + z5 - z6 + z7 - z8;
-
-  const pg2 = G * G;
-  const hx1pg = hx1 * G,
-    hx2pg = hx2 * G,
-    hx3pg = hx3 * G,
-    hx4pg2 = hx4 * pg2;
-  const hy1pg = hy1 * G,
-    hy2pg = hy2 * G,
-    hy3pg = hy3 * G,
-    hy4pg2 = hy4 * pg2;
-  const hz1pg = hz1 * G,
-    hz2pg = hz2 * G,
-    hz3pg = hz3 * G,
-    hz4pg2 = hz4 * pg2;
-
-  // s8ejacip3 IP order (ξ fastest): signs for (ηζ, ξζ, ξη) hourglass terms.
-  const gpAj: [number, number, number, number, number, number, number, number, number][] = [
-    [
-      aj1 - hx3pg - hx2pg + hx4pg2,
-      aj2 - hy3pg - hy2pg + hy4pg2,
-      aj3 - hz3pg - hz2pg + hz4pg2,
-      aj4 - hx1pg - hx3pg + hx4pg2,
-      aj5 - hy1pg - hy3pg + hy4pg2,
-      aj6 - hz1pg - hz3pg + hz4pg2,
-      aj7 - hx2pg - hx1pg + hx4pg2,
-      aj8 - hy2pg - hy1pg + hy4pg2,
-      aj9 - hz2pg - hz1pg + hz4pg2,
-    ],
-    [
-      aj1 - hx3pg - hx2pg + hx4pg2,
-      aj2 - hy3pg - hy2pg + hy4pg2,
-      aj3 - hz3pg - hz2pg + hz4pg2,
-      aj4 - hx1pg + hx3pg - hx4pg2,
-      aj5 - hy1pg + hy3pg - hy4pg2,
-      aj6 - hz1pg + hz3pg - hz4pg2,
-      aj7 + hx2pg - hx1pg - hx4pg2,
-      aj8 + hy2pg - hy1pg - hy4pg2,
-      aj9 + hz2pg - hz1pg - hz4pg2,
-    ],
-    [
-      aj1 + hx3pg - hx2pg - hx4pg2,
-      aj2 + hy3pg - hy2pg - hy4pg2,
-      aj3 + hz3pg - hz2pg - hz4pg2,
-      aj4 - hx1pg - hx3pg + hx4pg2,
-      aj5 - hy1pg - hy3pg + hy4pg2,
-      aj6 - hz1pg - hz3pg + hz4pg2,
-      aj7 - hx2pg + hx1pg - hx4pg2,
-      aj8 - hy2pg + hy1pg - hy4pg2,
-      aj9 - hz2pg + hz1pg - hz4pg2,
-    ],
-    [
-      aj1 + hx3pg - hx2pg - hx4pg2,
-      aj2 + hy3pg - hy2pg - hy4pg2,
-      aj3 + hz3pg - hz2pg - hz4pg2,
-      aj4 - hx1pg + hx3pg - hx4pg2,
-      aj5 - hy1pg + hy3pg - hy4pg2,
-      aj6 - hz1pg + hz3pg - hz4pg2,
-      aj7 + hx2pg + hx1pg + hx4pg2,
-      aj8 + hy2pg + hy1pg + hy4pg2,
-      aj9 + hz2pg + hz1pg + hz4pg2,
-    ],
-    [
-      aj1 - hx3pg + hx2pg - hx4pg2,
-      aj2 - hy3pg + hy2pg - hy4pg2,
-      aj3 - hz3pg + hz2pg - hz4pg2,
-      aj4 + hx1pg - hx3pg - hx4pg2,
-      aj5 + hy1pg - hy3pg - hy4pg2,
-      aj6 + hz1pg - hz3pg - hz4pg2,
-      aj7 - hx2pg - hx1pg + hx4pg2,
-      aj8 - hy2pg - hy1pg + hy4pg2,
-      aj9 - hz2pg - hz1pg + hz4pg2,
-    ],
-    [
-      aj1 - hx3pg + hx2pg - hx4pg2,
-      aj2 - hy3pg + hy2pg - hy4pg2,
-      aj3 - hz3pg + hz2pg - hz4pg2,
-      aj4 + hx1pg + hx3pg + hx4pg2,
-      aj5 + hy1pg + hy3pg + hy4pg2,
-      aj6 + hz1pg + hz3pg + hz4pg2,
-      aj7 + hx2pg - hx1pg - hx4pg2,
-      aj8 + hy2pg - hy1pg - hy4pg2,
-      aj9 + hz2pg - hz1pg - hz4pg2,
-    ],
-    [
-      aj1 + hx3pg + hx2pg + hx4pg2,
-      aj2 + hy3pg + hy2pg + hy4pg2,
-      aj3 + hz3pg + hz2pg + hz4pg2,
-      aj4 + hx1pg - hx3pg - hx4pg2,
-      aj5 + hy1pg - hy3pg - hy4pg2,
-      aj6 + hz1pg - hz3pg - hz4pg2,
-      aj7 - hx2pg + hx1pg - hx4pg2,
-      aj8 - hy2pg + hy1pg - hy4pg2,
-      aj9 - hz2pg + hz1pg - hz4pg2,
-    ],
-    [
-      aj1 + hx3pg + hx2pg + hx4pg2,
-      aj2 + hy3pg + hy2pg + hy4pg2,
-      aj3 + hz3pg + hz2pg + hz4pg2,
-      aj4 + hx1pg + hx3pg + hx4pg2,
-      aj5 + hy1pg + hy3pg + hy4pg2,
-      aj6 + hz1pg + hz3pg + hz4pg2,
-      aj7 + hx2pg + hx1pg + hx4pg2,
-      aj8 + hy2pg + hy1pg + hy4pg2,
-      aj9 + hz2pg + hz1pg + hz4pg2,
-    ],
-  ];
-
-  const oneOver512 = 1 / 512;
   let minVol = Infinity;
-  for (const aj of gpAj) {
-    const [a1, a2, a3, a4, a5, a6, a7, a8, a9] = aj;
-    const j5968 = a5! * a9! - a6! * a8!;
-    const j6749 = a6! * a7! - a4! * a9!;
-    const j4857 = a4! * a8! - a5! * a7!;
-    const detdp = oneOver512 * (a1! * j5968 + a2! * j6749 + a3! * j4857);
-    if (detdp <= 0) return 0;
-    minVol = Math.min(minVol, detdp * W1);
+  for (const aj of hierarchicalGpAj(x)) {
+    const { vol } = s8ederipr3(aj);
+    if (!(vol > 0)) return 0;
+    minVol = Math.min(minVol, vol);
   }
   return 128 * minVol * smax;
 }
 
-/**
- * Radioss `sz_dt1` characteristic length from PXC/PYC/PZC (used when FAC_NU<1).
- * `gfac = (1-2ν)/(1-ν)`; when gfac≥1 the routine returns 0 (caller falls back).
- */
 export function characteristicLengthPxc(x: Float64Array, poisson = 0.35): number {
   const gfac = (1 - 2 * poisson) / (1 - poisson);
   if (!(gfac < 1)) return 0;
@@ -931,18 +1166,15 @@ export function hexInternalForces(args: {
       ? meanDilatationRate(pxcOps.pxc, pxcOps.pyc, pxcOps.pzc, v)
       : 0;
 
-  for (let gp = 0; gp < 8; gp++) {
-    const { dN } = SHAPES[gp]!;
-    const J = jacobian(dN, x);
-    const detJ = mat3Det(J);
-    if (detJ <= 0) throw new Error("hex inversion");
-    const gN = gradN(dN, mat3Inverse(J));
+  // Hierarchical AJ GradN + DETDP (s8ejacip3 → s8ederipr3 → s8ederig3).
+  const hier = hierarchicalGpGeometry(x);
 
+  for (let gp = 0; gp < 8; gp++) {
+    const { gN, vol, detdp } = hier[gp]!;
     const { L, d } = s8edefo3Rates(gN, v);
 
-    const vol = detJ * W1 * W1 * W1;
+    cache.push({ detJ: detdp, gN, L, d, vol, q: 0 });
     volSum += vol;
-    cache.push({ detJ, gN, L, d, vol, q: 0 });
   }
 
   const { mu, bulk } = lame(mat.young, mat.poisson);
