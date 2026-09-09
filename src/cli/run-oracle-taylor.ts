@@ -79,7 +79,7 @@ function main(): void {
   );
   const ours = solveExplicit(model, {
     maxWallMs: 600_000,
-    ...(useOrMesh
+    ...(useOrMesh && nodalMasses
       ? {
           assembleForces: (a: Parameters<typeof assembleInternalForcesOrMesh>[0]) =>
             assembleInternalForcesOrMesh(a),
