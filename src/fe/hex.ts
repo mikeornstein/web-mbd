@@ -6,7 +6,7 @@ import {
   RADIOSS_ONEP333,
   type J2State,
 } from "./materialJ2.js";
-import { mat3Det, mat3Inverse } from "./math3.js";
+import { mat3Det } from "./math3.js";
 
 /** Radioss `s8eprst_ini` PG=.577350269189625D0 (not 1/√3, which is ~1 ulp larger). */
 const G = 0.577350269189625;
@@ -424,19 +424,6 @@ function jacobian(dN: number[][], x: Float64Array): number[] {
     }
   }
   return J;
-}
-
-function gradN(dN: number[][], Jinv: number[]): number[][] {
-  const g: number[][] = [];
-  for (let a = 0; a < 8; a++) {
-    const dn = dN[a]!;
-    g.push([
-      Jinv[0]! * dn[0]! + Jinv[3]! * dn[1]! + Jinv[6]! * dn[2]!,
-      Jinv[1]! * dn[0]! + Jinv[4]! * dn[1]! + Jinv[7]! * dn[2]!,
-      Jinv[2]! * dn[0]! + Jinv[5]! * dn[1]! + Jinv[8]! * dn[2]!,
-    ]);
-  }
-  return g;
 }
 
 export function gatherHex(
