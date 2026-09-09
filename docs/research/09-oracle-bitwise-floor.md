@@ -50,5 +50,5 @@ Anim→VTK is float32. Prefer host `.f64bin` (patched `stat_node.F`) over E20.13
 Early residuals (~1e-5 adaptive) were DT₀ phase (`ONEP333` + hierarchical
 DELTAX), then cycle-0 constitutive `DT1`, then GradN/VOL hierarchical AJ, then
 SCUMU3 `anod` vs F11 re-gather. Multi-NEL width alone was not the floor
-(NEL=16 ≡ NEL=1). Detail dumps: `docs/research/av-dumps/`,
-`docs/research/adaptive-dumps/` (NCYCLE 0–2 samples).
+(NEL=16 ≡ NEL=1). Host `.f64bin` samples are regenerable with the patches under
+`docs/research/or-patches/` — not checked in.

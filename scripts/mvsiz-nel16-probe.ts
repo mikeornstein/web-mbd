@@ -203,9 +203,6 @@ ${f20(endTime)}${f20(endTime)}
   console.log(JSON.stringify(row, null, 2));
 }
 
-writeFileSync("/tmp/mvsiz-nel16-probe.json", JSON.stringify(results, null, 2));
-writeFileSync(
-  join(process.cwd(), "docs/research/mvsiz-nel16-probe.json"),
-  JSON.stringify(results, null, 2),
-);
-console.error("wrote docs/research/mvsiz-nel16-probe.json");
+const outPath = process.argv[3] ?? "/tmp/mvsiz-nel16-probe.json";
+writeFileSync(outPath, JSON.stringify(results, null, 2));
+console.error(`wrote ${outPath}`);

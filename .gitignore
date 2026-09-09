@@ -30,3 +30,9 @@ native/force-kernel/*.o
 native/force-kernel/or-extract/*.o
 
 native/force-kernel/.build.lock
+
+# Regenerable OpenRadioss host dumps / local probe outputs
+docs/research/**/*.f64bin
+docs/research/*-probe.json
+docs/research/mass-vs-live.json
+docs/research/oracle-f64bin-object-is.json

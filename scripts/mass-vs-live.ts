@@ -1,5 +1,7 @@
 /**
- * Compare web-mbd lumped nodal masses to live OR NODES%MS from postaccele dump.
+ * Compare web-mbd lumped nodal masses to live OR NODES%MS from a postaccele dump.
+ *
+ *   pnpm exec tsx scripts/mass-vs-live.ts /path/to/wmbd_postaccele_0.f64bin
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { createTaylorBarModel } from "../src/fixtures/taylorBar.js";
@@ -32,7 +34,14 @@ function parsePostAccele(path: string): {
   return { ncycle, numnod, dt1, dt2, dt12, itab, masses };
 }
 
-const live = parsePostAccele("docs/research/av-dumps/wmbd_postaccele_0.f64bin");
+const dumpPath = process.argv[2];
+if (!dumpPath) {
+  console.error(
+    "usage: pnpm exec tsx scripts/mass-vs-live.ts /path/to/wmbd_postaccele_0.f64bin",
+  );
+  process.exit(1);
+}
+const live = parsePostAccele(dumpPath);
 
 const model = createTaylorBarModel({ nSide: 2, nZ: 4 });
 const x = snapCoordsToRadiossF20(model.mesh.coords);
@@ -85,4 +94,6 @@ const out = {
   first,
 };
 console.log(JSON.stringify(out, null, 2));
-writeFileSync("docs/research/mass-vs-live.json", JSON.stringify(out, null, 2));
+const outPath = process.argv[3] ?? "/tmp/mass-vs-live.json";
+writeFileSync(outPath, JSON.stringify(out, null, 2));
+console.error(`wrote ${outPath}`);

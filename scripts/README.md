@@ -9,7 +9,7 @@ usually `WMBD_OR_CALL_S8E=1` + relinked `libwmbd_or_hex.so`).
 | `f64bin-fixed-dt-probe.ts` | Fixed-Δt Object.is horizon |
 | `f64bin-vs-wmbd.ts` | Coarse/production live compare |
 | `f64bin-smoke.ts` | Quick f64bin runner smoke |
-| `mass-vs-live.ts` | Lumped MS vs live dump |
+| `mass-vs-live.ts` | Lumped MS vs live dump (pass `.f64bin` path) |
 | `mvsiz-nel16-probe.ts` | NEL=16 vs NEL=1 |
 | `replay-or-dt-schedule.ts` | Replay live DT schedule |
 | `probe-sta-divergence.ts` | E20.13 `.sta` floor |
