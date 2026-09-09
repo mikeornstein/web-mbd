@@ -204,18 +204,42 @@ QVIS, EPSD, VOL, RHO, AMU, EINT. Copies in `docs/research/gpsig-dumps/`.
 | --- | --- |
 | **Constitutive DT** | Live `m2law.F:195` `G1=DT1*G`. Cycle 0 DT1=0 ⇒ **SIG stays 0**. web-mbd was passing **DT2** into `hexInternalForces` → ~1e-9 Pa SIG under rigid V₀. **Fixed**: FORINT now uses `dt1` (`solver.ts`). |
 | SIG @ NCYCLE=0 | **Object.is** (all GPs) after DT1 fix |
-| D @ NCYCLE=0 | ~1e-12 noise; live/TS signs can flip (GradN·v cancellation) |
+| D @ NCYCLE=0 | Still ~1e-12 noise / sign flips after `s8edefo3` left-to-right `P·V` + engineering D4 |
+| **VOL @ NCYCLE=0** | 124/128 GPs differ (~2e-24 abs / ~3e-16 rel) — **iso `det(J)` vs live hierarchical `DETDP=ONE_OVER_512·det(AJ)`** |
 | SIG diagonals @ NCYCLE=1 impact GPs | **Object.is** (e.g. eid1 ip1); other GPs ~1e-12 relative (~3e-5 Pa hydrostatic) |
-| Shear D / SIG @ NCYCLE=1 | ~1e-12 / ~1e-9 residual — first post-fix divergence |
+| Shear D / SIG @ NCYCLE=1 | ~1e-12 / ~1e-9 residual — first post-force divergence |
 | PLA | Object.is (still 0 through 3 cycles) |
 | QVIS | Deck QA=1e-20, QB=1e-21; live ~1e-12 vs TS 0 — negligible vs ‖σ‖~1e8 |
 | Hourglass | GEO QH=0 — not active |
 
-**Conclusion:** the formulation mismatch that seeded the cascade was **M2LAW time factor DT1 vs DT2 on cycle 0** (`m2law.F:195` vs old `solver.ts` passing `dt`). After that fix, step≥3 coord Object.is is still open (~1 ulp) from **IEEE GradN·v / shear-rate residuals** under wall-driven nonuniform V (~1e-12 on D, ~1e-13 relative on face A). Not MVSIZ, IXS, RGWALL kinematics, QA/QB, or hourglass.
+### `s8edefo3` GradN·v association (landed)
 
-**Next:** match Radioss `s8edefo3` / `scoor3` B·v contraction order (or accept ulp floor and share the OR force kernel for production Object.is).
+web-mbd `hexInternalForces` / C `force_kernel.c` now mirror live `s8edefo3`
+(`I_SH==0`, `ICP≠11`):
 
-Production adaptive Object.is remains open (re-pinned Lf ~2e-15 after DT1 constitutive fix).
+1. Off-diagonal then diagonal velocity gradients as separate left-to-right `P·V` sums
+2. Engineering shear `D4=DXY+DYX` (not `½(Lxy+Lyx)`), constitutive `G·DT·D4` like M2LAW
+
+Fixed-Δt after this change (`docs/research/step1-5-object-is.json` /
+`step23-divergence-probe.json`):
+
+| Steps | coords Object.is | metrics Object.is | nDiff / maxAbs |
+| --- | --- | --- | --- |
+| 1–2 | **true** | **true** | 0 |
+| ≥3 | **false** | **true** | 2 dofs / 1 ulp (node 26 x,y) — unchanged |
+
+GP dump after the change still shows D/VOL noise at NCYCLE=0. **Association
+order alone did not close step-3 Object.is.**
+
+**Conclusion:** mass Object.is + DT1 constitutive + `s8edefo3` rate assembly are
+in. Remaining floor is **hierarchical GP Jacobian / GradN** (`s8ejacip3` →
+`s8ederipr3` DETDP + AJI → PX) vs web-mbd isoparametric `jacobian`/`gradN`.
+VOL already differs at rest (~1e-15 rel) ⇒ D ~ V·ΔGradN ~ 1e-12 under wall-driven
+V ⇒ A noise ⇒ 1 ulp on X by step 3. OR-ABI extract also fails step≥3.
+
+**Next bisect:** drive FORINT GradN + GP volume from hierarchical AJ (reuse
+`characteristicLengthSmax` AJ build / `S8EDERIPR3` inverse), not isoparametric
+`det(J)`. Production adaptive Object.is remains open.
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.
