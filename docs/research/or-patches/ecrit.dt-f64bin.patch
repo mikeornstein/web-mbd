@@ -1,0 +1,19 @@
+diff --git a/engine/source/output/ecrit.F b/engine/source/output/ecrit.F
+index 7f8936c..4a0a17a 100644
+--- a/engine/source/output/ecrit.F
++++ b/engine/source/output/ecrit.F
+@@ -649,6 +649,14 @@ C-----------------------------------------------
+         JPRI=MOD(NCYCLE,ILIGN*IABS(NCPRI))
+         IF(JPRI==0) WRITE(IOUT,1000)
+         WRITE(IOUT,1100) NCYCLE,TT,DT2,ELTYP(ITYPTS),NELTS,ERR1,ENINT,ENCIN,ENROT,OUTPUT%TH%WFEXT,EMASS,XMASS,XMASS-MASS0-DM_INOUT
++C       web-mbd: host float64 DT schedule (NCYCLE:i32, TT:f64, DT2:f64)
++        IF (ISPMD == 0) THEN
++          IF (NCYCLE == 0) THEN
++            OPEN(UNIT=778,FILE='TAYLOR_dt.f64bin',
++     .           ACCESS='STREAM',FORM='UNFORMATTED',STATUS='REPLACE')
++          ENDIF
++          WRITE(778) NCYCLE,TT,DT2
++        ENDIF
+         CALL MY_FLUSH(IOUT)
+         IF(NCPRI<0) THEN
+           IF(DEBUG(10)/=0)THEN

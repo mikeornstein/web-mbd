@@ -1,0 +1,53 @@
+{
+  "webmbd": {
+    "lengthRatio": 0.6665620240284902,
+    "radiusRatio": 2.2318896935064743,
+    "axialShortening": 0.010803390421476919,
+    "maxDisplacement": 0.010805343971564912,
+    "maxEqPlasticStrain": 2.8261925362994162,
+    "energyErrorPct": 6.001805689636812e-14,
+    "nSteps": 2573,
+    "forceBackend": "or-mesh-scumu3+live-ms"
+  },
+  "oracle": {
+    "finalLength": 0.02159660957852308,
+    "finalMaxRadius": 0.007142047019220717,
+    "lengthRatio": 0.6665620240284902,
+    "radiusRatio": 2.2318896935064743,
+    "source": "openradioss",
+    "root": "TAYLOR",
+    "coordSource": "f64bin"
+  },
+  "compare": {
+    "ok": true,
+    "lengthRelError": 0,
+    "radiusRelError": 0,
+    "tolerances": {
+      "lengthRatioRel": 1e-13,
+      "radiusRatioRel": 1e-13
+    },
+    "bitwiseEqual": true,
+    "nearestNeighborMax": 9.990277540241584e-19,
+    "nearestNeighborMean": 1.782029465968871e-20,
+    "alignedMax": 0,
+    "alignedMean": 0,
+    "coordsBitwiseEqual": true,
+    "coordSource": "f64bin"
+  },
+  "acceptancePass": true,
+  "acceptance": {
+    "lengthRatio": {
+      "min": 0.65,
+      "max": 0.69
+    },
+    "radiusRatio": {
+      "min": 2.15,
+      "max": 2.35
+    },
+    "energyErrorPctAbsMax": 5,
+    "maxEqPlasticStrain": {
+      "min": 0.5,
+      "max": 8
+    }
+  }
+}

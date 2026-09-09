@@ -26,7 +26,9 @@ test("research catalog exposes the Taylor bar stock model", () => {
 
 test("stock Taylor model solves inside research acceptance bands", () => {
   const taylor = getResearchStockModel("taylor-bar-copper");
-  const result = solveExplicit(taylor.create(), { maxWallMs: 60_000 });
+  const result = solveExplicit(taylor.create(), { maxWallMs: 600_000 });
   expect(metricsPassAcceptance(result.metrics, taylor.acceptance)).toBe(true);
   expect(result.history.length).toBeGreaterThan(1);
-}, 60_000);
+  expect(result.metrics.maxEqPlasticStrain).toBeGreaterThan(0.5);
+  expect(result.metrics.axialShortening).toBeGreaterThan(0);
+}, 600_000);

@@ -18,7 +18,14 @@ export interface HexMesh {
 export interface RigidWallPlane {
   point: Vec3;
   normal: Vec3;
+  /** Penalty stiffness (used when kind === "penalty"). */
   penalty: number;
+  /**
+   * Contact idealization.
+   * - penalty: soft spring (legacy MVP)
+   * - kinematic: Radioss /RWALL ITIED=0 style (default for Taylor oracle parity)
+   */
+  kind?: "penalty" | "kinematic";
 }
 
 export interface ModelIR {
@@ -40,7 +47,11 @@ export interface ModelIR {
     endTime: number;
     cfl: number;
     fixedDt?: number;
+    /** Recompute CFL dt from current mesh each step (Radioss-like). Default true. */
+    adaptiveDt?: boolean;
     maxSteps?: number;
+    /** If true, never early-exit on residual KE (needed for oracle parity). */
+    runToEnd?: boolean;
   };
   output: {
     historyInterval: number;
@@ -61,6 +72,12 @@ export interface TaylorMetrics {
   finalMaxRadius: number;
   lengthRatio: number;
   radiusRatio: number;
+  /** L0 - Lf (axial shortening). */
+  axialShortening: number;
+  /** Max nodal |u| from the undeformed mesh. */
+  maxDisplacement: number;
+  /** Max equivalent plastic strain over all Gauss points. */
+  maxEqPlasticStrain: number;
   energyErrorPct: number;
   nSteps: number;
   elapsedMs: number;
@@ -70,4 +87,6 @@ export interface SolveResult {
   coords: Float64Array;
   history: EnergySample[];
   metrics: TaylorMetrics;
+  /** Present when `SolveOptions.recordDtHistory` is set — DT2 per cycle. */
+  dtHistory?: number[];
 }

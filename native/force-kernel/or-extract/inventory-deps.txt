@@ -1,0 +1,130 @@
+## s8eforc3.F calls
+!||--- calls      -----------------------------------------------------
+!||    basis8                 ../engine/source/elements/solid/solide8/basis8.F
+!||    boltst                 ../engine/source/elements/solid/solide/boltst.F
+!||    csmall3                ../engine/source/elements/solid/solide/csmall3.F
+!||    degenes8               ../engine/source/elements/solid/solide/degenes8.F
+!||    jacob_f0               ../engine/source/elements/solid/solide8e/jacob_f0.F
+!||    mmain                  ../engine/source/materials/mat_share/mmain.F90
+!||    nsvis_sm12             ../engine/source/elements/solid/solide10/nsvis_sm12.F
+!||    s8dlenmax_sm           ../engine/source/elements/solid/solide/s8dlenmax_sm.F90
+!||    s8e_sig_a              ../engine/source/elements/solid/solide8e/s8e_sig_a.F
+!||    s8e_sigp               ../engine/source/elements/solid/solide8e/s8e_sig.F
+!||    s8edefo3               ../engine/source/elements/solid/solide8e/s8edefo3.F
+!||    s8edefoc3              ../engine/source/elements/solid/solide8e/s8edefoc3.F
+!||    s8edefot12             ../engine/source/elements/solid/solide8e/s8edefot12.F
+!||    s8edefot3              ../engine/source/elements/solid/solide8e/s8edefot3.F
+!||    s8edefw3               ../engine/source/elements/solid/solide8e/s8edefw3.F
+!||    s8ederi_2              ../engine/source/elements/solid/solide8e/s8ederi_2.F
+!||    s8ederi_bij            ../engine/source/elements/solid/solide8e/s8ederi_bij.F
+!||    s8ederic3              ../engine/source/elements/solid/solide8e/s8ederic3.F
+!||    s8edericm3             ../engine/source/elements/solid/solide8e/s8edericm3.F
+!||    s8ederict3             ../engine/source/elements/solid/solide8e/s8ederict3.F
+!||    s8edericto3            ../engine/source/elements/solid/solide8e/s8edericto3.F
+!||    s8ederig3              ../engine/source/elements/solid/solide8e/s8ederig3.F
+!||    s8ederipr3             ../engine/source/elements/solid/solide8e/s8ederipr3.F
+!||    s8ederish2             ../engine/source/elements/solid/solide8e/s8ederish2.F
+!||    s8efint3               ../engine/source/elements/solid/solide8e/s8efint3.F
+!||    s8efmoy3               ../engine/source/elements/solid/solide8e/s8efmoy3.F
+!||    s8egetbij              ../engine/source/elements/solid/solide8e/s8egetbij.F
+!||    s8egetpij              ../engine/source/elements/solid/solide8e/s8egetpij.F
+!||    s8ejacip3              ../engine/source/elements/solid/solide8e/s8ejacip3.F
+!||    s8ejacit3              ../engine/source/elements/solid/solide8e/s8ejacit3.F
+!||    s8eprst_ini            ../engine/source/elements/solid/solide8e/s8eprst_ini.F
+!||    s8eselecsh             ../engine/source/elements/solid/solide8e/s8eselecsh.F
+!||    s8eselecsht            ../engine/source/elements/solid/solide8e/s8eselecsht.F
+!||    s8etherm               ../engine/source/elements/solid/solide8e/s8etherm.F
+!||    s8etotsh10             ../engine/source/elements/solid/solide8e/s8etotsh10.F
+!||    s8evis3                ../engine/source/elements/solid/solide8e/s8evis3.F
+!||    s8for_distor           ../engine/source/elements/solid/solide/s8for_distor.F
+!||    s8fupd11t12            ../engine/source/elements/solid/solide8e/s8fupd11t12.F
+!||    s8get_x3               ../engine/source/elements/solid/solide/s8get_x3.F
+!||    s8sav12                ../engine/source/elements/solid/solide/s8sav12.F
+!||    s8sav3                 ../engine/source/elements/solid/solide/s8sav3.F
+!||    s8savsr3               ../engine/source/elements/solid/solide/s8savsr3.F
+!||    s8zderims3             ../engine/source/elements/solid/solide8z/s8zderims3.F
+!||    s8zfint_reg            ../engine/source/elements/solid/solide8z/s8zfint_reg.F
+!||    s8zfintp3              ../engine/source/elements/solid/solide8z/s8zfintp3.F
+!||    s8zsigp3               ../engine/source/elements/solid/solide8z/s8zsigp3.F
+!||    s8ztempel              ../engine/source/elements/solid/solide8z/s8ztempel.F
+!||    s8zzero3               ../engine/source/elements/solid/solide8z/s8zzero3.F
+!||    sbilan                 ../engine/source/elements/solid/solide/sbilan.F
+!||    scoor3                 ../engine/source/elements/solid/solide/scoor3.F
+!||    scoor_cp2sp            ../engine/source/elements/solid/solidez/scoor_cp2sp.F
+!||    scumu3                 ../engine/source/elements/solid/solide/scumu3.F
+!||    scumu3p                ../engine/source/elements/solid/solide/scumu3p.F
+!||    sdistor_ini            ../engine/source/elements/solid/solide/sdistror_ini.F90
+!||    sdlen_dege             ../engine/source/elements/solid/solide/sdlen_dege.F
+!||    sdlen_sm11             ../engine/source/elements/solid/solide/sdlen_sm11.F
+!||    sdlenmax               ../engine/source/elements/solid/solide/sdlenmax.F
+!||    sfillopt               ../engine/source/elements/solid/solide/sfillopt.F
+!||    sgcoor3                ../engine/source/elements/solid/solide/sgcoor3.F
+!||    sgeodel3               ../engine/source/elements/solid/solide/sgeodel3.F
+!||    smallb3                ../engine/source/elements/solid/solide/smallb3.F
+!||    smallg3                ../engine/source/elements/solid/solide/smallg3.F
+!||    smallgeo3              ../engine/source/elements/solid/solide/smallgeo3.F
+!||    sordef12               ../engine/source/elements/solid/solidez/sordef12.F
+!||    sordeft12              ../engine/source/elements/solid/solidez/sordeft12.F
+!||    sordeft3               ../engine/source/elements/solid/solidez/sordeft3.F
+!||    sordeftb               ../engine/source/elements/solid/solide8e/sordeftb.F
+!||    srbilan                ../engine/source/elements/solid/solide/srbilan.F
+!||    srcoor12               ../engine/source/elements/solid/solide/srcoor12.F
+!||    srcoor3                ../engine/source/elements/solid/solide/srcoor3.F
+!||    srho3                  ../engine/source/elements/solid/solide/srho3.F
+!||    srota3                 ../engine/source/elements/solid/solide/srota3.F
+!||    sroto12_sig            ../engine/source/elements/solid/solidez/sroto12_sig.F
+!||    srrota3                ../engine/source/elements/solid/solide/srrota3.F
+!||    srrotadp               ../engine/source/elements/solid/solide/srrotadp.F
+!||    sstra3                 ../engine/source/elements/solid/solide/sstra3.F
+!||    startime               ../engine/source/system/timer_mod.F90
+!||    stoptime               ../engine/source/system/timer_mod.F90
+!||    sz_dt1                 ../engine/source/elements/solid/solidez/sz_dt1.F90
+!||--- uses       -----------------------------------------------------
+
+## m2law.F calls
+!||--- calls      -----------------------------------------------------
+!||    m2iter_imp         ../engine/source/materials/mat/mat002/m2iter_imp.F
+!||    mdtsph             ../engine/source/materials/mat_share/mdtsph.F
+!||    mqviscb            ../engine/source/materials/mat_share/mqviscb.F
+!||    mstrain_rate       ../engine/source/materials/mat_share/mstrain_rate.F
+!||--- uses       -----------------------------------------------------
+!||    glob_therm_mod     ../common_source/modules/mat_elem/glob_therm_mod.F90
+!||    matparam_def_mod   ../common_source/modules/mat_elem/matparam_def_mod.F90
+!||    prop_param_mod     ../common_source/modules/mat_elem/prop_param_mod.F90
+!||====================================================================
+      SUBROUTINE M2LAW(mat_param ,
+     1   PM,      OFF,        SIG,     EINT,
+     2   RHO,     QOLD,       EPXE,    EPSD,
+     3   VOL,     STIFN,      DT2T,    NELTST,
+     4   ITYPTST, OFFG,       GEO,     PID,
+     5   AMU,     VOL_AVG,    MUMAX,   MAT,
+     6   NGL,     SSP,        DVOL,    AIRE,
+     7   VNEW,    VD2,        DELTAX,  VIS,
+     8   D1,      D2,         D3,      D4,
+     9   D5,      D6,         PNEW,    PSH,
+     A   QNEW,    SSP_EQ,     SOLD1,   SOLD2,
+     B   SOLD3,   SOLD4,      SOLD5,   SOLD6,
+     C   SIGY,    DEFP,       DPLA,    JLAG,
+     D   EPSP,    TSTAR,      ETSE,    MSSA,
+     E   DMELS,   TEMPEL,     SIGBAK,  AL_IMP,
+     F   SIGNOR,  CONDE,      DTEL,    G_DT,
+     G   NEL,     IPM,        RHOREF,  RHOSP,
+     H   IPG,     DMG,        ITY,     JTUR,
+     I   JTHE,    JSPH,       ISMSTR,  JSMS,
+     J   NPG ,    DPDM ,      FHEAT,   glob_therm,
+     H   NUMGEO,  IGEO)
+C-----------------------------------------------
+C   M o d u l e s
+C-----------------------------------------------
+      use glob_therm_mod
+      use matparam_def_mod
+      USE prop_param_mod , only : n_var_igeo
+C-----------------------------------------------
+C   I m p l i c i t   T y p e s
+C-----------------------------------------------
+#include      "implicit_f.inc"
+
+## Solid8e directory object count
+44
+## mat002 object count
+9

@@ -14,3 +14,25 @@ playwright-report
 blob-report
 playwright/.cache
 e2e/artifacts
+
+# Native force-kernel build products
+native/**/*.so
+native/**/*.dylib
+native/**/*.o
+native/force-kernel/force_kernel_selftest
+native/force-kernel/force_kernel_golden
+native/force-kernel/goldens/*.dbl
+
+# OpenRadioss shared-engine extract build tree
+native/force-kernel/or-extract/build/
+native/force-kernel/or-extract/smoke_symbols
+native/force-kernel/*.o
+native/force-kernel/or-extract/*.o
+
+native/force-kernel/.build.lock
+
+# Regenerable OpenRadioss host dumps / local probe outputs
+docs/research/**/*.f64bin
+docs/research/*-probe.json
+docs/research/mass-vs-live.json
+docs/research/oracle-f64bin-object-is.json

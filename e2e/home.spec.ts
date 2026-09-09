@@ -25,9 +25,11 @@ test("research → pre → solve → post for Taylor stock model", async ({ page
   await page.getByRole("button", { name: "Run solve" }).click();
 
   await expect(page.getByRole("heading", { name: "Post — results" })).toBeVisible({
-    timeout: 60_000,
+    timeout: 120_000,
   });
   await expect(page.getByText(/Acceptance gate: PASS/)).toBeVisible();
+  await expect(page.getByText("Max eq. plastic strain")).toBeVisible();
+  await expect(page.getByText("Axial shortening")).toBeVisible();
   await expect(page.getByRole("img", { name: "Deformed mesh" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Energy history" })).toBeVisible();
   await expect(page.getByText("Lf / L₀")).toBeVisible();

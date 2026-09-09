@@ -25,14 +25,14 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 | --- | --- |
 | Rigid multibody (joints, constraints, contacts) | planned |
 | Flexible bodies (linear modal + nonlinear FE) | planned |
-| Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar) |
+| Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar, refined mesh) |
 | Implicit dynamics (Newmark / HHT, Newton–Raphson) | planned |
 | Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** |
 | Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** |
 | Shells, solids, beams, discrete elements | **hex solids MVP** |
 | GPU time integration (WebGPU) | planned |
 | Interactive 3D pre/post | **MVP canvas pre/post** (Taylor workbench) |
-| LS-DYNA / OpenRadioss deck import | planned |
+| LS-DYNA / OpenRadioss deck import | planned (oracle export + pin compare) |
 
 ### First model: Taylor bar
 
@@ -40,8 +40,9 @@ Copper-like cylinder into a rigid wall — the Layer-1 gate from the research no
 
 ```bash
 pnpm install
-pnpm test          # unit + Taylor golden / determinism
+pnpm test          # unit + Taylor golden / determinism / oracle pin
 pnpm taylor        # headless Taylor bar solve + metrics
+pnpm oracle:taylor # live OpenRadioss bitwise Object.is (needs OPENRADIOSS_PATH)
 pnpm dev           # workbench: research → pre → solve → post
 pnpm test:e2e      # Playwright proof of the same path
 ```
