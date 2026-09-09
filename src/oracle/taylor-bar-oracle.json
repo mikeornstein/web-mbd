@@ -1,11 +1,11 @@
 {
   "webmbd": {
-    "lengthRatio": 0.6665620240284901,
-    "radiusRatio": 2.2318896935064805,
-    "axialShortening": 0.010803390421476922,
-    "maxDisplacement": 0.010805343971564947,
-    "maxEqPlasticStrain": 2.826192536299342,
-    "energyErrorPct": -4.801444551709449e-14,
+    "lengthRatio": 0.666562024028488,
+    "radiusRatio": 2.231889693506493,
+    "axialShortening": 0.010803390421476988,
+    "maxDisplacement": 0.010805343971564926,
+    "maxEqPlasticStrain": 2.826192536299426,
+    "energyErrorPct": -1.4404333655128346e-13,
     "nSteps": 2573
   },
   "oracle": {
@@ -19,17 +19,17 @@
   },
   "compare": {
     "ok": true,
-    "lengthRelError": 1.6655959754732494e-16,
-    "radiusRelError": 2.785643464365432e-15,
+    "lengthRelError": 3.3311919509464986e-15,
+    "radiusRelError": 8.356930393096295e-15,
     "tolerances": {
       "lengthRatioRel": 1e-13,
       "radiusRatioRel": 1e-13
     },
     "bitwiseEqual": false,
-    "nearestNeighborMax": 2.783851877196397e-16,
-    "nearestNeighborMean": 6.210563020910683e-17,
-    "alignedMax": 2.783851877196397e-16,
-    "alignedMean": 6.210571773160345e-17,
+    "nearestNeighborMax": 2.979289721899148e-16,
+    "nearestNeighborMean": 6.982713862504817e-17,
+    "alignedMax": 2.979289721899148e-16,
+    "alignedMean": 6.982693612162454e-17,
     "coordsBitwiseEqual": false,
     "coordSource": "f64bin"
   },

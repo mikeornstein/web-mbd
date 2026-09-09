@@ -204,8 +204,8 @@ QVIS, EPSD, VOL, RHO, AMU, EINT. Copies in `docs/research/gpsig-dumps/`.
 | --- | --- |
 | **Constitutive DT** | Live `m2law.F:195` `G1=DT1*G`. Cycle 0 DT1=0 ⇒ **SIG stays 0**. web-mbd was passing **DT2** into `hexInternalForces` → ~1e-9 Pa SIG under rigid V₀. **Fixed**: FORINT now uses `dt1` (`solver.ts`). |
 | SIG @ NCYCLE=0 | **Object.is** (all GPs) after DT1 fix |
-| D @ NCYCLE=0 | Still ~1e-12 noise / sign flips after `s8edefo3` left-to-right `P·V` + engineering D4 |
-| **VOL @ NCYCLE=0** | 124/128 GPs differ (~2e-24 abs / ~3e-16 rel) — **iso `det(J)` vs live hierarchical `DETDP=ONE_OVER_512·det(AJ)`** |
+| D @ NCYCLE=0 | **Object.is** after hierarchical GradN |
+| **VOL @ NCYCLE=0** | **Object.is** after hierarchical DETDP (was ~1e-15 rel vs iso `det(J)`) |
 | SIG diagonals @ NCYCLE=1 impact GPs | **Object.is** (e.g. eid1 ip1); other GPs ~1e-12 relative (~3e-5 Pa hydrostatic) |
 | Shear D / SIG @ NCYCLE=1 | ~1e-12 / ~1e-9 residual — first post-force divergence |
 | PLA | Object.is (still 0 through 3 cycles) |
@@ -225,21 +225,23 @@ Fixed-Δt after this change (`docs/research/step1-5-object-is.json` /
 
 | Steps | coords Object.is | metrics Object.is | nDiff / maxAbs |
 | --- | --- | --- | --- |
-| 1–2 | **true** | **true** | 0 |
-| ≥3 | **false** | **true** | 2 dofs / 1 ulp (node 26 x,y) — unchanged |
+| 1–5 (after hier GradN) | **true** | **true** | 0 |
 
-GP dump after the change still shows D/VOL noise at NCYCLE=0. **Association
-order alone did not close step-3 Object.is.**
+### Hierarchical FORINT GradN / DETDP (landed)
 
-**Conclusion:** mass Object.is + DT1 constitutive + `s8edefo3` rate assembly are
-in. Remaining floor is **hierarchical GP Jacobian / GradN** (`s8ejacip3` →
-`s8ederipr3` DETDP + AJI → PX) vs web-mbd isoparametric `jacobian`/`gradN`.
-VOL already differs at rest (~1e-15 rel) ⇒ D ~ V·ΔGradN ~ 1e-12 under wall-driven
-V ⇒ A noise ⇒ 1 ulp on X by step 3. OR-ABI extract also fails step≥3.
+FORINT now uses `hierarchicalGpGeometry` (`s8ejacip3` → `s8ederipr3` DETDP →
+`s8ederig3` GradN). `createHexGpStates` vol0 uses the same DETDP. C mirror
+matches TS expression-for-expression on AJ (association mattered).
 
-**Next bisect:** drive FORINT GradN + GP volume from hierarchical AJ (reuse
-`characteristicLengthSmax` AJ build / `S8EDERIPR3` inverse), not isoparametric
-`det(J)`. Production adaptive Object.is remains open.
+| Check | Result |
+| --- | --- |
+| NCYCLE=0 VOL / D / SIG / AMU vs live GP dumps | **Object.is** (all GPs) |
+| Fixed-Δt steps 1–5 coords + metrics vs live `.f64bin` | **Object.is** |
+| Production adaptive 80 μs | gates pass; `bitwiseEqual` still false (~3e-15 Lf) |
+
+**Conclusion:** the NCYCLE=0 VOL / GradN floor is closed. Coarse fixed-Δt
+Object.is through step 5 is achieved. Production adaptive Object.is remains open
+(few-ulp residual — next: late-cycle DSV/AMU or OR-ABI packing).
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.

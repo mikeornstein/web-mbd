@@ -409,7 +409,7 @@ static void fill_prst(double pr[8][8], double ps[8][8], double pt[8][8]) {
   (void)a;
 }
 
-/* s8ejacip3 hierarchical GP AJ (9 components × 8 GPs). */
+/* s8ejacip3 hierarchical GP AJ — expressions match hex.ts hierarchicalGpAj bit-for-bit. */
 static void hierarchical_gp_aj(const double x[24], double aj[8][9]) {
   double x1 = x[0], y1 = x[1], z1 = x[2];
   double x2 = x[3], y2 = x[4], z2 = x[5];
@@ -428,8 +428,8 @@ static void hierarchical_gp_aj(const double x[24], double aj[8][9]) {
   double a17 = x17 + x46, a28 = x28 + x35;
   double b17 = y17 + y46, b28 = y28 + y35;
   double c17 = z17 + z46, c28 = z28 + z35;
-  double cj7 = a17 + a28, cj8 = b17 + b28, cj9 = c17 + c28;
-  double cj1 = a17 - a28, cj2 = b17 - b28, cj3 = c17 - c28;
+  double aj7 = a17 + a28, aj8 = b17 + b28, aj9 = c17 + c28;
+  double aj1 = a17 - a28, aj2 = b17 - b28, aj3 = c17 - c28;
   double hx1 = x1 + x2 - x3 - x4 - x5 - x6 + x7 + x8;
   double hy1 = y1 + y2 - y3 - y4 - y5 - y6 + y7 + y8;
   double hz1 = z1 + z2 - z3 - z4 - z5 - z6 + z7 + z8;
@@ -446,37 +446,87 @@ static void hierarchical_gp_aj(const double x[24], double aj[8][9]) {
   double hx1pg = hx1 * PG, hx2pg = hx2 * PG, hx3pg = hx3 * PG, hx4pg2 = hx4 * pg2;
   double hy1pg = hy1 * PG, hy2pg = hy2 * PG, hy3pg = hy3 * PG, hy4pg2 = hy4 * pg2;
   double hz1pg = hz1 * PG, hz2pg = hz2 * PG, hz3pg = hz3 * PG, hz4pg2 = hz4 * pg2;
-  /* IP=1..8 signs match s8ejacip3 / hex.ts hierarchicalGpAj */
-  #define SETAJ(ip, s1,s2,s3, s4,s5,s6, s7,s8,s9) do { \
-    aj[ip][0]=cj1+(s1); aj[ip][1]=cj2+(s2); aj[ip][2]=cj3+(s3); \
-    aj[ip][3]=aj4+(s4); aj[ip][4]=aj5+(s5); aj[ip][5]=aj6+(s6); \
-    aj[ip][6]=cj7+(s7); aj[ip][7]=cj8+(s8); aj[ip][8]=cj9+(s9); \
-  } while (0)
-  SETAJ(0, -hx3pg-hx2pg+hx4pg2, -hy3pg-hy2pg+hy4pg2, -hz3pg-hz2pg+hz4pg2,
-           -hx1pg-hx3pg+hx4pg2, -hy1pg-hy3pg+hy4pg2, -hz1pg-hz3pg+hz4pg2,
-           -hx2pg-hx1pg+hx4pg2, -hy2pg-hy1pg+hy4pg2, -hz2pg-hz1pg+hz4pg2);
-  SETAJ(1, -hx3pg-hx2pg+hx4pg2, -hy3pg-hy2pg+hy4pg2, -hz3pg-hz2pg+hz4pg2,
-           -hx1pg+hx3pg-hx4pg2, -hy1pg+hy3pg-hy4pg2, -hz1pg+hz3pg-hz4pg2,
-           +hx2pg-hx1pg-hx4pg2, +hy2pg-hy1pg-hy4pg2, +hz2pg-hz1pg-hz4pg2);
-  SETAJ(2, +hx3pg-hx2pg-hx4pg2, +hy3pg-hy2pg-hy4pg2, +hz3pg-hz2pg-hz4pg2,
-           -hx1pg-hx3pg+hx4pg2, -hy1pg-hy3pg+hy4pg2, -hz1pg-hz3pg+hz4pg2,
-           -hx2pg+hx1pg-hx4pg2, -hy2pg+hy1pg-hy4pg2, -hz2pg+hz1pg-hz4pg2);
-  SETAJ(3, +hx3pg-hx2pg-hx4pg2, +hy3pg-hy2pg-hy4pg2, +hz3pg-hz2pg-hz4pg2,
-           -hx1pg+hx3pg-hx4pg2, -hy1pg+hy3pg-hy4pg2, -hz1pg+hz3pg-hz4pg2,
-           +hx2pg+hx1pg+hx4pg2, +hy2pg+hy1pg+hy4pg2, +hz2pg+hz1pg+hz4pg2);
-  SETAJ(4, -hx3pg+hx2pg-hx4pg2, -hy3pg+hy2pg-hy4pg2, -hz3pg+hz2pg-hz4pg2,
-           +hx1pg-hx3pg-hx4pg2, +hy1pg-hy3pg-hy4pg2, +hz1pg-hz3pg-hz4pg2,
-           -hx2pg-hx1pg+hx4pg2, -hy2pg-hy1pg+hy4pg2, -hz2pg-hz1pg+hz4pg2);
-  SETAJ(5, -hx3pg+hx2pg-hx4pg2, -hy3pg+hy2pg-hy4pg2, -hz3pg+hz2pg-hz4pg2,
-           +hx1pg+hx3pg+hx4pg2, +hy1pg+hy3pg+hy4pg2, +hz1pg+hz3pg+hz4pg2,
-           +hx2pg-hx1pg-hx4pg2, +hy2pg-hy1pg-hy4pg2, +hz2pg-hz1pg-hz4pg2);
-  SETAJ(6, +hx3pg+hx2pg+hx4pg2, +hy3pg+hy2pg+hy4pg2, +hz3pg+hz2pg+hz4pg2,
-           +hx1pg-hx3pg-hx4pg2, +hy1pg-hy3pg-hy4pg2, +hz1pg-hz3pg-hz4pg2,
-           -hx2pg+hx1pg-hx4pg2, -hy2pg+hy1pg-hy4pg2, -hz2pg+hz1pg-hz4pg2);
-  SETAJ(7, +hx3pg+hx2pg+hx4pg2, +hy3pg+hy2pg+hy4pg2, +hz3pg+hz2pg+hz4pg2,
-           +hx1pg+hx3pg+hx4pg2, +hy1pg+hy3pg+hy4pg2, +hz1pg+hz3pg+hz4pg2,
-           +hx2pg+hx1pg+hx4pg2, +hy2pg+hy1pg+hy4pg2, +hz2pg+hz1pg+hz4pg2);
-  #undef SETAJ
+
+  /* IP 0 */
+  aj[0][0] = aj1 - hx3pg - hx2pg + hx4pg2;
+  aj[0][1] = aj2 - hy3pg - hy2pg + hy4pg2;
+  aj[0][2] = aj3 - hz3pg - hz2pg + hz4pg2;
+  aj[0][3] = aj4 - hx1pg - hx3pg + hx4pg2;
+  aj[0][4] = aj5 - hy1pg - hy3pg + hy4pg2;
+  aj[0][5] = aj6 - hz1pg - hz3pg + hz4pg2;
+  aj[0][6] = aj7 - hx2pg - hx1pg + hx4pg2;
+  aj[0][7] = aj8 - hy2pg - hy1pg + hy4pg2;
+  aj[0][8] = aj9 - hz2pg - hz1pg + hz4pg2;
+  /* IP 1 */
+  aj[1][0] = aj1 - hx3pg - hx2pg + hx4pg2;
+  aj[1][1] = aj2 - hy3pg - hy2pg + hy4pg2;
+  aj[1][2] = aj3 - hz3pg - hz2pg + hz4pg2;
+  aj[1][3] = aj4 - hx1pg + hx3pg - hx4pg2;
+  aj[1][4] = aj5 - hy1pg + hy3pg - hy4pg2;
+  aj[1][5] = aj6 - hz1pg + hz3pg - hz4pg2;
+  aj[1][6] = aj7 + hx2pg - hx1pg - hx4pg2;
+  aj[1][7] = aj8 + hy2pg - hy1pg - hy4pg2;
+  aj[1][8] = aj9 + hz2pg - hz1pg - hz4pg2;
+  /* IP 2 */
+  aj[2][0] = aj1 + hx3pg - hx2pg - hx4pg2;
+  aj[2][1] = aj2 + hy3pg - hy2pg - hy4pg2;
+  aj[2][2] = aj3 + hz3pg - hz2pg - hz4pg2;
+  aj[2][3] = aj4 - hx1pg - hx3pg + hx4pg2;
+  aj[2][4] = aj5 - hy1pg - hy3pg + hy4pg2;
+  aj[2][5] = aj6 - hz1pg - hz3pg + hz4pg2;
+  aj[2][6] = aj7 - hx2pg + hx1pg - hx4pg2;
+  aj[2][7] = aj8 - hy2pg + hy1pg - hy4pg2;
+  aj[2][8] = aj9 - hz2pg + hz1pg - hz4pg2;
+  /* IP 3 */
+  aj[3][0] = aj1 + hx3pg - hx2pg - hx4pg2;
+  aj[3][1] = aj2 + hy3pg - hy2pg - hy4pg2;
+  aj[3][2] = aj3 + hz3pg - hz2pg - hz4pg2;
+  aj[3][3] = aj4 - hx1pg + hx3pg - hx4pg2;
+  aj[3][4] = aj5 - hy1pg + hy3pg - hy4pg2;
+  aj[3][5] = aj6 - hz1pg + hz3pg - hz4pg2;
+  aj[3][6] = aj7 + hx2pg + hx1pg + hx4pg2;
+  aj[3][7] = aj8 + hy2pg + hy1pg + hy4pg2;
+  aj[3][8] = aj9 + hz2pg + hz1pg + hz4pg2;
+  /* IP 4 */
+  aj[4][0] = aj1 - hx3pg + hx2pg - hx4pg2;
+  aj[4][1] = aj2 - hy3pg + hy2pg - hy4pg2;
+  aj[4][2] = aj3 - hz3pg + hz2pg - hz4pg2;
+  aj[4][3] = aj4 + hx1pg - hx3pg - hx4pg2;
+  aj[4][4] = aj5 + hy1pg - hy3pg - hy4pg2;
+  aj[4][5] = aj6 + hz1pg - hz3pg - hz4pg2;
+  aj[4][6] = aj7 - hx2pg - hx1pg + hx4pg2;
+  aj[4][7] = aj8 - hy2pg - hy1pg + hy4pg2;
+  aj[4][8] = aj9 - hz2pg - hz1pg + hz4pg2;
+  /* IP 5 */
+  aj[5][0] = aj1 - hx3pg + hx2pg - hx4pg2;
+  aj[5][1] = aj2 - hy3pg + hy2pg - hy4pg2;
+  aj[5][2] = aj3 - hz3pg + hz2pg - hz4pg2;
+  aj[5][3] = aj4 + hx1pg + hx3pg + hx4pg2;
+  aj[5][4] = aj5 + hy1pg + hy3pg + hy4pg2;
+  aj[5][5] = aj6 + hz1pg + hz3pg + hz4pg2;
+  aj[5][6] = aj7 + hx2pg - hx1pg - hx4pg2;
+  aj[5][7] = aj8 + hy2pg - hy1pg - hy4pg2;
+  aj[5][8] = aj9 + hz2pg - hz1pg - hz4pg2;
+  /* IP 6 */
+  aj[6][0] = aj1 + hx3pg + hx2pg + hx4pg2;
+  aj[6][1] = aj2 + hy3pg + hy2pg + hy4pg2;
+  aj[6][2] = aj3 + hz3pg + hz2pg + hz4pg2;
+  aj[6][3] = aj4 + hx1pg - hx3pg - hx4pg2;
+  aj[6][4] = aj5 + hy1pg - hy3pg - hy4pg2;
+  aj[6][5] = aj6 + hz1pg - hz3pg - hz4pg2;
+  aj[6][6] = aj7 - hx2pg + hx1pg - hx4pg2;
+  aj[6][7] = aj8 - hy2pg + hy1pg - hy4pg2;
+  aj[6][8] = aj9 - hz2pg + hz1pg - hz4pg2;
+  /* IP 7 */
+  aj[7][0] = aj1 + hx3pg + hx2pg + hx4pg2;
+  aj[7][1] = aj2 + hy3pg + hy2pg + hy4pg2;
+  aj[7][2] = aj3 + hz3pg + hz2pg + hz4pg2;
+  aj[7][3] = aj4 + hx1pg + hx3pg + hx4pg2;
+  aj[7][4] = aj5 + hy1pg + hy3pg + hy4pg2;
+  aj[7][5] = aj6 + hz1pg + hz3pg + hz4pg2;
+  aj[7][6] = aj7 + hx2pg + hx1pg + hx4pg2;
+  aj[7][7] = aj8 + hy2pg + hy1pg + hy4pg2;
+  aj[7][8] = aj9 + hz2pg + hz1pg + hz4pg2;
 }
 
 static int s8ederipr3(const double aj[9], double *detdp, double *vol, double aji[9]) {

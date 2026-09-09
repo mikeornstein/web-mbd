@@ -24,31 +24,31 @@
     },
     {
       "steps": 3,
-      "coordsObjectIs": false,
+      "coordsObjectIs": true,
       "metricsObjectIs": true,
-      "nDiff": 2,
-      "maxAbs": 4.336808689942018e-19,
-      "maxNode": 26,
+      "nDiff": 0,
+      "maxAbs": 0,
+      "maxNode": null,
       "lengthRelError": 0,
       "radiusRelError": 0
     },
     {
       "steps": 4,
-      "coordsObjectIs": false,
+      "coordsObjectIs": true,
       "metricsObjectIs": true,
-      "nDiff": 2,
-      "maxAbs": 4.336808689942018e-19,
-      "maxNode": 26,
+      "nDiff": 0,
+      "maxAbs": 0,
+      "maxNode": null,
       "lengthRelError": 0,
       "radiusRelError": 0
     },
     {
       "steps": 5,
-      "coordsObjectIs": false,
+      "coordsObjectIs": true,
       "metricsObjectIs": true,
-      "nDiff": 2,
-      "maxAbs": 4.336808689942018e-19,
-      "maxNode": 26,
+      "nDiff": 0,
+      "maxAbs": 0,
+      "maxNode": null,
       "lengthRelError": 0,
       "radiusRelError": 0
     }
