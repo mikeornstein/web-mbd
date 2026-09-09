@@ -42,7 +42,7 @@ Copper-like cylinder into a rigid wall — the Layer-1 gate from the research no
 pnpm install
 pnpm test          # unit + Taylor golden / determinism / oracle pin
 pnpm taylor        # headless Taylor bar solve + metrics
-pnpm oracle:taylor # optional live OpenRadioss same-mesh compare
+pnpm oracle:taylor # live OpenRadioss bitwise Object.is (needs OPENRADIOSS_PATH)
 pnpm dev           # workbench: research → pre → solve → post
 pnpm test:e2e      # Playwright proof of the same path
 ```
