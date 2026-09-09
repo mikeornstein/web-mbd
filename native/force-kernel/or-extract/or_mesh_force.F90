@@ -1,5 +1,7 @@
-! or_mesh_force.F90 — PoC multi-element (MVSIZ packet) OR force path.
-! Packs NEL hexes (coarse Taylor = 16) into one S8EFORC3 call.
+! or_mesh_force.F90 — multi-element OR force path (MVSIZ packets).
+! Packs hexes into S8EFORC3 calls of NEL≤128 (live FORINT group width).
+! NEL≤128: one packet (exact). NEL>128: consecutive packets; SCUMU3
+! accumulates into shared anod (not zeroed between packets).
 ! Keeps one-hex ABI in or_hex_force.F90 unchanged (separate ELBUF).
 !
 ! BIND(C): wmbd_mesh_internal_forces_or
@@ -39,10 +41,13 @@ module wmbd_or_mesh_force_mod
   integer, parameter :: numgeo_c = 1
   integer, parameter :: mvsiz_c = 129
   integer, parameter :: max_nel_c = 128
+  ! Soft cap on total hexes (production Taylor 6×6×16 = 576).
+  integer, parameter :: max_hex_c = 4096
 
   logical, save :: mesh_ready = .false.
   integer, save :: mesh_nel = 0
   integer, save :: mesh_numnod = 0
+  integer, save :: mesh_buf_nel = 0
 
   type(elbuf_struct_), target, save :: elbuf_tab(ngroup_c)
   type(matparam_struct_), target, save :: mat_param_arr(nummat_c)
@@ -485,6 +490,7 @@ contains
 
     ok = .true.
     mesh_nel = nel
+    mesh_buf_nel = nel
     mesh_numnod = numnod_in
   end function alloc_mesh_elbuf
 
@@ -571,6 +577,137 @@ contains
     end do
   end subroutine pack_mesh
 
+  ! Pack one MVSIZ packet starting at global element ie0 (0-based) into
+  ! ELBUF slots 1..buf_nel. Real elements fill 1..pnel; pads pnel+1..buf_nel
+  ! get OFF=0 so SCUMU3 contributes nothing (stride must equal buf_nel).
+  subroutine pack_packet(ie0, pnel, buf_nel, n_hex, n_nodes, x, v, conn, &
+       stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, zero_anod)
+    integer, intent(in) :: ie0, pnel, buf_nel, n_hex, n_nodes
+    real(c_double), intent(in) :: x(3 * n_nodes), v(3 * n_nodes)
+    integer(c_int), intent(in) :: conn(8 * n_hex)
+    real(c_double), intent(in) :: stress_io(48 * n_hex), eqps_io(8 * n_hex), vol0_io(8 * n_hex)
+    real(c_double), intent(in) :: smstr_io(21 * n_hex), offg_io(n_hex), hist_io(32 * n_hex)
+    logical, intent(in) :: zero_anod
+    integer :: n, ie, ig, a, ir, is, it, ip, k, base
+    type(l_bufel_), pointer :: lbuf
+    real(kind=8) :: eint_sum, rho_sum
+
+    if (zero_anod) then
+      do n = 1, n_nodes
+        xnod(1, n) = x(3 * (n - 1) + 1)
+        xnod(2, n) = x(3 * (n - 1) + 2)
+        xnod(3, n) = x(3 * (n - 1) + 3)
+        vnod(1, n) = v(3 * (n - 1) + 1)
+        vnod(2, n) = v(3 * (n - 1) + 2)
+        vnod(3, n) = v(3 * (n - 1) + 3)
+      end do
+      anod = zero
+      dnod = zero
+      wnod = zero
+    end if
+
+    do ie = 1, buf_nel
+      if (ie <= pnel) then
+        ig = ie0 + ie
+        do a = 1, 8
+          ixs(1 + a, ie) = conn(8 * (ig - 1) + a) + 1
+        end do
+        ixs(1, ie) = 1
+        ixs(10, ie) = 1
+        ixs(11, ie) = ig
+        elbuf_tab(1)%gbuf%off(ie) = offg_io(ig)
+        do k = 1, 21
+          elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * buf_nel) = smstr_io(21 * (ig - 1) + k)
+        end do
+      else
+        ! Pad: OFF=0, connect to node 1 — SCUMU3 skips OFF≤0.
+        do a = 1, 8
+          ixs(1 + a, ie) = 1
+        end do
+        ixs(1, ie) = 1
+        ixs(10, ie) = 1
+        ixs(11, ie) = 0
+        elbuf_tab(1)%gbuf%off(ie) = zero
+        do k = 1, 21
+          elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * buf_nel) = zero
+        end do
+      end if
+      if (associated(elbuf_tab(1)%gbuf%pla)) elbuf_tab(1)%gbuf%pla(ie) = zero
+      if (associated(elbuf_tab(1)%gbuf%sig)) then
+        do k = 1, 6
+          elbuf_tab(1)%gbuf%sig(ie + (k - 1) * buf_nel) = zero
+        end do
+      end if
+    end do
+
+    do ie = 1, buf_nel
+      eint_sum = zero
+      rho_sum = zero
+      if (ie <= pnel) then
+        ig = ie0 + ie
+        base = 48 * (ig - 1)
+      else
+        ig = 0
+        base = 0
+      end if
+      do it = 1, 2
+        do is = 1, 2
+          do ir = 1, 2
+            ip = ir + ((is - 1) + (it - 1) * 2) * 2
+            lbuf => elbuf_tab(1)%bufly(1)%lbuf(ir, is, it)
+            if (ie <= pnel) then
+              do k = 1, 6
+                lbuf%sig(ie + (k - 1) * buf_nel) = stress_io(base + 6 * (ip - 1) + k)
+              end do
+              lbuf%pla(ie) = eqps_io(8 * (ig - 1) + ip)
+              lbuf%vol(ie) = vol0_io(8 * (ig - 1) + ip)
+              lbuf%vol0dp(ie) = vol0_io(8 * (ig - 1) + ip)
+              lbuf%eint(ie) = hist_io(32 * (ig - 1) + ip)
+              lbuf%epsd(ie) = hist_io(32 * (ig - 1) + 8 + ip)
+              lbuf%qvis(ie) = hist_io(32 * (ig - 1) + 16 + ip)
+              lbuf%rho(ie) = hist_io(32 * (ig - 1) + 24 + ip)
+              lbuf%off(ie) = one
+              eint_sum = eint_sum + lbuf%eint(ie)
+              rho_sum = rho_sum + lbuf%rho(ie)
+            else
+              do k = 1, 6
+                lbuf%sig(ie + (k - 1) * buf_nel) = zero
+              end do
+              lbuf%pla(ie) = zero
+              lbuf%vol(ie) = one
+              lbuf%vol0dp(ie) = one
+              lbuf%eint(ie) = zero
+              lbuf%epsd(ie) = zero
+              lbuf%qvis(ie) = zero
+              lbuf%rho(ie) = one
+              lbuf%off(ie) = zero
+            end if
+            if (associated(lbuf%sigb)) then
+              do k = 1, 6
+                lbuf%sigb(ie + (k - 1) * buf_nel) = zero
+              end do
+            end if
+            if (associated(lbuf%stra)) then
+              do k = 1, 6
+                lbuf%stra(ie + (k - 1) * buf_nel) = zero
+              end do
+            end if
+          end do
+        end do
+      end do
+      if (ie <= pnel) then
+        elbuf_tab(1)%gbuf%eint(ie) = eint_sum * 0.125d0
+        elbuf_tab(1)%gbuf%rho(ie) = rho_sum * 0.125d0
+      else
+        elbuf_tab(1)%gbuf%eint(ie) = zero
+        elbuf_tab(1)%gbuf%rho(ie) = one
+      end if
+      elbuf_tab(1)%gbuf%qvis(ie) = zero
+      elbuf_tab(1)%gbuf%epsd(ie) = zero
+    end do
+    iparg(2, 1) = buf_nel
+  end subroutine pack_packet
+
   subroutine scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
     integer(c_int), intent(in), value :: n_hex
     real(c_double), intent(inout) :: stress_io(48 * n_hex), eqps_io(8 * n_hex), vol0_io(8 * n_hex)
@@ -605,6 +742,40 @@ contains
     end do
   end subroutine scatter_mesh
 
+  subroutine scatter_packet(ie0, pnel, buf_nel, n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
+    integer, intent(in) :: ie0, pnel, buf_nel, n_hex
+    real(c_double), intent(inout) :: stress_io(48 * n_hex), eqps_io(8 * n_hex), vol0_io(8 * n_hex)
+    real(c_double), intent(inout) :: smstr_io(21 * n_hex), offg_io(n_hex), hist_io(32 * n_hex)
+    integer :: ie, ig, ir, is, it, ip, k, base
+    type(l_bufel_), pointer :: lbuf
+
+    do ie = 1, pnel
+      ig = ie0 + ie
+      base = 48 * (ig - 1)
+      do it = 1, 2
+        do is = 1, 2
+          do ir = 1, 2
+            ip = ir + ((is - 1) + (it - 1) * 2) * 2
+            lbuf => elbuf_tab(1)%bufly(1)%lbuf(ir, is, it)
+            do k = 1, 6
+              stress_io(base + 6 * (ip - 1) + k) = lbuf%sig(ie + (k - 1) * buf_nel)
+            end do
+            eqps_io(8 * (ig - 1) + ip) = lbuf%pla(ie)
+            vol0_io(8 * (ig - 1) + ip) = lbuf%vol(ie)
+            hist_io(32 * (ig - 1) + ip) = lbuf%eint(ie)
+            hist_io(32 * (ig - 1) + 8 + ip) = lbuf%epsd(ie)
+            hist_io(32 * (ig - 1) + 16 + ip) = lbuf%qvis(ie)
+            hist_io(32 * (ig - 1) + 24 + ip) = lbuf%rho(ie)
+          end do
+        end do
+      end do
+      offg_io(ig) = elbuf_tab(1)%gbuf%off(ie)
+      do k = 1, 21
+        smstr_io(21 * (ig - 1) + k) = elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * buf_nel)
+      end do
+    end do
+  end subroutine scatter_packet
+
   function env_call_s8e() result(yes)
     logical :: yes
     character(len=8) :: val
@@ -616,68 +787,16 @@ contains
     end if
   end function env_call_s8e
 
-  function wmbd_mesh_internal_forces_or(n_hex, n_nodes, x, v, conn, mat, stress_io, eqps_io, vol0_io, &
-       smstr_io, offg_io, hist_io, dt, f_out) result(rc) bind(C, name='wmbd_mesh_internal_forces_or')
-    integer(c_int), intent(in), value :: n_hex, n_nodes
-    real(c_double), intent(in) :: x(3 * n_nodes), v(3 * n_nodes)
-    integer(c_int), intent(in) :: conn(8 * n_hex)
-    type(wmbd_mat_mesh_c), intent(in) :: mat
-    real(c_double), intent(inout) :: stress_io(48 * n_hex)
-    real(c_double), intent(inout) :: eqps_io(8 * n_hex)
-    real(c_double), intent(inout) :: vol0_io(8 * n_hex)
-    real(c_double), intent(inout) :: smstr_io(21 * n_hex)
-    real(c_double), intent(inout) :: offg_io(n_hex)
-    real(c_double), intent(inout) :: hist_io(32 * n_hex)
-    real(c_double), intent(in), value :: dt
-    real(c_double), intent(out) :: f_out(3 * n_nodes)
-    integer(c_int) :: rc
-
-    interface
-      subroutine wmbd_or_set_dt1(dt1) bind(C, name='wmbd_or_set_dt1')
-        import :: c_double
-        real(c_double), intent(in), value :: dt1
-      end subroutine
-    end interface
-
+  subroutine call_s8e_packet(nel)
+    integer, intent(in) :: nel
     real(kind=8) :: dt2t
-    integer :: ng, nel, icp, offset, nvc, itask, istrain, iexpan, h3d_strain
+    integer :: ng, icp, offset, nvc, itask, istrain, iexpan, h3d_strain
     integer :: neltst, ityptst, ioutprt
     integer :: snpc, stf, sbufmat, nsvois, idtmins, iresp, maxfunc
     integer :: userl_avail, impl_s, idyna
-    integer :: n
-
     external s8eforc3
 
-    f_out = 0
-    if (n_hex < 1 .or. n_hex > max_nel_c .or. n_nodes < 8) then
-      rc = -5_c_int
-      return
-    end if
-
-    call wmbd_or_init_commons()
-    call wmbd_or_set_group(n_nodes, n_hex)
-    call wmbd_or_set_dt1(dt)
-
-    if (.not. mesh_ready) then
-      if (.not. alloc_mesh_elbuf(mat, n_hex, n_nodes)) then
-        rc = -4_c_int
-        return
-      end if
-      mesh_ready = .true.
-    else if (mesh_nel /= n_hex .or. mesh_numnod /= n_nodes) then
-      rc = -5_c_int
-      return
-    end if
-
-    call pack_mesh(n_hex, n_nodes, x, v, conn, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
-
-    if (.not. env_call_s8e()) then
-      rc = -2_c_int
-      return
-    end if
-
     ng = 1
-    nel = n_hex
     icp = 1
     offset = 0
     nvc = 0
@@ -727,9 +846,83 @@ contains
          mssa, dmels, table, igeo, xdp, voln, condn, condnsky, dnod, sensors, ioutprt, &
          mat_elem, h3d_strain, dt_t, snpc, stf, sbufmat, svis, nsvois, idtmins, iresp, &
          maxfunc, userl_avail, glob_therm, impl_s, idyna)
+  end subroutine call_s8e_packet
 
-    call scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
-    ! Return SCUMU3 nodal forces (IPARIT=0) — same gather as live FORINT→A.
+  function wmbd_mesh_internal_forces_or(n_hex, n_nodes, x, v, conn, mat, stress_io, eqps_io, vol0_io, &
+       smstr_io, offg_io, hist_io, dt, f_out) result(rc) bind(C, name='wmbd_mesh_internal_forces_or')
+    integer(c_int), intent(in), value :: n_hex, n_nodes
+    real(c_double), intent(in) :: x(3 * n_nodes), v(3 * n_nodes)
+    integer(c_int), intent(in) :: conn(8 * n_hex)
+    type(wmbd_mat_mesh_c), intent(in) :: mat
+    real(c_double), intent(inout) :: stress_io(48 * n_hex)
+    real(c_double), intent(inout) :: eqps_io(8 * n_hex)
+    real(c_double), intent(inout) :: vol0_io(8 * n_hex)
+    real(c_double), intent(inout) :: smstr_io(21 * n_hex)
+    real(c_double), intent(inout) :: offg_io(n_hex)
+    real(c_double), intent(inout) :: hist_io(32 * n_hex)
+    real(c_double), intent(in), value :: dt
+    real(c_double), intent(out) :: f_out(3 * n_nodes)
+    integer(c_int) :: rc
+
+    interface
+      subroutine wmbd_or_set_dt1(dt1) bind(C, name='wmbd_or_set_dt1')
+        import :: c_double
+        real(c_double), intent(in), value :: dt1
+      end subroutine
+    end interface
+
+    integer :: n, ie0, pnel, buf_nel
+    logical :: multi
+
+    f_out = 0
+    if (n_hex < 1 .or. n_hex > max_hex_c .or. n_nodes < 8) then
+      rc = -5_c_int
+      return
+    end if
+
+    multi = n_hex > max_nel_c
+    buf_nel = merge(max_nel_c, n_hex, multi)
+
+    call wmbd_or_init_commons()
+    call wmbd_or_set_dt1(dt)
+
+    if (.not. mesh_ready) then
+      if (.not. alloc_mesh_elbuf(mat, buf_nel, n_nodes)) then
+        rc = -4_c_int
+        return
+      end if
+      mesh_ready = .true.
+    else if (mesh_numnod /= n_nodes .or. mesh_buf_nel /= buf_nel) then
+      ! Buffer sized for a different mesh mode/size — refuse rather than leak.
+      rc = -5_c_int
+      return
+    end if
+
+    if (.not. env_call_s8e()) then
+      rc = -2_c_int
+      return
+    end if
+
+    if (.not. multi) then
+      call wmbd_or_set_group(n_nodes, n_hex)
+      call pack_mesh(n_hex, n_nodes, x, v, conn, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
+      call call_s8e_packet(n_hex)
+      call scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
+    else
+      ! Live FORINT order: groups of ≤MVSIZ in element order; A accumulates.
+      ie0 = 0
+      do while (ie0 < n_hex)
+        pnel = min(max_nel_c, n_hex - ie0)
+        call wmbd_or_set_group(n_nodes, buf_nel)
+        call pack_packet(ie0, pnel, buf_nel, n_hex, n_nodes, x, v, conn, &
+             stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, ie0 == 0)
+        call call_s8e_packet(buf_nel)
+        call scatter_packet(ie0, pnel, buf_nel, n_hex, stress_io, eqps_io, vol0_io, &
+             smstr_io, offg_io, hist_io)
+        ie0 = ie0 + pnel
+      end do
+    end if
+
     do n = 1, n_nodes
       f_out(3 * (n - 1) + 1) = anod(1, n)
       f_out(3 * (n - 1) + 2) = anod(2, n)
