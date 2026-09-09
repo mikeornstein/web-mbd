@@ -29,6 +29,9 @@ export function createJ2State(vol0 = 0): J2State {
  */
 export const RADIOSS_ONEP333 = 1.333;
 
+/** OpenRadioss `THIRD = ONE/THREE` — must multiply, not divide by 3 (1 ulp). */
+export const RADIOSS_THIRD = 1 / 3;
+
 export function lame(E: number, nu: number): { lam: number; mu: number; bulk: number } {
   const lam = (E * nu) / ((1 + nu) * (1 - 2 * nu));
   const mu = E / (2 * (1 + nu));
@@ -49,6 +52,7 @@ export function dilatationalWaveSpeed(mat: MaterialJ2Linear): number {
  * - Radial return with isotropic linear hardening (CN=1, CC=0)
  * - Pressure from bulk EOS: P = K·AMU with Radioss LAW2 association
  *   RHON = ρ₀·(V₀/V), AMU = RHON/ρ₀ − 1 (not the algebraically equal V₀/V − 1)
+ * - P/DAV use `THIRD = 1/3` multiply (`-THIRD*sum`), not divide-by-3 (1 ulp)
  *
  * `d` matches `s8edefo3` / M2LAW: D1..D3 stretch rates, D4..D6 engineering
  * shear (D4=DXY+DYX). Diagonals use G2=2G·DT; shear uses G1=G·DT (`m2law.F`).
@@ -63,8 +67,9 @@ export function j2Update(
 ): void {
   const { mu, bulk } = lame(mat.young, mat.poisson);
   const s = state.stress;
-  const pOld = -(s[0]! + s[1]! + s[2]!) / 3;
-  const dav = -(d[0]! + d[1]! + d[2]!) / 3;
+  // m2law.F: P = -THIRD*(S1+S2+S3); DAV = -THIRD*(D1+D2+D3) — not ÷3.
+  const pOld = -RADIOSS_THIRD * (s[0]! + s[1]! + s[2]!);
+  const dav = -RADIOSS_THIRD * (d[0]! + d[1]! + d[2]!);
   const g1 = dt * mu;
   const g2 = 2 * g1;
 
@@ -76,20 +81,22 @@ export function j2Update(
   s[4]! += g1 * d[4]!;
   s[5]! += g1 * d[5]!;
 
+  // AJ2 = HALF*(…); AJ2 = SQRT(THREE*AJ2)
   const j2 =
     0.5 * (s[0]! * s[0]! + s[1]! * s[1]! + s[2]! * s[2]!) +
     s[3]! * s[3]! +
     s[4]! * s[4]! +
     s[5]! * s[5]!;
-  const seq = Math.sqrt(Math.max(0, 3 * j2));
+  const seq = Math.sqrt(3 * j2);
 
   const ca = mat.yieldStress;
   const cb = mat.hardeningModulus;
   let ak = ca + cb * state.eqPlasticStrain;
   const qh = cb;
 
-  if (seq > ak && seq > 1e-15) {
-    let scale = Math.min(1, ak / seq);
+  // m2law always evaluates SCALE/DPLA (elastic → scale=1, dpla=0).
+  {
+    let scale = Math.min(1, ak / Math.max(seq, 1e-15));
     const dpla = (1 - scale) * seq / Math.max(3 * mu + qh, 1e-15);
     ak = ak + dpla * qh;
     scale = Math.min(1, ak / Math.max(seq, 1e-15));
@@ -109,9 +116,10 @@ export function j2Update(
     amuOverride ??
     (mat.density * (vol0 / Math.max(vol, 1e-30))) / mat.density - 1;
   const pNew = bulk * amu;
-  s[0]! -= pNew;
-  s[1]! -= pNew;
-  s[2]! -= pNew;
+  // m2law: SIG = (SIG - PNEW)*OFF with OFF=1.
+  s[0]! = s[0]! - pNew;
+  s[1]! = s[1]! - pNew;
+  s[2]! = s[2]! - pNew;
 }
 
 /** σ:D with Radioss engineering shear rates (no factor 2 on D4..D6). */

@@ -137,8 +137,12 @@ static void j2_update(
   lame(mat->young, mat->poisson, &lam, &mu, &bulk);
   (void)lam;
 
-  pOld = -(stress[0] + stress[1] + stress[2]) / 3.0;
-  dav = -(d[0] + d[1] + d[2]) / 3.0;
+  /* m2law.F: P/DAV = -THIRD*(…), not ÷3 (1 ulp under adaptive Δt). */
+  {
+    const double THIRD = 1.0 / 3.0;
+    pOld = -THIRD * (stress[0] + stress[1] + stress[2]);
+    dav = -THIRD * (d[0] + d[1] + d[2]);
+  }
   g1 = dt * mu;
   g2 = 2.0 * g1;
 
@@ -152,15 +156,16 @@ static void j2_update(
 
   j2 = 0.5 * (stress[0] * stress[0] + stress[1] * stress[1] + stress[2] * stress[2]) +
        stress[3] * stress[3] + stress[4] * stress[4] + stress[5] * stress[5];
-  seq = sqrt(fmax(0.0, 3.0 * j2));
+  seq = sqrt(3.0 * j2);
 
   ca = mat->yield_stress;
   cb = mat->hardening;
   ak = ca + cb * (*eqps);
   qh = cb;
 
-  if (seq > ak && seq > 1e-15) {
-    double scale = fmin(1.0, ak / seq);
+  /* m2law always evaluates SCALE/DPLA (elastic → scale=1, dpla=0). */
+  {
+    double scale = fmin(1.0, ak / fmax(seq, 1e-15));
     double dpla = (1.0 - scale) * seq / fmax(3.0 * mu + qh, 1e-15);
     ak = ak + dpla * qh;
     scale = fmin(1.0, ak / fmax(seq, 1e-15));
