@@ -177,7 +177,8 @@ static void j2_update(
   if (have_amu_override) {
     amu = amu_override;
   } else {
-    amu = vol0_eff / fmax(vol, 1e-30) - 1.0;
+    /* Radioss mmain/srho3 LAW2: RHON=RHO0*(VOLO/VOLN); AMU=RHON/RHO0-1 */
+    amu = (mat->density * (vol0_eff / fmax(vol, 1e-30))) / mat->density - 1.0;
   }
   pNew = bulk * amu;
   stress[0] -= pNew;

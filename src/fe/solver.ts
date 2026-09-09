@@ -34,6 +34,11 @@ export interface SolveOptions {
    */
   dtSchedule?: ArrayLike<number>;
   /**
+   * When true, return `dtHistory` — the DT2 used each cycle after
+   * `recomputeDt` (for bit-compare vs live `TAYLOR_dt.f64bin`).
+   */
+  recordDtHistory?: boolean;
+  /**
    * Override hex force evaluation (e.g. native shared kernel from `cli/forceNative`).
    * Default: TypeScript `hexInternalForces`.
    */
@@ -131,6 +136,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
   }
 
   const history: EnergySample[] = [];
+  const dtHistory: number[] | undefined = options.recordDtHistory ? [] : undefined;
   let internalEnergy = 0;
   let E0 = 0;
   let step = 0;
@@ -254,6 +260,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
 
     // resol.F: DT1 carries prior DT2 (0 on cycle 0); recompute DT2; DT12=½(DT1+DT2).
     recomputeDt();
+    dtHistory?.push(dt);
     const dt12 = 0.5 * (dt1 + dt);
     // RGWAL once before VELOCITY (rgwall.F predicts with DT12/DT2).
     applyWallKinematics(dt, dt12);
@@ -299,6 +306,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     coords: x,
     history,
     metrics: makeMetrics(model, x, history, hexStates, step, performance.now() - wallClock0),
+    ...(dtHistory ? { dtHistory } : {}),
   };
 }
 

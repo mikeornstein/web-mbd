@@ -47,7 +47,8 @@ export function dilatationalWaveSpeed(mat: MaterialJ2Linear): number {
  *
  * - Deviatoric hypoelastic predictor with Jaumann already applied by the element
  * - Radial return with isotropic linear hardening (CN=1, CC=0)
- * - Pressure from bulk EOS: P = K * (ρ/ρ0 − 1) = K * (V0/V − 1)
+ * - Pressure from bulk EOS: P = K·AMU with Radioss LAW2 association
+ *   RHON = ρ₀·(V₀/V), AMU = RHON/ρ₀ − 1 (not the algebraically equal V₀/V − 1)
  *
  * `d` matches `s8edefo3` / M2LAW: D1..D3 stretch rates, D4..D6 engineering
  * shear (D4=DXY+DYX). Diagonals use G2=2G·DT; shear uses G1=G·DT (`m2law.F`).
@@ -102,7 +103,11 @@ export function j2Update(
   }
 
   const vol0 = state.vol0 > 0 ? state.vol0 : vol;
-  const amu = amuOverride ?? vol0 / Math.max(vol, 1e-30) - 1;
+  // Radioss mmain / srho3 (LAW2, IRESP=0): RHON = RHO0*(VOLO/VOLN); AMU = RHON/RHO0 − 1.
+  // Direct `vol0/vol − 1` differs by ~1 ulp on many volumes and accumulates under adaptive CFL.
+  const amu =
+    amuOverride ??
+    (mat.density * (vol0 / Math.max(vol, 1e-30))) / mat.density - 1;
   const pNew = bulk * amu;
   s[0]! -= pNew;
   s[1]! -= pNew;

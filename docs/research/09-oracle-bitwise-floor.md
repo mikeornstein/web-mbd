@@ -236,12 +236,35 @@ matches TS expression-for-expression on AJ (association mattered).
 | Check | Result |
 | --- | --- |
 | NCYCLE=0 VOL / D / SIG / AMU vs live GP dumps | **Object.is** (all GPs) |
-| Fixed-Δt steps 1–5 coords + metrics vs live `.f64bin` | **Object.is** |
-| Production adaptive 80 μs | gates pass; `bitwiseEqual` still false (~3e-15 Lf) |
+| Fixed-Δt coarse 2×2×4 @ 2.5e-8 | metrics+coords **Object.is** through ≥10 steps (vitest) |
+| Production adaptive 80 μs | gates pass; `bitwiseEqual` still false |
 
-**Conclusion:** the NCYCLE=0 VOL / GradN floor is closed. Coarse fixed-Δt
-Object.is through step 5 is achieved. Production adaptive Object.is remains open
-(few-ulp residual — next: late-cycle DSV/AMU or OR-ABI packing).
+### Adaptive DT schedule bisect (in progress)
+
+`scripts/compare-adaptive-dt.ts` vs live `TAYLOR_dt.f64bin` (coarse 2×2×4 @ 80 μs):
+
+| Driver | First DT mismatch | Notes |
+| --- | --- | --- |
+| TS (pre AMU assoc) | i=4 (1 ulp) | After 4 live-DT steps, `minH` already 1 ulp low |
+| TS (LAW2 AMU `ρ₀·(V₀/V)/ρ₀−1`) | i=7 | CFL formula OK when DELTAX matches |
+| OR-ABI | i=6 (coarse) / i=10 (prod) | Same CFL; force micro-drift vs live |
+
+Root cause of first DT mismatch is **DELTAX from force/geometry drift**, not
+`cfl*(h/cd)` vs `(cfl*h)/cd` or `ONEP1` vs `1.1`. Schedule replay (exact live
+DT) still misses metrics Object.is — residual is force accumulation under
+adaptive-sized steps.
+
+**LAW2 AMU association (landed):** `j2Update` / C mirror now use Radioss
+`srho3`/`mmain` (IRESP=0): `RHON=RHO0*(VOLO/VOLN)`, `AMU=RHON/RHO0−1` instead of
+algebraically equal `VOLO/VOLN−1` (~1 ulp per GP). Coarse adaptive after fix:
+~1 ulp Lf / ~6 ulp Rf; production ~14 ulp Lf / ~13 ulp Rf (was ~20 / ~42).
+DT₀ remains Object.is; fixed-Δt ≥10-step Object.is preserved.
+
+**Conclusion:** NCYCLE=0 VOL/GradN floor and fixed-Δt ≥10-step Object.is are
+closed. Production adaptive Object.is remains open (few-ulp force residual under
+CFL; next: remaining TS↔OR-ABI / live FORINT packing, or mid-run A dumps).
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.
+Live adaptive dumps one extra DT row past the STATE time; compare step counts
+to STATE (`_0001.f64bin`), not the overshoot cycle.

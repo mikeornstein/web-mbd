@@ -1,0 +1,37 @@
+{
+  "mesh": {
+    "nSide": 2,
+    "nZ": 4
+  },
+  "endTime": 0.00008,
+  "liveRows": 209,
+  "oursSteps": 208,
+  "dt0ObjectIs": true,
+  "dt0": {
+    "ours": 3.9018300091135514e-7,
+    "live": 3.9018300091135514e-7
+  },
+  "firstMismatch": 7,
+  "firstMismatchDetail": {
+    "i": 7,
+    "ncycleLive": 7,
+    "ttLive": 0.0000027173881829320053,
+    "ours": 3.862691477636097e-7,
+    "live": 3.8626914776360963e-7,
+    "abs": 5.293955920339377e-23,
+    "rel": 1.370535532281028e-16,
+    "oursPrev": 3.846291261778252e-7,
+    "livePrev": 3.846291261778252e-7
+  },
+  "nMatchPrefix": 7,
+  "lenEqual": false,
+  "shape": {
+    "metricsBitwise": false,
+    "lengthRelError": 1.5990942242874323e-16,
+    "radiusRelError": 1.3210540928811668e-15,
+    "coordsBitwise": false,
+    "alignedMax": 3.92702774747162e-17,
+    "LfObjectIs": false,
+    "RfObjectIs": false
+  }
+}

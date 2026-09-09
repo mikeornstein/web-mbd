@@ -315,7 +315,11 @@ function captureHexGp(
   });
 
   for (let gp = 0; gp < 8; gp++) {
-    const amu = cloned[gp]!.vol0 / Math.max(vols[gp]!, 1e-30) - 1;
+    // Radioss LAW2 (IRESP=0): RHON=RHO0*(VOLO/VOL); AMU=RHON/RHO0−1
+    const vol0 = cloned[gp]!.vol0;
+    const vol = vols[gp]!;
+    const amu =
+      (model.material.density * (vol0 / Math.max(vol, 1e-30))) / model.material.density - 1;
     out.push({
       ip: gp + 1,
       dEng: rates[gp]!,

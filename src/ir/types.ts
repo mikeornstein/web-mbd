@@ -87,4 +87,6 @@ export interface SolveResult {
   coords: Float64Array;
   history: EnergySample[];
   metrics: TaylorMetrics;
+  /** Present when `SolveOptions.recordDtHistory` is set — DT2 per cycle. */
+  dtHistory?: number[];
 }
