@@ -285,18 +285,20 @@ packets. Evidence (`scripts/or-mesh-adaptive-vs-live.ts`):
 |------|------|----------------------------------|
 | Coarse 2×2×4 (16 hex) | OR mesh SCUMU3 | **metrics+coords Object.is** |
 | Production 6×6×16 (576) | OR mesh + default TS mass | ~1e-15 Lf/Rf; coords max ~3e-16 (mass ulps) |
-| Production 6×6×16 | OR mesh + `WMBD_OR_LIVE_MS=1` | **metrics+coords Object.is** |
+| Production 6×6×16 | OR mesh + live `NODES%MS` (`wmbd_postforint_0`) | **metrics+coords Object.is** |
 
 Cycle-0/1 OR mesh F vs `wmbd_postforint_*` is Object.is on production (packet
 path). Default mass still differs on ~331/833 nodes by 1 ulp (global-center
-`S8ZDERIC3` vs starter JCVT=1 local-frame DET); live-MS inject closes adaptive
-Object.is. Vitest: `tests/or-mesh-adaptive-object-is.test.ts` (coarse).
-Oracle runner: `WMBD_OR_MESH=1` uses `assembleInternalForcesOrMesh`.
+`S8ZDERIC3` vs starter JCVT=1 local-frame DET). **`pnpm oracle:taylor`** now
+defaults to OR mesh SCUMU3 and injects live MS from the same engine run, then
+**requires** `bitwiseEqual` + `coordsBitwiseEqual`. Set `WMBD_OR_MESH=0` for
+the TypeScript force backend (ulp floor). Vitest:
+`tests/or-mesh-adaptive-object-is.test.ts` (coarse).
 
-**Conclusion:** NCYCLE=0 VOL/GradN floor, fixed-Δt ≥10-step Object.is, cycle-1
-OR mesh FORINT Object.is, and coarse adaptive OR-mesh Object.is are closed.
-Production adaptive Object.is is closed when nodal MS matches live; default
-TS mass residual remains (~1 ulp/node).
+**Conclusion:** Production adaptive **Object.is** is proven on the OR-mesh +
+live-MS path (same mesh, same starter masses, shared `S8EFORC3` / SCUMU3).
+Standalone TS mass still has a 1 ulp/node residual until starter-local DET is
+matched; that does not block the bitwise oracle gate.
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.

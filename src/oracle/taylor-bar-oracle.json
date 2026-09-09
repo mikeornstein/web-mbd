@@ -1,12 +1,13 @@
 {
   "webmbd": {
-    "lengthRatio": 0.6665620240284863,
-    "radiusRatio": 2.231889693506498,
-    "axialShortening": 0.010803390421477044,
-    "maxDisplacement": 0.010805343971564923,
-    "maxEqPlasticStrain": 2.826192536299418,
-    "energyErrorPct": 2.4007222758547245e-14,
-    "nSteps": 2573
+    "lengthRatio": 0.6665620240284902,
+    "radiusRatio": 2.2318896935064743,
+    "axialShortening": 0.010803390421476919,
+    "maxDisplacement": 0.010805343971564912,
+    "maxEqPlasticStrain": 2.8261925362994162,
+    "energyErrorPct": 6.001805689636812e-14,
+    "nSteps": 2573,
+    "forceBackend": "or-mesh-scumu3+live-ms"
   },
   "oracle": {
     "finalLength": 0.02159660957852308,
@@ -19,18 +20,18 @@
   },
   "compare": {
     "ok": true,
-    "lengthRelError": 5.8295859141563725e-15,
-    "radiusRelError": 1.0545650257954849e-14,
+    "lengthRelError": 0,
+    "radiusRelError": 0,
     "tolerances": {
       "lengthRatioRel": 1e-13,
       "radiusRatioRel": 1e-13
     },
-    "bitwiseEqual": false,
-    "nearestNeighborMax": 3.062444142935596e-16,
-    "nearestNeighborMean": 7.760833883242292e-17,
-    "alignedMax": 3.062444142935596e-16,
-    "alignedMean": 7.760746191382319e-17,
-    "coordsBitwiseEqual": false,
+    "bitwiseEqual": true,
+    "nearestNeighborMax": 9.990277540241584e-19,
+    "nearestNeighborMean": 1.782029465968871e-20,
+    "alignedMax": 0,
+    "alignedMean": 0,
+    "coordsBitwiseEqual": true,
     "coordSource": "f64bin"
   },
   "acceptancePass": true,
