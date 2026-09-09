@@ -197,6 +197,54 @@ button:disabled {
   touch-action: none;
 }
 
+.mesh-shading {
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.75rem 0.65rem;
+  margin: 0.75rem 0 0.35rem;
+  max-width: 640px;
+}
+
+.mesh-shading legend {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0 0.35rem;
+}
+
+.mesh-shading-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.1rem;
+}
+
+.mesh-shading label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.time-scrubber {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 640px;
+  margin: 0.25rem 0 1rem;
+}
+
+.time-scrubber label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.time-scrubber input[type="range"] {
+  width: 100%;
+}
+
+.time-scrubber output {
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
 .solve-progress {
   min-height: 1.4em;
   color: var(--accent);

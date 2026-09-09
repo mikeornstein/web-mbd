@@ -147,6 +147,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
   }
 
   const history: EnergySample[] = [];
+  const meshHistory: Float64Array[] = [];
   const dtHistory: number[] | undefined = options.recordDtHistory ? [] : undefined;
   let internalEnergy = 0;
   let E0 = 0;
@@ -243,8 +244,13 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
 
   // Radioss resol CD: FORINT(X,DT1) → DT2/DT12 → RGWALL → V+=A·DT12 → X+=V·DT2.
   // Cold DT1=0 ⇒ first-cycle constitutive G·DT1=0 (live SIG stays 0) and DT12=DT2/2.
+  const recordSample = (contactEnergy: number): void => {
+    history.push(sample(contactEnergy));
+    meshHistory.push(Float64Array.from(x));
+  };
+
   let contactEnergy = 0;
-  history.push(sample(contactEnergy));
+  recordSample(contactEnergy);
   nextSample = model.output.historyInterval;
 
   while (t < model.controls.endTime - 1e-18 && step < maxSteps) {
@@ -299,7 +305,7 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
     internalEnergy += keBefore - keAfter - (contactEnergy - contactBefore);
     if (t + 1e-18 >= nextSample || t >= model.controls.endTime - 1e-18) {
-      history.push(sample(contactEnergy));
+      recordSample(contactEnergy);
       nextSample += model.output.historyInterval;
     }
 
@@ -315,9 +321,15 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
     }
   }
 
+  const last = history[history.length - 1];
+  if (last === undefined || last.t !== t) {
+    recordSample(contactEnergy);
+  }
+
   return {
     coords: x,
     history,
+    meshHistory,
     metrics: makeMetrics(model, x, history, hexStates, step, performance.now() - wallClock0),
     ...(dtHistory ? { dtHistory } : {}),
   };

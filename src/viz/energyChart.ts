@@ -4,6 +4,7 @@ export class EnergyChart {
   readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private samples: EnergySample[] = [];
+  private cursorIndex = -1;
   private readonly titleEl: HTMLElement;
 
   constructor(host: HTMLElement) {
@@ -26,11 +27,18 @@ export class EnergyChart {
 
   setSamples(samples: EnergySample[]): void {
     this.samples = samples;
+    if (this.cursorIndex >= samples.length) this.cursorIndex = samples.length - 1;
+    this.draw();
+  }
+
+  setCursorIndex(index: number): void {
+    this.cursorIndex = index;
     this.draw();
   }
 
   clear(): void {
     this.samples = [];
+    this.cursorIndex = -1;
     this.draw();
   }
 
@@ -88,6 +96,26 @@ export class EnergyChart {
         else ctx.lineTo(x, y);
       });
       ctx.stroke();
+    }
+
+    const cursor = this.samples[this.cursorIndex];
+    if (cursor) {
+      const cx = xOf(cursor.t);
+      ctx.strokeStyle = "#e6edf3";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cx, pad.t);
+      ctx.lineTo(cx, h - pad.b);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#e6edf3";
+      ctx.beginPath();
+      ctx.moveTo(cx, pad.t);
+      ctx.lineTo(cx - 4, pad.t - 6);
+      ctx.lineTo(cx + 4, pad.t - 6);
+      ctx.closePath();
+      ctx.fill();
     }
 
     ctx.fillStyle = "#9aa7b5";

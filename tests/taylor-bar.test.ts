@@ -36,8 +36,11 @@ describe("taylor bar MVP", () => {
     expect(a.metrics.radiusRatio).toBeCloseTo(b.metrics.radiusRatio, 12);
     expect(a.metrics.maxEqPlasticStrain).toBeCloseTo(b.metrics.maxEqPlasticStrain, 12);
     expect(a.history.length).toBe(b.history.length);
+    expect(a.meshHistory.length).toBe(a.history.length);
+    const lastFrame = a.meshHistory[a.meshHistory.length - 1]!;
     for (let i = 0; i < a.coords.length; i++) {
       expect(Object.is(a.coords[i], b.coords[i]!)).toBe(true);
+      expect(Object.is(lastFrame[i], a.coords[i])).toBe(true);
     }
 
     expect(metricsPassAcceptance(a.metrics, TAYLOR_ACCEPTANCE)).toBe(true);
