@@ -15,8 +15,8 @@ static const double ONE_OVER_512 = 1.0 / 512.0;
 static const int CONSTANT_PRESSURE = 1;
 static const int DSV_VOL0 = 1;
 static const int MEAN_AMU = 0;
-static const double QA = 0.0;
-static const double QB = 0.0;
+static const double QA = 1e-20; /* match /PROP/SOLID deck */
+static const double QB = 1e-21;
 
 /* CORNERS node order — same as hex.ts */
 static const double CORNERS[8][3] = {

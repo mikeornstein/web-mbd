@@ -396,6 +396,8 @@ export function assembleInternalForcesOrMesh(args: {
   mat: MaterialJ2Linear;
   dt: number;
   f: Float64Array;
+  /** Optional: filled with per-hex hist eint[8]+epsd[8]+qvis[8]+rho[8] after FORINT. */
+  histOut?: Float64Array;
 }): void {
   if (!loadOrForceKernel() || !orLib?.wmbd_mesh_internal_forces_or) {
     throw new Error("OR mesh force kernel not loaded (rebuild or-extract with or_mesh_force.F90)");
@@ -413,7 +415,6 @@ export function assembleInternalForcesOrMesh(args: {
   const smstr = new Float64Array(nHex * 21);
   const offg = new Float64Array(nHex);
   const hist = new Float64Array(nHex * 32);
-  const fElem = new Float64Array(nHex * 24);
 
   for (let e = 0; e < nHex; e++) {
     let s = orSmstrByElem.get(e);
@@ -451,6 +452,7 @@ export function assembleInternalForcesOrMesh(args: {
     hardening: args.mat.hardeningModulus,
   };
   args.f.fill(0);
+  const fNod = new Float64Array(nNodes * 3);
   const rc = orLib.wmbd_mesh_internal_forces_or(
     nHex,
     nNodes,
@@ -465,7 +467,7 @@ export function assembleInternalForcesOrMesh(args: {
     offg,
     hist,
     args.dt,
-    fElem,
+    fNod,
   );
   if (rc !== 0) {
     throw new Error(`wmbd_mesh_internal_forces_or rc=${rc}`);
@@ -477,19 +479,15 @@ export function assembleInternalForcesOrMesh(args: {
     orOffgByElem.set(e, offg[e]!);
     const h = orHistByElem.get(e)!;
     h.set(hist.subarray(e * 32, e * 32 + 32));
+    if (args.histOut) args.histOut.set(hist.subarray(e * 32, e * 32 + 32), e * 32);
     for (let gp = 0; gp < 8; gp++) {
       const st = args.hexStates[e]![gp]!;
       st.stress.set(stress.subarray(e * 48 + gp * 6, e * 48 + gp * 6 + 6));
       st.eqPlasticStrain = eqps[e * 8 + gp]!;
       st.vol0 = vol0[e * 8 + gp]!;
     }
-    for (let ai = 0; ai < 8; ai++) {
-      const n = args.hexConn[e]![ai]!;
-      const base = e * 24 + ai * 3;
-      args.f[n * 3]! -= fElem[base]!;
-      args.f[n * 3 + 1]! -= fElem[base + 1]!;
-      args.f[n * 3 + 2]! -= fElem[base + 2]!;
-    }
   }
+  // Mesh ABI returns live-signed nodal forces from SCUMU3 (anod), not per-hex F11.
+  args.f.set(fNod);
 }
 

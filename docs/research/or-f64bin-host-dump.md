@@ -30,6 +30,8 @@ Replay live DT with `scripts/replay-or-dt-schedule.ts`.
 Patched `resol.F` also writes, for `NCYCLE<=2` and `ISPMD==0`:
 
 - `wmbd_postaccele_N.f64bin` — after `ACCELE` (A = F/m, pre-RGWALL)
+- `wmbd_preaccele_N.f64bin` — `NODES%A` as forces immediately before `ACCELE`
+- `wmbd_postforint_N.f64bin` — forces right after FORINT+ASSPAR (before RWALL/kin)
 - `wmbd_postwall_N.f64bin` — after `RGWAL0`
 
 Header: `int32 NCYCLE, NUMNOD` + `float64 DT1, DT2, DT12`.

@@ -266,13 +266,21 @@ D/VOL/AMU match. Root cause: `P`/`DAV` used `-(sum)/3` instead of Radioss
 `-THIRD*(sum)` (`THIRD=ONE/THREE`). With THIRD, cycle-1 PLA/AMU are Object.is and
 SIG is noise-only. ACCELE now uses `A = F*(1/MS)` (`accele.F`), not `F/MS`.
 GPSIG dumps write `LBUF%VOL`(=VOLO) and a cleared `AMU`; recover VOLN/AMU from
-`RHO`. Cycle-1+ residual is nodal force (~1–2 ulp on large A) under adaptive-sized
-steps — not constitutive. Production adaptive still not metrics Object.is
-(~few×10⁻¹⁵ Lf/Rf). Fixed-Δt ≥10-step Object.is preserved.
+`RHO`. Fixed-Δt ≥10-step Object.is preserved.
 
-**Conclusion:** NCYCLE=0 VOL/GradN floor and fixed-Δt ≥10-step Object.is are
-closed. Production adaptive Object.is remains open (force-assembly / ACCELE-scale
-ulp residual under CFL).
+**Cycle-1 OR-ABI nodal F (landed):** With live X/V and cold vol0, OR extract
+SIG/PLA/QVIS/RHO are Object.is vs `wmbd_gpsig_1`, but F11→negate→JS assemble
+differed from live by 1 ulp on 2 huge DOFs. Root cause: live IPARIT=0 uses
+`SCUMU3` into `A` (`anod`); extract was re-gathering from `F11..F38` in JS.
+Mesh ABI now returns `anod` (3×n_nodes); one-hex returns `-anod` (+∫Bᵀσ ABI).
+`wmbd_postforint_*` dump (right after ASSPAR) ≡ pre-ACCELE F; OR mesh F/A vs
+live are Object.is at NCYCLE=1. GEO QA/QB set to deck `1e-20`/`1e-21` (was 0).
+TS force path still has a larger gap; production adaptive metrics Object.is
+remains open (~few×10⁻¹⁵ Lf/Rf).
+
+**Conclusion:** NCYCLE=0 VOL/GradN floor, fixed-Δt ≥10-step Object.is, and
+cycle-1 OR-ABI FORINT nodal F Object.is (mesh/SCUMU3) are closed. Production
+adaptive Object.is remains open (TS force path under CFL).
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.

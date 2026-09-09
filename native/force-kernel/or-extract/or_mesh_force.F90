@@ -5,7 +5,7 @@
 ! BIND(C): wmbd_mesh_internal_forces_or
 !   conn: int32[8*n_hex], 0-based node indices (web-mbd order)
 !   stress/eqps/vol0/smstr/offg/hist: per-element flat arrays
-!   f_out: 24*n_hex, same +∫Bᵀσ sign as one-hex ABI
+!   f_out: 3*n_nodes — nodal forces from SCUMU3 into A (same as live IPARIT=0)
 !
 ! Return: 0 ok, -2 packed only, -4 alloc fail, -5 nel/numnod unsupported
 
@@ -480,8 +480,8 @@ contains
     igeo(15, 1) = 1
     igeo(16, 1) = 0
     igeo(97, 1) = 0
-    geo(14, 1) = zero
-    geo(15, 1) = zero
+    geo(14, 1) = 1.0d-20
+    geo(15, 1) = 1.0d-21
 
     ok = .true.
     mesh_nel = nel
@@ -571,12 +571,11 @@ contains
     end do
   end subroutine pack_mesh
 
-  subroutine scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f_out)
+  subroutine scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
     integer(c_int), intent(in), value :: n_hex
     real(c_double), intent(inout) :: stress_io(48 * n_hex), eqps_io(8 * n_hex), vol0_io(8 * n_hex)
     real(c_double), intent(inout) :: smstr_io(21 * n_hex), offg_io(n_hex), hist_io(32 * n_hex)
-    real(c_double), intent(out) :: f_out(24 * n_hex)
-    integer :: ie, ir, is, it, ip, k, base, nel, fo
+    integer :: ie, ir, is, it, ip, k, base, nel
     type(l_bufel_), pointer :: lbuf
 
     nel = n_hex
@@ -603,16 +602,6 @@ contains
       do k = 1, 21
         smstr_io(21 * (ie - 1) + k) = elbuf_tab(1)%gbuf%smstr(ie + (k - 1) * nel)
       end do
-      ! Negate FORINT collectors → +∫Bᵀσ per element (same as one-hex ABI)
-      fo = 24 * (ie - 1)
-      f_out(fo + 1:fo + 3) = -[f11(ie), f21(ie), f31(ie)]
-      f_out(fo + 4:fo + 6) = -[f12(ie), f22(ie), f32(ie)]
-      f_out(fo + 7:fo + 9) = -[f13(ie), f23(ie), f33(ie)]
-      f_out(fo + 10:fo + 12) = -[f14(ie), f24(ie), f34(ie)]
-      f_out(fo + 13:fo + 15) = -[f15(ie), f25(ie), f35(ie)]
-      f_out(fo + 16:fo + 18) = -[f16(ie), f26(ie), f36(ie)]
-      f_out(fo + 19:fo + 21) = -[f17(ie), f27(ie), f37(ie)]
-      f_out(fo + 22:fo + 24) = -[f18(ie), f28(ie), f38(ie)]
     end do
   end subroutine scatter_mesh
 
@@ -640,7 +629,7 @@ contains
     real(c_double), intent(inout) :: offg_io(n_hex)
     real(c_double), intent(inout) :: hist_io(32 * n_hex)
     real(c_double), intent(in), value :: dt
-    real(c_double), intent(out) :: f_out(24 * n_hex)
+    real(c_double), intent(out) :: f_out(3 * n_nodes)
     integer(c_int) :: rc
 
     interface
@@ -655,6 +644,7 @@ contains
     integer :: neltst, ityptst, ioutprt
     integer :: snpc, stf, sbufmat, nsvois, idtmins, iresp, maxfunc
     integer :: userl_avail, impl_s, idyna
+    integer :: n
 
     external s8eforc3
 
@@ -738,7 +728,13 @@ contains
          mat_elem, h3d_strain, dt_t, snpc, stf, sbufmat, svis, nsvois, idtmins, iresp, &
          maxfunc, userl_avail, glob_therm, impl_s, idyna)
 
-    call scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f_out)
+    call scatter_mesh(n_hex, stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io)
+    ! Return SCUMU3 nodal forces (IPARIT=0) — same gather as live FORINT→A.
+    do n = 1, n_nodes
+      f_out(3 * (n - 1) + 1) = anod(1, n)
+      f_out(3 * (n - 1) + 2) = anod(2, n)
+      f_out(3 * (n - 1) + 3) = anod(3, n)
+    end do
     rc = 0_c_int
   end function wmbd_mesh_internal_forces_or
 

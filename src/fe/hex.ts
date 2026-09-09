@@ -1115,8 +1115,8 @@ export function hexInternalForces(args: {
   const constantPressure = args.options?.constantPressure !== false;
   const dsvVol0 = args.options?.dsvVol0 ?? constantPressure;
   const meanAmu = args.options?.meanAmu === true;
-  const qa = args.options?.bulkViscQuad ?? 0;
-  const qb = args.options?.bulkViscLin ?? 0;
+  const qa = args.options?.bulkViscQuad ?? 1e-20;
+  const qb = args.options?.bulkViscLin ?? 1e-21;
   const jcvt = args.options?.jcvt ?? 0;
   fOut.fill(0);
   let dU = 0;

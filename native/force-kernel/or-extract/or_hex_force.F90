@@ -469,8 +469,10 @@ contains
     igeo(15, 1) = 1
     igeo(16, 1) = 0
     igeo(97, 1) = 0
-    geo(14, 1) = zero
-    geo(15, 1) = zero
+    ! Match live /PROP/SOLID QA,QB (deck 1e-20 / 1e-21). Zero would skip
+    ! mqviscb contribution that live still evaluates with these tiny coeffs.
+    geo(14, 1) = 1.0d-20
+    geo(15, 1) = 1.0d-21
 
     ok = .true.
   end function alloc_taylor_elbuf
@@ -539,17 +541,11 @@ contains
     elbuf_tab(1)%gbuf%epsd(1) = zero
   end subroutine pack_state
 
-  subroutine scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f11, f21, f31, f12, f22, f32, &
-       f13, f23, f33, f14, f24, f34, f15, f25, f35, f16, f26, f36, f17, f27, f37, &
-       f18, f28, f38, f_out)
+  subroutine scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f_out)
     real(c_double), intent(inout) :: stress_io(48), eqps_io(8), vol0_io(8)
     real(c_double), intent(inout) :: smstr_io(21)
     real(c_double), intent(out) :: offg_io
     real(c_double), intent(inout) :: hist_io(32)
-    real(kind=8), intent(in) :: f11(:), f21(:), f31(:), f12(:), f22(:), f32(:)
-    real(kind=8), intent(in) :: f13(:), f23(:), f33(:), f14(:), f24(:), f34(:)
-    real(kind=8), intent(in) :: f15(:), f25(:), f35(:), f16(:), f26(:), f36(:)
-    real(kind=8), intent(in) :: f17(:), f27(:), f37(:), f18(:), f28(:), f38(:)
     real(c_double), intent(out) :: f_out(24)
     integer :: ir, is, it, ip, k
     type(l_bufel_), pointer :: lbuf
@@ -577,16 +573,17 @@ contains
       smstr_io(k) = elbuf_tab(1)%gbuf%smstr(k)
     end do
 
-    ! OpenRadioss F11..F38 are the FORINT collectors that later enter A as
-    ! A -= F / m. web-mbd / C-mirror ABI returns +∫Bᵀσ, so negate here.
-    f_out(1:3) = -[f11(1), f21(1), f31(1)]
-    f_out(4:6) = -[f12(1), f22(1), f32(1)]
-    f_out(7:9) = -[f13(1), f23(1), f33(1)]
-    f_out(10:12) = -[f14(1), f24(1), f34(1)]
-    f_out(13:15) = -[f15(1), f25(1), f35(1)]
-    f_out(16:18) = -[f16(1), f26(1), f36(1)]
-    f_out(19:21) = -[f17(1), f27(1), f37(1)]
-    f_out(22:24) = -[f18(1), f28(1), f38(1)]
+    ! Prefer SCUMU3 nodal A (anod) over raw F11 collectors. For NEL=1 they
+    ! match; using anod keeps the one-hex ABI aligned with live IPARIT=0.
+    ! web-mbd / C-mirror ABI returns +∫Bᵀσ, so negate anod (= FORINT F).
+    f_out(1:3) = -[anod(1, 1), anod(2, 1), anod(3, 1)]
+    f_out(4:6) = -[anod(1, 2), anod(2, 2), anod(3, 2)]
+    f_out(7:9) = -[anod(1, 3), anod(2, 3), anod(3, 3)]
+    f_out(10:12) = -[anod(1, 4), anod(2, 4), anod(3, 4)]
+    f_out(13:15) = -[anod(1, 5), anod(2, 5), anod(3, 5)]
+    f_out(16:18) = -[anod(1, 6), anod(2, 6), anod(3, 6)]
+    f_out(19:21) = -[anod(1, 7), anod(2, 7), anod(3, 7)]
+    f_out(22:24) = -[anod(1, 8), anod(2, 8), anod(3, 8)]
   end subroutine scatter_state
 
   function env_call_s8e() result(yes)
@@ -701,9 +698,7 @@ contains
          mat_elem, h3d_strain, dt_t, snpc, stf, sbufmat, svis, nsvois, idtmins, iresp, &
          maxfunc, userl_avail, glob_therm, impl_s, idyna)
 
-    call scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f11, f21, f31, f12, f22, f32, &
-         f13, f23, f33, f14, f24, f34, f15, f25, f35, f16, f26, f36, f17, f27, f37, &
-         f18, f28, f38, f_out)
+    call scatter_state(stress_io, eqps_io, vol0_io, smstr_io, offg_io, hist_io, f_out)
     rc = 0_c_int
   end function wmbd_hex_internal_forces_or
 
