@@ -273,9 +273,10 @@ function runTsWithSchedule(sched: number[], nCycles: number): Snap[] {
       }
     }
     for (let i = 0; i < nNodes; i++) {
-      acc[i * 3] = f[i * 3]! / masses[i]!;
-      acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
-      acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
+      const rtmp = 1 / masses[i]!;
+      acc[i * 3] = f[i * 3]! * rtmp;
+      acc[i * 3 + 1] = f[i * 3 + 1]! * rtmp;
+      acc[i * 3 + 2] = f[i * 3 + 2]! * rtmp;
     }
     const dt12 = 0.5 * (dt1 + dt);
     snaps.push({

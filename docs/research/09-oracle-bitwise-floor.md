@@ -260,9 +260,19 @@ algebraically equal `VOLO/VOLN−1` (~1 ulp per GP). Coarse adaptive after fix:
 ~1 ulp Lf / ~6 ulp Rf; production ~14 ulp Lf / ~13 ulp Rf (was ~20 / ~42).
 DT₀ remains Object.is; fixed-Δt ≥10-step Object.is preserved.
 
+**M2LAW THIRD + ACCELE (landed):** Mid-run adaptive FORINT bisect (live DT
+schedule, coarse 2×2×4) showed cycle-1 SIG/PLA lose Object.is by 1–3 ulps while
+D/VOL/AMU match. Root cause: `P`/`DAV` used `-(sum)/3` instead of Radioss
+`-THIRD*(sum)` (`THIRD=ONE/THREE`). With THIRD, cycle-1 PLA/AMU are Object.is and
+SIG is noise-only. ACCELE now uses `A = F*(1/MS)` (`accele.F`), not `F/MS`.
+GPSIG dumps write `LBUF%VOL`(=VOLO) and a cleared `AMU`; recover VOLN/AMU from
+`RHO`. Cycle-1+ residual is nodal force (~1–2 ulp on large A) under adaptive-sized
+steps — not constitutive. Production adaptive still not metrics Object.is
+(~few×10⁻¹⁵ Lf/Rf). Fixed-Δt ≥10-step Object.is preserved.
+
 **Conclusion:** NCYCLE=0 VOL/GradN floor and fixed-Δt ≥10-step Object.is are
-closed. Production adaptive Object.is remains open (few-ulp force residual under
-CFL; next: remaining TS↔OR-ABI / live FORINT packing, or mid-run A dumps).
+closed. Production adaptive Object.is remains open (force-assembly / ACCELE-scale
+ulp residual under CFL).
 
 Also: when `/DTIX` equals TSTOP, OpenRadioss may take one extra cycle past
 endTime and force-write a second `.sta` — always use `_0001` for parity.

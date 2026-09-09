@@ -252,10 +252,12 @@ export function solveExplicit(model: ModelIR, options: SolveOptions = {}): Solve
 
     assembleInternal();
     contactEnergy = applyWallForces();
+    // Radioss ACCELE: RTMP = 1/MS; A = F * RTMP (not F/MS — 1 ulp under adaptive).
     for (let i = 0; i < nNodes; i++) {
-      acc[i * 3] = f[i * 3]! / masses[i]!;
-      acc[i * 3 + 1] = f[i * 3 + 1]! / masses[i]!;
-      acc[i * 3 + 2] = f[i * 3 + 2]! / masses[i]!;
+      const rtmp = 1 / masses[i]!;
+      acc[i * 3] = f[i * 3]! * rtmp;
+      acc[i * 3 + 1] = f[i * 3 + 1]! * rtmp;
+      acc[i * 3 + 2] = f[i * 3 + 2]! * rtmp;
     }
 
     // resol.F: DT1 carries prior DT2 (0 on cycle 0); recompute DT2; DT12=½(DT1+DT2).
