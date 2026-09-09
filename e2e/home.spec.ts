@@ -17,7 +17,16 @@ test("research → pre → solve → post for Taylor stock model", async ({ page
   await expect(page.getByLabel("Model tree")).toBeVisible();
   await expect(page.getByText("taylor-bar-copper")).toBeVisible();
   await expect(page.getByText("Hex elements")).toBeVisible();
-  await expect(page.getByRole("img", { name: "Undeformed mesh" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Undeformed mesh/ })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Mesh shading" })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Both" })).toBeChecked();
+  const preMesh = page.getByRole("img", { name: /Undeformed mesh/ });
+  await page.getByRole("radio", { name: "Wire" }).click();
+  const preWire = await preMesh.screenshot();
+  await page.getByRole("radio", { name: "Solid" }).click();
+  const preSolid = await preMesh.screenshot();
+  expect(preSolid.equals(preWire)).toBe(false);
+  await page.getByRole("radio", { name: "Both" }).click();
   await page.screenshot({ path: "e2e/artifacts/pre.png", fullPage: true });
 
   await page.getByRole("button", { name: "Continue to solve" }).click();
@@ -30,8 +39,30 @@ test("research → pre → solve → post for Taylor stock model", async ({ page
   await expect(page.getByText(/Acceptance gate: PASS/)).toBeVisible();
   await expect(page.getByText("Max eq. plastic strain")).toBeVisible();
   await expect(page.getByText("Axial shortening")).toBeVisible();
-  await expect(page.getByRole("img", { name: "Deformed mesh" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Deformed mesh/ })).toBeVisible();
   await expect(page.getByRole("img", { name: "Energy history" })).toBeVisible();
   await expect(page.getByText("Lf / L₀")).toBeVisible();
+  await expect(page.getByRole("group", { name: "Mesh shading" })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Time step" })).toBeVisible();
+
+  const postMesh = page.getByRole("img", { name: /Deformed mesh/ });
+  await page.getByRole("radio", { name: "Wire" }).click();
+  const wireShot = await postMesh.screenshot();
+  await page.getByRole("radio", { name: "Solid" }).click();
+  const solidShot = await postMesh.screenshot();
+  expect(solidShot.equals(wireShot)).toBe(false);
+  await page.screenshot({ path: "e2e/artifacts/post-solid.png", fullPage: true });
+  await page.getByRole("radio", { name: "Both" }).click();
+
+  const slider = page.getByRole("slider", { name: "Time step" });
+  const max = Number(await slider.getAttribute("max"));
+  expect(max).toBeGreaterThan(1);
+  await expect(page.getByText(new RegExp(`index ${String(max)} / ${String(max)}`))).toBeVisible();
+  const lateShot = await postMesh.screenshot();
+  await slider.fill("0");
+  await expect(page.getByText(/index 0 \/ \d+ · t = 0\.0 µs/)).toBeVisible();
+  const earlyShot = await postMesh.screenshot();
+  expect(earlyShot.equals(lateShot)).toBe(false);
+  await page.screenshot({ path: "e2e/artifacts/post-scrub.png", fullPage: true });
   await page.screenshot({ path: "e2e/artifacts/post.png", fullPage: true });
 });

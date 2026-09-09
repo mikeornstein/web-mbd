@@ -86,6 +86,8 @@ export interface TaylorMetrics {
 export interface SolveResult {
   coords: Float64Array;
   history: EnergySample[];
+  /** Nodal coords at each history sample (same length as `history`). */
+  meshHistory: Float64Array[];
   metrics: TaylorMetrics;
   /** Present when `SolveOptions.recordDtHistory` is set — DT2 per cycle. */
   dtHistory?: number[];
