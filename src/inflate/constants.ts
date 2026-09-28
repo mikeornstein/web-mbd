@@ -45,7 +45,7 @@ export const CONTACT_ENGAGE = 0.003;
  * desk). A node-to-segment analogue was tried and failed those bands — not
  * the default. Not bitwise TYPE19.
  */
-export const CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT = "type19-class-gapmin-node-node";
+export const CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE = "type19-class-gapmin-node-node";
 
 export const LOAD_FAMILY_DYNAMIC_PLOAD_40MS = "dynamic-pload-40ms";
 

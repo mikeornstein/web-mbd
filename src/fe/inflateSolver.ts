@@ -1,5 +1,5 @@
 import { applyKissProjection, punchedThrough } from "./contactKiss.js";
-import { CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT } from "../inflate/constants.js";
+import { CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE } from "../inflate/constants.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
 import {
   accumulateCstForces,
@@ -111,12 +111,12 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     pushed: number;
     minGap: number;
     viol: number;
-    contactClass: typeof CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT;
+    contactClass: typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
   } = {
     pushed: 0,
     minGap: law.gapMin,
     viol: 0,
-    contactClass: CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT,
+    contactClass: CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
   };
   let punched = false;
   let incompressResidualMax = 0;

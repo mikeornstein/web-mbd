@@ -1,5 +1,5 @@
 import {
-  CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT,
+  CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
   CONTACT_ENGAGE,
   CONTACT_KISS,
 } from "../inflate/constants.js";
@@ -90,7 +90,7 @@ export interface KissResult {
   minGap: number;
   /** Remaining node pairs with gap < Gapmin *after* the soft press. */
   viol: number;
-  contactClass: typeof CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT;
+  contactClass: typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
 }
 
 function pack(ix: number, iy: number, iz: number): number {
@@ -206,7 +206,7 @@ export function applyKissProjection(args: {
     pushed,
     minGap,
     viol,
-    contactClass: CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT,
+    contactClass: CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
   };
 }
 

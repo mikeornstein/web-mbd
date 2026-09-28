@@ -1,6 +1,6 @@
 import type { EnergySample } from "../ir/types.js";
 import type {
-  CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT,
+  CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
   LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
   LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
 } from "./constants.js";
@@ -16,7 +16,7 @@ export type InflateValidationStatus =
   | "radioss-qs-empty"
   | "playable-not-yet-radioss";
 
-export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT;
+export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
 
 export interface InflateLawCard {
   mu1: number;
