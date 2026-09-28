@@ -28,7 +28,7 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 | Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar, refined mesh) |
 | Implicit dynamics (Newmark / HHT, Newton–Raphson) | planned |
 | Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** + **neo-Hookean membrane inflate (letter A)** |
-| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** + **TYPE19-class membrane kiss (Gapmin=CONTACT_KISS; not bitwise TYPE19)** |
+| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** + **TYPE19-class Gapmin kiss (node-node; not bitwise TYPE19)** |
 | Shells, solids, beams, discrete elements | **hex solids MVP** + **quad membrane shells (letters A/B/C)** |
 | GPU time integration (WebGPU) | planned |
 | Interactive 3D pre/post | **MVP canvas pre/post** (Taylor + inflate A/B/C; mesh edges default ON) |

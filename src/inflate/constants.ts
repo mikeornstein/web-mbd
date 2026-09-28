@@ -40,10 +40,12 @@ export const CONTACT_ENGAGE = 0.003;
 /**
  * Contact class implemented in the toy. OpenRadioss `/INTER/TYPE19` is
  * TYPE7 (node-to-surface) + TYPE11 (edge-to-edge) with Igap=4, Irem_gap=2,
- * Inacti=6. This toy is node-to-segment Gapmin projection only — same
- * CONTACT_KISS number, not bitwise TYPE19.
+ * Inacti=6. The toy uses the same CONTACT_KISS Gapmin with a node-node
+ * soft-press (the response that stays in Themis bands vs the PR#8 TYPE19
+ * desk). A node-to-segment analogue was tried and failed those bands — not
+ * the default. Not bitwise TYPE19.
  */
-export const CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT = "type19-class-node-to-segment";
+export const CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT = "type19-class-gapmin-node-node";
 
 export const LOAD_FAMILY_DYNAMIC_PLOAD_40MS = "dynamic-pload-40ms";
 

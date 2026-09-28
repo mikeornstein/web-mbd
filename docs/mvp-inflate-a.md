@@ -23,7 +23,7 @@ solver.
 - Plane-stress neo-Hookean CST membrane (`materialNeoHookean.ts`, `membraneCst.ts`)
 - Letter-A shell mesh from inflation-abc `meshes/A.json` (Design-PASS quad; 28 orphan `faceTris` paired → 14 quads; NUMELC=1554, NUMELTG=0)
 - `/PLOAD` follower + Rayleigh α=80 + Underwood `/ADYREL` analogue
-- TYPE19-class node-to-segment kiss at CONTACT_KISS (Gapmin=0.762 mm). **Not** bitwise OpenRadioss `/INTER/TYPE19` (no Igap=4, no TYPE11 edges, no Inacti=6)
+- TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): node-node soft-press with **honest post-press viol**. A node-to-segment analogue moved λ/V outside Themis bands vs the PR#8 TYPE19 desk, so it is not the default. **Not** bitwise OpenRadioss `/INTER/TYPE19`
 - Inflate metrics at first ANIM-stride sample with λ_max ≥ 2
 - Letters B/C playable from inflation-abc ship meshes; leftover unpaired cap triangles kept as constant-strain triangles
 - Labeled `qs-ish-dead-pressure` toy path; Radioss QS golden EMPTY / FAIL-closed
@@ -101,7 +101,7 @@ golden still happens offline on a desk with linux64 OpenRadioss (AGPL).
 | A constitutive Ψ≥0, rest Ψ≈0, λ₃ condensed | PASS on this path |
 | B warn freeze at first λ≥2 | PASS (ANIM-stride, labeled) |
 | C V and p reported | PASS |
-| D kiss / no punch-through | TYPE19-class node-to-segment Gapmin=CONTACT_KISS; honest post-press viol. **Not** bitwise Radioss TYPE19 |
+| D kiss / no punch-through | TYPE19-class Gapmin=CONTACT_KISS node-node soft-press; honest post-press viol. Node-to-segment analogue failed Themis bands vs PR#8. **Not** bitwise Radioss TYPE19 |
 | E same-class vs Radioss dynamic golden | PASS for `dynamic-pload-40ms`. **QS apples vs ABC ~54 kPa still EMPTY** — labeled, μ not retuned |
 | Letters B/C | Playable; same μ/ρ/H0/kiss/warn; OpenRadioss goldens NOT-YET (no tapes) |
 | Mesh refine ladder | NOT-YET (PR#9) |

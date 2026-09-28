@@ -43,7 +43,7 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(Object.is(a.metrics.warn.lambdaMax, b.metrics.warn.lambdaMax)).toBe(true);
     expect(a.metrics.warn.psi_J).toBeGreaterThanOrEqual(0);
     expect(a.metrics.punchedThrough).toBe(false);
-    expect(a.metrics.contactClass).toBe("type19-class-node-to-segment");
+    expect(a.metrics.contactClass).toBe("type19-class-gapmin-node-node");
     expect(a.metrics.loadFamily).toBe(golden.loadFamily);
     expect(a.law.mu1).toBe(golden.law.mu1);
     expect(a.law.rho).toBe(golden.law.rho);

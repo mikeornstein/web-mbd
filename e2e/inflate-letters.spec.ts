@@ -10,7 +10,7 @@ test("letters B/C and QS-ish A load in pre with locks and NOT-YET goldens", asyn
   await expect(page.getByLabel("Model tree").getByText("qs-ish-dead-pressure", { exact: true })).toBeVisible();
   await expect(page.getByText(/Radioss QS EMPTY/)).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
-  await expect(page.getByText(/TYPE19-class node-to-segment/)).toBeVisible();
+  await expect(page.getByText(/TYPE19-class Gapmin/)).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
   await expect(pre.getByRole("radio", { name: "Both" })).toBeChecked();
   await page.screenshot({ path: "e2e/artifacts/inflate-qs-ish-pre.png", fullPage: true });

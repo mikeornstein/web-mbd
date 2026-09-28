@@ -107,7 +107,9 @@ What would make a false PASS:
 - Comparing pressure across load families (36 kPa dynamic vs 54 kPa QS).
 - Hashing a different mesh and calling it ship A.
 - Counting kiss violations **before** the projection and calling them zero
-  after.
+  after. (Mitigation: viol is post-press.)
+- Shipping a node-to-segment analogue that misses the PR#8 TYPE19 desk
+  bands and calling it same-class.
 - Checking in a hand-written “Radioss” QS JSON with no engine run.
 
 Mitigations in-tree: law-card Object.is lock; load-family tag; mesh
@@ -130,7 +132,7 @@ until a desk tape exists; compare CLI exit 1 on mismatch.
 | Underwood scale | 0.18 at kinetic-energy peaks | `/ADYREL` **analogue**; full reset overdamps vs PR#8 | not on the LAW42 card |
 | Rayleigh α | 80 1/s | Starter `/DAMP` | ρ unchanged |
 | QS dead p | 54100 Pa | ABC warn class, toy family `qs-ish-dead-pressure` | EMPTY Radioss tape |
-| Kiss algorithm | node-to-segment Gapmin projection | TYPE19-**class**, not bitwise TYPE19 | — |
+| Kiss algorithm | node-node Gapmin projection | TYPE19-**class** Gapmin=CONTACT_KISS; node-to-segment analogue failed Themis bands vs PR#8 TYPE19 desk | — |
 
 No μ or ρ retune between the dynamic golden PASS and this follow-up.
 
@@ -142,7 +144,7 @@ No μ or ρ retune between the dynamic golden PASS and this follow-up.
 | --- | --- | --- |
 | Dynamic letter-A toy vs PR#8 golden inside λ 2% / V 5% / p 5% | **High** | Machine gate `pnpm compare:inflate`; Themis desk PASS on head 8223978 |
 | Constitutive lock (μ, H0, λ₃ = 1/(λ₁λ₂), Ψ ≥ 0 at rest) | **High** | Unit kernel + golden law Object.is |
-| TYPE19-class kiss stops punch-through on the dynamic tape | **Medium** | Fixture viol=0 after press; not bitwise TYPE7+TYPE11; no TYPE11 edges |
+| TYPE19-class kiss stops punch-through on the dynamic tape | **Medium** | Post-press viol; node-node Gapmin (node-to-segment analogue failed bands vs PR#8) |
 | ABC quasi-static ~54 kPa apples | **Low** | Radioss QS golden EMPTY. Toy path is labeled QS-ish only |
 | Letters B/C vs Radioss | **Low** | Playable; no tapes. Leftover cap triangles are CST, not SH3N Radioss |
 | `/ADYREL` bitwise | **Low** | Underwood analogue only |

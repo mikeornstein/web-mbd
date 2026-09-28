@@ -71,7 +71,7 @@ export const LAW_CARD_DUMP_LINES: readonly string[] = [
   `  Gapmin  = ${CONTACT_KISS} m  # CONTACT_KISS = max(2*H0, 1e-4)`,
   "  WARN_LAM= 2",
   "  /PROP   N=1  Ismstr=10  Ishell=1 (Belytschko)  Ithick=1",
-  "  Contact : TYPE19-class node-to-segment Gapmin=CONTACT_KISS (not bitwise /INTER/TYPE19)",
+  "  Contact : TYPE19-class Gapmin=CONTACT_KISS node-node (not bitwise /INTER/TYPE19)",
   "  /PLOAD  0 → 65000 Pa in 0.04 s (dynamic-pload-40ms; not MONVOL; not ABC QS)",
 ];
 

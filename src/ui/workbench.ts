@@ -600,7 +600,7 @@ function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { ki
         ],
         [
           "Kiss",
-          `TYPE19-class node-to-segment Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm (not bitwise TYPE19)`,
+          `TYPE19-class Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm node-node (not bitwise TYPE19)`,
         ],
         ["Warn", `first λ_max ≥ ${model.law.warnLam}`],
         ["View", "mesh edges default ON"],
