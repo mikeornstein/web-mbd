@@ -8,7 +8,7 @@ test("letters B/C and QS-ish A load in pre with locks and labeled goldens", asyn
   await expect(page.getByRole("heading", { name: "Pre — model inspection" })).toBeVisible();
   await expect(page.getByText("inflate-a-qs-ish")).toBeVisible();
   await expect(page.getByLabel("Model tree").getByText("qs-ish-pload-400ms", { exact: true })).toBeVisible();
-  await expect(page.getByText(/p@λ≥2 ≈ 27\.6 kPa, not ABC 54 kPa/)).toBeVisible();
+  await expect(page.getByLabel("Model tree").getByText(/p@λ≥2 ≈ 27\.6 kPa, not ABC 54 kPa/).first()).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(page.getByText(/TYPE19-class Gapmin/)).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
