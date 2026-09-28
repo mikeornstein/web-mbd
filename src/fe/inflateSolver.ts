@@ -1,8 +1,10 @@
-import { applyKissProjection, buildMeshAdjacency, punchedThrough } from "./contactKiss.js";
+import { applyKissProjection, punchedThrough } from "./contactKiss.js";
+import { CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT } from "../inflate/constants.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
 import {
   accumulateCstForces,
   accumulatePressureTri,
+  buildCstRest,
   cstSample,
   splitQuadCsts,
   type CstRest,
@@ -26,9 +28,10 @@ export function assertInflateModel(model: InflateModelIR): void {
   if (model.kind !== "inflate-nh-membrane") throw new Error("expected inflate-nh-membrane IR");
   if (model.meta.version !== 1) throw new Error("IR version must be 1");
   if (model.meta.units !== "SI") throw new Error("units must be SI");
-  const { coords, quads, nNodes, nQuads } = model.mesh;
+  const { coords, quads, tris, nNodes, nQuads, nTris } = model.mesh;
   if (coords.length !== nNodes * 3) throw new Error("coords/nNodes mismatch");
   if (quads.length !== nQuads * 4) throw new Error("quads/nQuads mismatch");
+  if (tris.length !== nTris * 3) throw new Error("tris/nTris mismatch");
   if (!(model.law.mu1 > 0)) throw new Error("mu1 must be > 0");
   if (!(model.law.rho > 0)) throw new Error("rho must be > 0");
   if (!(model.controls.endTime > 0)) throw new Error("endTime must be > 0");
@@ -66,17 +69,31 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     masses[pair.b.k]! += massB;
     minH = Math.min(minH, Math.sqrt(2 * pair.a.A0), Math.sqrt(2 * pair.b.A0));
   }
+  for (let e = 0; e < mesh.nTris; e++) {
+    const rest = buildCstRest(
+      mesh.coords,
+      mesh.tris[e * 3]!,
+      mesh.tris[e * 3 + 1]!,
+      mesh.tris[e * 3 + 2]!,
+    );
+    if (!rest) continue;
+    rests.push(rest);
+    const mass = (law.rho * law.h0 * rest.A0) / 3;
+    masses[rest.i]! += mass;
+    masses[rest.j]! += mass;
+    masses[rest.k]! += mass;
+    minH = Math.min(minH, Math.sqrt(2 * rest.A0));
+  }
   for (let a = 0; a < nNodes; a++) {
     if (!(masses[a]! > 0)) masses[a] = law.rho * law.h0 * minH * minH * 0.25;
   }
 
-  const skip = buildMeshAdjacency(mesh.quads, nNodes);
   const c = membraneWaveSpeed(law.mu1, law.rho, law.nu);
   const dtCrit0 = minH / c;
   let dt = controls.cfl * dtCrit0;
   if (!(dt > 0) || dt > dtCrit0) dt = controls.cfl * dtCrit0;
 
-  const volume0 = enclosedVolume(x, mesh.quads);
+  const volume0 = enclosedVolume(x, mesh.quads, mesh.tris);
   const history: EnergySample[] = [];
   const meshHistory: Float64Array[] = [];
   const lambdaHistory: number[] = [];
@@ -90,10 +107,16 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let dt1 = 0;
   let kePrev = 0;
   let kePrev2 = 0;
-  let lastKiss: { pushed: number; minGap: number; viol: number } = {
+  let lastKiss: {
+    pushed: number;
+    minGap: number;
+    viol: number;
+    contactClass: typeof CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT;
+  } = {
     pushed: 0,
     minGap: law.gapMin,
     viol: 0,
+    contactClass: CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT,
   };
   let punched = false;
   let incompressResidualMax = 0;
@@ -126,7 +149,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         vz = v[i * 3 + 2]!;
       ke += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
     }
-    return { lambdaMax, psi, volume: enclosedVolume(x, mesh.quads), ke };
+    return { lambdaMax, psi, volume: enclosedVolume(x, mesh.quads, mesh.tris), ke };
   };
 
   const recordSample = (p: number): void => {
@@ -217,7 +240,12 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     const dt12 = 0.5 * (dt1 + dt);
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
-    lastKiss = applyKissProjection({ coords: x, skip, kiss: law.gapMin });
+    lastKiss = applyKissProjection({
+      coords: x,
+      quads: mesh.quads,
+      tris: mesh.tris,
+      kiss: law.gapMin,
+    });
     t += dt;
     step += 1;
     dt1 = dt;
@@ -242,7 +270,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     kePrev2 = kePrev;
     kePrev = ke;
 
-    const vol = enclosedVolume(x, mesh.quads);
+    const vol = enclosedVolume(x, mesh.quads, mesh.tris);
     if (punchedThrough(vol, volume0)) {
       punched = true;
       break;
@@ -281,6 +309,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     punchedThrough: punched,
     minGap: lastKiss.minGap,
     contactViol: lastKiss.viol,
+    contactClass: lastKiss.contactClass,
     incompressResidualMax,
   };
 

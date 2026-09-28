@@ -5,19 +5,22 @@ import {
   H0,
   IFORM,
   LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+  LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
   MU,
   MU_OTHER,
   NU,
   P_MAX,
+  P_WARN_ABC,
   PRONY_M,
   RAYLEIGH_ALPHA,
   RHO,
   T_RAMP,
+  T_RAMP_QS_ISH,
   WARN_LAM,
 } from "./constants.js";
 import type { InflateLawCard } from "./types.js";
 
-export function lockedLawCard(): InflateLawCard {
+function constitutiveLocks(): Omit<InflateLawCard, "loadFamily" | "pMax" | "tRamp"> {
   return {
     mu1: MU,
     alpha1: ALPHA1,
@@ -32,10 +35,26 @@ export function lockedLawCard(): InflateLawCard {
     ishell: 1,
     ismstr: 10,
     ithick: 1,
+    rayleighAlpha: RAYLEIGH_ALPHA,
+  };
+}
+
+export function lockedLawCard(): InflateLawCard {
+  return {
+    ...constitutiveLocks(),
     loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
     pMax: P_MAX,
     tRamp: T_RAMP,
-    rayleighAlpha: RAYLEIGH_ALPHA,
+  };
+}
+
+/** Same μ/ρ/H0/kiss/warn. Dead pressure at ABC ~54.1 kPa. Not a μ retune. */
+export function lockedLawCardQsIsh(): InflateLawCard {
+  return {
+    ...constitutiveLocks(),
+    loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+    pMax: P_WARN_ABC,
+    tRamp: T_RAMP_QS_ISH,
   };
 }
 
@@ -52,8 +71,8 @@ export const LAW_CARD_DUMP_LINES: readonly string[] = [
   `  Gapmin  = ${CONTACT_KISS} m  # CONTACT_KISS = max(2*H0, 1e-4)`,
   "  WARN_LAM= 2",
   "  /PROP   N=1  Ismstr=10  Ishell=1 (Belytschko)  Ithick=1",
-  "  /INTER/TYPE19  Igap=4  Irem_gap=2  Inacti=6  Gapmin=CONTACT_KISS",
-  "  /PLOAD  0 → 65000 Pa in 0.04 s (not MONVOL)",
+  "  Contact : TYPE19-class node-to-segment Gapmin=CONTACT_KISS (not bitwise /INTER/TYPE19)",
+  "  /PLOAD  0 → 65000 Pa in 0.04 s (dynamic-pload-40ms; not MONVOL; not ABC QS)",
 ];
 
 export function ploadAt(t: number, law: InflateLawCard = lockedLawCard()): number {

@@ -1,6 +1,11 @@
-import { createInflateAModel } from "../fixtures/inflateA.js";
+import {
+  createInflateAModel,
+  createInflateAQsIshModel,
+  createInflateBModel,
+  createInflateCModel,
+} from "../fixtures/inflateA.js";
 import { createTaylorBarModel, TAYLOR_ACCEPTANCE } from "../fixtures/taylorBar.js";
-import type { InflateModelIR } from "../inflate/types.js";
+import type { InflateModelIR, InflateValidationStatus } from "../inflate/types.js";
 import type { ModelIR, TaylorMetrics } from "../ir/types.js";
 
 export interface TaylorStockModel {
@@ -21,6 +26,7 @@ export interface InflateStockModel {
   researchPath: string;
   layer: 1;
   summary: string;
+  validation: InflateValidationStatus;
   create: () => InflateModelIR;
 }
 
@@ -47,7 +53,41 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     layer: 1,
     summary:
       "Desmopan 85085A film letter A. Locked μ/ρ/H0, dynamic PLOAD 0→65 kPa / 40 ms (not ABC QS). Mesh edges default ON. OpenRadioss is the offline golden only.",
+    validation: "radioss-dynamic-golden",
     create: () => createInflateAModel(),
+  },
+  {
+    kind: "inflate-nh-membrane",
+    id: "inflate-a-qs-ish",
+    title: "Letter A inflate (QS-ish dead pressure)",
+    researchPath: "docs/radioss-qs-desk.md",
+    layer: 1,
+    summary:
+      "Same μ/ρ/H0/kiss/warn as letter A. Dead pressure at ABC ~54.1 kPa (qs-ish-dead-pressure). OpenRadioss QS golden EMPTY / FAIL-closed — not ABC QS apples.",
+    validation: "radioss-qs-empty",
+    create: () => createInflateAQsIshModel(),
+  },
+  {
+    kind: "inflate-nh-membrane",
+    id: "inflate-b-desmopan",
+    title: "Letter B inflate (neo-Hookean)",
+    researchPath: "docs/mvp-inflate-a.md",
+    layer: 1,
+    summary:
+      "Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. Playable; OpenRadioss golden NOT-YET (no tape).",
+    validation: "playable-not-yet-radioss",
+    create: () => createInflateBModel(),
+  },
+  {
+    kind: "inflate-nh-membrane",
+    id: "inflate-c-desmopan",
+    title: "Letter C inflate (neo-Hookean)",
+    researchPath: "docs/mvp-inflate-a.md",
+    layer: 1,
+    summary:
+      "Desmopan 85085A film letter C from inflation-abc meshes/C.json. Same constitutive locks. Playable; OpenRadioss golden NOT-YET (no tape).",
+    validation: "playable-not-yet-radioss",
+    create: () => createInflateCModel(),
   },
 ];
 

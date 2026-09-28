@@ -1,7 +1,22 @@
 import type { EnergySample } from "../ir/types.js";
-import type { LOAD_FAMILY_DYNAMIC_PLOAD_40MS } from "./constants.js";
+import type {
+  CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT,
+  LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+  LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+} from "./constants.js";
 
-export type InflateLoadFamily = typeof LOAD_FAMILY_DYNAMIC_PLOAD_40MS;
+export type InflateLoadFamily =
+  | typeof LOAD_FAMILY_DYNAMIC_PLOAD_40MS
+  | typeof LOAD_FAMILY_QS_ISH_DEAD_PRESSURE;
+
+export type InflateLetter = "A" | "B" | "C";
+
+export type InflateValidationStatus =
+  | "radioss-dynamic-golden"
+  | "radioss-qs-empty"
+  | "playable-not-yet-radioss";
+
+export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT;
 
 export interface InflateLawCard {
   mu1: number;
@@ -27,9 +42,13 @@ export interface QuadShellMesh {
   coords: number[];
   /** Packed 4-node shells, 0-based, NUMELC = length/4. */
   quads: number[];
+  /** Packed leftover 3-node CSTs after orphan pairing (NUMELTG analogue). Empty on letter A. */
+  tris: number[];
   nNodes: number;
   nQuads: number;
+  nTris: number;
   fingerprint: string;
+  letter: InflateLetter;
 }
 
 export interface InflateModelIR {
@@ -80,6 +99,7 @@ export interface InflateSolveMetrics {
   punchedThrough: boolean;
   minGap: number;
   contactViol: number;
+  contactClass: InflateContactClass;
   incompressResidualMax: number;
 }
 
@@ -126,3 +146,23 @@ export interface RadiossInflateGolden {
     pressureRel: number;
   };
 }
+
+/** FAIL-closed until a desk OpenRadioss quasi-static tape exists. */
+export type RadiossQsGolden =
+  | {
+      status: "EMPTY";
+      loadFamily: typeof LOAD_FAMILY_QS_ISH_DEAD_PRESSURE;
+      law: InflateLawCard;
+      mesh: RadiossInflateGolden["mesh"];
+      bands: RadiossInflateGolden["bands"];
+      provenance: {
+        source: "none";
+        desk: string;
+        branch: string;
+        note: string;
+      };
+    }
+  | (Omit<RadiossInflateGolden, "loadFamily"> & {
+      status: "filled";
+      loadFamily: typeof LOAD_FAMILY_QS_ISH_DEAD_PRESSURE;
+    });

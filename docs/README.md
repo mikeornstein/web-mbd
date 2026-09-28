@@ -23,6 +23,8 @@ Research and design notes for building a client-side flexible multibody / explic
 | --- | --- |
 | [Taylor bar](mvp-taylor-bar.md) | J2 hex + rigid wall + OpenRadioss bitwise oracle |
 | [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + dynamic PLOAD + banded Radioss golden |
+| [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; Aletheia pending Zeus |
+| [Radioss QS desk](radioss-qs-desk.md) | EMPTY FAIL-closed recipe for a quasi-static tape |
 
 ## Sources
 

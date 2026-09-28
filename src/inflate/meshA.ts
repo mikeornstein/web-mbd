@@ -1,23 +1,69 @@
 import meshARaw from "../fixtures/meshes/A.json" with { type: "json" };
+import meshBRaw from "../fixtures/meshes/B.json" with { type: "json" };
+import meshCRaw from "../fixtures/meshes/C.json" with { type: "json" };
 import {
+  SHIP_B_NODES,
+  SHIP_B_ORPHAN_TRIS,
+  SHIP_B_SOURCE_QUADS,
+  SHIP_C_NODES,
+  SHIP_C_ORPHAN_TRIS,
+  SHIP_C_SOURCE_QUADS,
   SHIP_MESH_NODES,
   SHIP_ORPHAN_TRIS,
   SHIP_SHELL_QUADS,
   SHIP_SOURCE_QUADS,
 } from "./constants.js";
-import type { QuadShellMesh } from "./types.js";
+import type { InflateLetter, QuadShellMesh } from "./types.js";
 
 interface AbcBake {
   pos0: number[];
   quads: [number, number, number, number][];
   faceTris: [number, number, number][];
   meta: {
-    letter: string;
+    letter: InflateLetter;
     N: number;
     nMidTris: number;
     nOrphanCapTris: number;
   };
 }
+
+interface ShipSpec {
+  letter: InflateLetter;
+  N: number;
+  sourceQuads: number;
+  orphanTris: number;
+  nMidTris: number;
+  allowLeftoverTris: boolean;
+  expectedShellQuads?: number;
+}
+
+const SHIP: Record<InflateLetter, ShipSpec> = {
+  A: {
+    letter: "A",
+    N: SHIP_MESH_NODES,
+    sourceQuads: SHIP_SOURCE_QUADS,
+    orphanTris: SHIP_ORPHAN_TRIS,
+    nMidTris: 0,
+    allowLeftoverTris: false,
+    expectedShellQuads: SHIP_SHELL_QUADS,
+  },
+  B: {
+    letter: "B",
+    N: SHIP_B_NODES,
+    sourceQuads: SHIP_B_SOURCE_QUADS,
+    orphanTris: SHIP_B_ORPHAN_TRIS,
+    nMidTris: 47,
+    allowLeftoverTris: true,
+  },
+  C: {
+    letter: "C",
+    N: SHIP_C_NODES,
+    sourceQuads: SHIP_C_SOURCE_QUADS,
+    orphanTris: SHIP_C_ORPHAN_TRIS,
+    nMidTris: 0,
+    allowLeftoverTris: true,
+  },
+};
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
@@ -37,41 +83,50 @@ function isIndexQuad(v: unknown): v is [number, number, number, number] {
   return v.every((n) => typeof n === "number" && Number.isInteger(n) && n >= 0);
 }
 
+function isLetter(v: unknown): v is InflateLetter {
+  return v === "A" || v === "B" || v === "C";
+}
+
 /** Parse inflation-abc Design-PASS bake JSON. Unknown at the boundary. */
-export function parseAbcBake(raw: unknown): AbcBake {
-  if (!isRecord(raw)) throw new Error("A.json: not an object");
+export function parseAbcBake(raw: unknown, expected: InflateLetter): AbcBake {
+  const spec = SHIP[expected];
+  if (!isRecord(raw)) throw new Error(`${expected}.json: not an object`);
   const pos0 = raw["pos0"];
   const quads = raw["quads"];
   const faceTris = raw["faceTris"];
   const metaRaw = raw["meta"];
-  if (!Array.isArray(pos0) || !pos0.every(isFiniteNumber)) throw new Error("A.json: bad pos0");
-  if (pos0.length % 3 !== 0) throw new Error("A.json: pos0 length not multiple of 3");
-  if (!Array.isArray(quads) || !quads.every(isIndexQuad)) throw new Error("A.json: bad quads");
+  if (!Array.isArray(pos0) || !pos0.every(isFiniteNumber)) throw new Error(`${expected}.json: bad pos0`);
+  if (pos0.length % 3 !== 0) throw new Error(`${expected}.json: pos0 length not multiple of 3`);
+  if (!Array.isArray(quads) || !quads.every(isIndexQuad)) throw new Error(`${expected}.json: bad quads`);
   if (!Array.isArray(faceTris) || !faceTris.every(isIndexTriple)) {
-    throw new Error("A.json: bad faceTris");
+    throw new Error(`${expected}.json: bad faceTris`);
   }
-  if (!isRecord(metaRaw)) throw new Error("A.json: bad meta");
+  if (!isRecord(metaRaw)) throw new Error(`${expected}.json: bad meta`);
   const letter = metaRaw["letter"];
   const N = metaRaw["N"];
   const nMidTris = metaRaw["nMidTris"];
   const nOrphanCapTris = metaRaw["nOrphanCapTris"];
-  if (letter !== "A") throw new Error(`A.json: expected letter A, got ${String(letter)}`);
-  if (N !== SHIP_MESH_NODES) throw new Error(`A.json: expected N=${SHIP_MESH_NODES}, got ${String(N)}`);
-  if (nMidTris !== 0) throw new Error(`A.json: expected nMidTris=0, got ${String(nMidTris)}`);
-  if (nOrphanCapTris !== SHIP_ORPHAN_TRIS) {
-    throw new Error(`A.json: expected ${SHIP_ORPHAN_TRIS} orphan cap tris`);
+  if (!isLetter(letter) || letter !== expected) {
+    throw new Error(`${expected}.json: expected letter ${expected}, got ${String(letter)}`);
   }
-  if (quads.length !== SHIP_SOURCE_QUADS) {
-    throw new Error(`A.json: expected ${SHIP_SOURCE_QUADS} source quads`);
+  if (N !== spec.N) throw new Error(`${expected}.json: expected N=${spec.N}, got ${String(N)}`);
+  if (nMidTris !== spec.nMidTris) {
+    throw new Error(`${expected}.json: expected nMidTris=${spec.nMidTris}, got ${String(nMidTris)}`);
   }
-  if (faceTris.length !== SHIP_ORPHAN_TRIS) {
-    throw new Error(`A.json: expected ${SHIP_ORPHAN_TRIS} faceTris`);
+  if (nOrphanCapTris !== spec.orphanTris) {
+    throw new Error(`${expected}.json: expected ${spec.orphanTris} orphan cap tris`);
+  }
+  if (quads.length !== spec.sourceQuads) {
+    throw new Error(`${expected}.json: expected ${spec.sourceQuads} source quads`);
+  }
+  if (faceTris.length !== spec.orphanTris) {
+    throw new Error(`${expected}.json: expected ${spec.orphanTris} faceTris`);
   }
   return {
     pos0: pos0.slice(),
     quads: quads.map((q): [number, number, number, number] => [q[0], q[1], q[2], q[3]]),
     faceTris: faceTris.map((t): [number, number, number] => [t[0], t[1], t[2]]),
-    meta: { letter: "A", N: SHIP_MESH_NODES, nMidTris: 0, nOrphanCapTris: SHIP_ORPHAN_TRIS },
+    meta: { letter: expected, N: spec.N, nMidTris: spec.nMidTris, nOrphanCapTris: spec.orphanTris },
   };
 }
 
@@ -90,16 +145,22 @@ function mergeTriPair(
   return [u1, n1, u2, n2];
 }
 
+export interface QuadifyResult {
+  quads: [number, number, number, number][];
+  leftover: [number, number, number][];
+}
+
 /**
  * Pair orphan faceTris that share an edge into quads (PR#8 convert-time map).
- * Does not remesh existing midplane quads. Leftover must be empty.
+ * Does not remesh existing midplane quads. Leftover CST triangles are returned
+ * (letter A must be empty; B/C may keep unpaired caps).
  */
 export function quadifyOrphans(
   quads: readonly (readonly [number, number, number, number])[],
   orphans: readonly (readonly [number, number, number])[],
-): [number, number, number, number][] {
+): QuadifyResult {
   const all: [number, number, number, number][] = quads.map((q) => [q[0], q[1], q[2], q[3]]);
-  if (orphans.length === 0) return all;
+  if (orphans.length === 0) return { quads: all, leftover: [] };
   const edges = new Map<string, number[]>();
   const tris: [number, number, number][] = orphans.map((t) => [t[0], t[1], t[2]]);
   for (let ti = 0; ti < tris.length; ti++) {
@@ -126,15 +187,13 @@ export function quadifyOrphans(
     all.push(mergeTriPair(tris[a]!, tris[b]!, [s0, s1]));
   }
   const leftover = tris.filter((_, i) => !used.has(i));
-  if (leftover.length !== 0) {
-    throw new Error(`quadify left ${leftover.length} unpaired tris — refuse SH3N`);
-  }
-  return all;
+  return { quads: all, leftover };
 }
 
 export function enclosedVolume(
   coords: ArrayLike<number>,
   quads: ArrayLike<number>,
+  tris: ArrayLike<number> = [],
 ): number {
   let v = 0;
   const nq = quads.length / 4;
@@ -145,6 +204,10 @@ export function enclosedVolume(
     const i3 = quads[e * 4 + 3]!;
     v += tetVol(coords, i0, i1, i2);
     v += tetVol(coords, i0, i2, i3);
+  }
+  const nt = tris.length / 3;
+  for (let e = 0; e < nt; e++) {
+    v += tetVol(coords, tris[e * 3]!, tris[e * 3 + 1]!, tris[e * 3 + 2]!);
   }
   return v;
 }
@@ -165,15 +228,23 @@ function tetVol(coords: ArrayLike<number>, ia: number, ib: number, ic: number): 
 }
 
 /** FNV-1a 32-bit over IEEE coords + connectivity (stable mesh id). */
-export function meshFingerprint(coords: ArrayLike<number>, quads: ArrayLike<number>): string {
+export function meshFingerprint(
+  coords: ArrayLike<number>,
+  quads: ArrayLike<number>,
+  tris: ArrayLike<number> = [],
+): string {
   const n = coords.length;
-  const bytes = new Uint8Array(n * 8 + quads.length * 4);
+  const bytes = new Uint8Array(n * 8 + quads.length * 4 + tris.length * 4);
   const f64 = new Float64Array(bytes.buffer, 0, n);
   for (let i = 0; i < n; i++) f64[i] = coords[i]!;
   const view = new DataView(bytes.buffer);
   const base = n * 8;
   for (let i = 0; i < quads.length; i++) {
     view.setInt32(base + i * 4, quads[i]!, true);
+  }
+  const tbase = base + quads.length * 4;
+  for (let i = 0; i < tris.length; i++) {
+    view.setInt32(tbase + i * 4, tris[i]!, true);
   }
   let h = 0x811c9dc5;
   for (let i = 0; i < bytes.length; i++) {
@@ -183,16 +254,37 @@ export function meshFingerprint(coords: ArrayLike<number>, quads: ArrayLike<numb
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 
-export function loadShipMeshA(): QuadShellMesh {
-  const bake = parseAbcBake(meshARaw);
+function rawFor(letter: InflateLetter): unknown {
+  switch (letter) {
+    case "A":
+      return meshARaw;
+    case "B":
+      return meshBRaw;
+    case "C":
+      return meshCRaw;
+    default: {
+      const _exhaustive: never = letter;
+      throw new Error(`unhandled letter ${String(_exhaustive)}`);
+    }
+  }
+}
+
+export function loadShipMesh(letter: InflateLetter): QuadShellMesh {
+  const spec = SHIP[letter];
+  const bake = parseAbcBake(rawFor(letter), letter);
   const nNodes = bake.pos0.length / 3;
-  const quads = quadifyOrphans(bake.quads, bake.faceTris);
-  if (quads.length !== SHIP_SHELL_QUADS) {
-    throw new Error(`expected ${SHIP_SHELL_QUADS} shells after quadify, got ${quads.length}`);
+  const { quads, leftover } = quadifyOrphans(bake.quads, bake.faceTris);
+  if (!spec.allowLeftoverTris && leftover.length !== 0) {
+    throw new Error(`quadify left ${leftover.length} unpaired tris — refuse SH3N`);
+  }
+  if (spec.expectedShellQuads !== undefined && quads.length !== spec.expectedShellQuads) {
+    throw new Error(`expected ${spec.expectedShellQuads} shells after quadify, got ${quads.length}`);
   }
   const packed: number[] = [];
   for (const q of quads) packed.push(q[0], q[1], q[2], q[3]);
-  const v0 = enclosedVolume(bake.pos0, packed);
+  const packedTris: number[] = [];
+  for (const t of leftover) packedTris.push(t[0], t[1], t[2]);
+  const v0 = enclosedVolume(bake.pos0, packed, packedTris);
   let vOrphans = 0;
   for (const t of bake.faceTris) vOrphans += tetVol(bake.pos0, t[0], t[1], t[2]);
   const srcPacked: number[] = [];
@@ -204,11 +296,21 @@ export function loadShipMeshA(): QuadShellMesh {
   for (const id of packed) {
     if (id < 0 || id >= nNodes) throw new Error(`bad shell node ${id}`);
   }
+  for (const id of packedTris) {
+    if (id < 0 || id >= nNodes) throw new Error(`bad leftover tri node ${id}`);
+  }
   return {
     coords: bake.pos0.slice(),
     quads: packed,
+    tris: packedTris,
     nNodes,
     nQuads: quads.length,
-    fingerprint: meshFingerprint(bake.pos0, packed),
+    nTris: leftover.length,
+    fingerprint: meshFingerprint(bake.pos0, packed, packedTris),
+    letter,
   };
+}
+
+export function loadShipMeshA(): QuadShellMesh {
+  return loadShipMesh("A");
 }

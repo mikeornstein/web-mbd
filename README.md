@@ -28,10 +28,10 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 | Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar, refined mesh) |
 | Implicit dynamics (Newmark / HHT, Newton–Raphson) | planned |
 | Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** + **neo-Hookean membrane inflate (letter A)** |
-| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** + **membrane kiss projection (CONTACT_KISS)** |
-| Shells, solids, beams, discrete elements | **hex solids MVP** + **quad membrane shells (letter A)** |
+| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** + **TYPE19-class membrane kiss (Gapmin=CONTACT_KISS; not bitwise TYPE19)** |
+| Shells, solids, beams, discrete elements | **hex solids MVP** + **quad membrane shells (letters A/B/C)** |
 | GPU time integration (WebGPU) | planned |
-| Interactive 3D pre/post | **MVP canvas pre/post** (Taylor + inflate A; mesh edges default ON) |
+| Interactive 3D pre/post | **MVP canvas pre/post** (Taylor + inflate A/B/C; mesh edges default ON) |
 | LS-DYNA / OpenRadioss deck import | planned (oracle export + pin compare). **Inflate: offline OpenRadioss golden JSON only — solver not in Pages** |
 
 ### First model: Taylor bar
@@ -49,10 +49,15 @@ pnpm dev           # workbench: research → pre → solve → post
 pnpm test:e2e      # Playwright proof of the same path
 ```
 
-Second stock model: letter **A** neo-Hookean inflate. Locked μ/ρ/H0; load family
-**`dynamic-pload-40ms`** (PR#8 `/PLOAD` 0→65 kPa / 40 ms — not ABC QS ~54 kPa).
-Default view shows **mesh edges**. OpenRadioss stays offline: the Pages app
-never bundles the AGPL solver. See [`docs/mvp-inflate-a.md`](docs/mvp-inflate-a.md).
+Second stock family: letters **A / B / C** neo-Hookean inflate. Locked μ/ρ/H0;
+load family **`dynamic-pload-40ms`** is the filled OpenRadioss golden (PR#8
+`/PLOAD` 0→65 kPa / 40 ms — not ABC QS ~54 kPa). A labeled
+**`qs-ish-dead-pressure`** path exists; its Radioss golden is **EMPTY** /
+FAIL-closed. B/C are playable with the same constitutive locks; no Radioss
+tapes yet. Default view shows **mesh edges**. OpenRadioss stays offline: the
+Pages app never bundles the AGPL solver. See
+[`docs/mvp-inflate-a.md`](docs/mvp-inflate-a.md) and
+[`docs/engineering-review-inflate-a.md`](docs/engineering-review-inflate-a.md).
 
 This repository is the product, not a paper. Algorithms land here when they run in the browser on real models.
 
@@ -95,10 +100,11 @@ Prior-art research (OpenRadioss Confluence + broader solver landscape) lives in 
 ## Status
 
 Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via
-`pnpm test` / `pnpm taylor`. Letter-A neo-Hookean inflate is a second stock
-model (`pnpm inflate` / `pnpm compare:inflate`) gated against a checked-in
-OpenRadioss golden — the AGPL solver is not in the browser. The workbench loads
-either research model through pre → solve → post. Default mesh shading includes
+`pnpm test` / `pnpm taylor`. Letter-A neo-Hookean inflate is gated against a checked-in
+OpenRadioss **dynamic** golden (`pnpm inflate` / `pnpm compare:inflate`). Letters B/C
+are playable with the same locks; Radioss tapes NOT-YET. Quasi-static Radioss is EMPTY
+/ FAIL-closed (`pnpm compare:inflate:qs`). The AGPL solver is not in the browser. The
+workbench loads research models through pre → solve → post. Default mesh shading includes
 edges. WebGPU and richer field viz are next.
 
 If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.

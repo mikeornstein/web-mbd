@@ -238,7 +238,7 @@ export function mountWorkbench(root: HTMLElement): void {
   const solveHelp = document.createElement("p");
   solveHelp.className = "muted";
   solveHelp.textContent =
-    "Central-difference explicit integration. Taylor: J2 hex + rigid wall. Inflate A: neo-Hookean membrane + dynamic PLOAD (OpenRadioss offline golden).";
+    "Central-difference explicit integration. Taylor: J2 hex + rigid wall. Inflate: neo-Hookean membrane + labeled PLOAD (OpenRadioss offline golden on letter A dynamic only).";
   const progress = document.createElement("p");
   progress.className = "solve-progress";
   progress.setAttribute("aria-live", "polite");
@@ -542,6 +542,21 @@ function createTimeScrubber(onIndex: (index: number) => void): {
   };
 }
 
+function validationLabel(status: InflateStockModel["validation"]): string {
+  switch (status) {
+    case "radioss-dynamic-golden":
+      return "dynamic-pload-40ms · λ≤2% · V≤5% · p≤5%";
+    case "radioss-qs-empty":
+      return "qs-ish-dead-pressure · Radioss golden EMPTY / FAIL-closed";
+    case "playable-not-yet-radioss":
+      return "playable · OpenRadioss golden NOT-YET";
+    default: {
+      const _exhaustive: never = status;
+      throw new Error(`unhandled validation ${String(_exhaustive)}`);
+    }
+  }
+}
+
 function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { kind: "none" }>): void {
   const rows: [string, string][] = [];
   switch (loaded.kind) {
@@ -577,10 +592,21 @@ function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { ki
           `μ₁=${model.law.mu1.toExponential(6)} Pa · α₁=${model.law.alpha1} · H0=${(model.law.h0 * 1e3).toFixed(3)} mm · ρ=${model.law.rho} kg/m³`,
         ],
         ["Load family", model.law.loadFamily],
-        ["PLOAD", `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (dynamic; not ABC QS)`],
-        ["Kiss", `CONTACT_KISS=${(model.law.gapMin * 1e3).toFixed(3)} mm`],
+        [
+          "PLOAD",
+          model.law.loadFamily === "qs-ish-dead-pressure"
+            ? `dead ${model.law.pMax} Pa (qs-ish; ABC warn class; Radioss QS EMPTY)`
+            : `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (dynamic; not ABC QS)`,
+        ],
+        [
+          "Kiss",
+          `TYPE19-class node-to-segment Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm (not bitwise TYPE19)`,
+        ],
         ["Warn", `first λ_max ≥ ${model.law.warnLam}`],
         ["View", "mesh edges default ON"],
+        ["Validation", validationLabel(loaded.stock.validation)],
+        ["Letter", model.mesh.letter],
+        ["Leftover CST tris", String(model.mesh.nTris)],
       );
       break;
     }
@@ -632,9 +658,11 @@ function fillMetrics(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { kind
         ["Warn mark", w ? `frame ${w.frame} · t=${(w.t * 1e3).toFixed(1)} ms · λ=${w.lambdaMax.toFixed(3)}` : "λ never ≥ 2"],
         ["Punch-through", m.punchedThrough ? "yes" : "no"],
         ["Min gap", `${(m.minGap * 1e3).toFixed(3)} mm`],
+        ["Contact viol", String(m.contactViol)],
+        ["Contact class", m.contactClass],
         ["Steps", String(m.nSteps)],
         ["Wall clock", `${m.elapsedMs.toFixed(1)} ms`],
-        ["Radioss golden", "dynamic-pload-40ms · λ≤2% · V≤5% · p≤5%"],
+        ["Radioss golden", validationLabel(loaded.stock.validation)],
       );
       break;
     }
@@ -679,13 +707,34 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
       break;
     }
     case "inflate": {
-      const golden = loadInflateGolden();
-      const cmp = compareInflateToGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
-      gateEl.textContent = cmp.ok
-        ? "Acceptance gate: PASS (Radioss golden · dynamic-pload-40ms · λ/V/p bands)"
-        : `Acceptance gate: FAIL vs Radioss golden (${cmp.reasons[0] ?? "see compare:inflate"})`;
-      gateEl.classList.toggle("pass", cmp.ok);
-      gateEl.classList.toggle("fail", !cmp.ok);
+      switch (loaded.stock.validation) {
+        case "radioss-dynamic-golden": {
+          const golden = loadInflateGolden();
+          const cmp = compareInflateToGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
+          gateEl.textContent = cmp.ok
+            ? "Acceptance gate: PASS (Radioss golden · dynamic-pload-40ms · λ/V/p bands)"
+            : `Acceptance gate: FAIL vs Radioss golden (${cmp.reasons[0] ?? "see compare:inflate"})`;
+          gateEl.classList.toggle("pass", cmp.ok);
+          gateEl.classList.toggle("fail", !cmp.ok);
+          break;
+        }
+        case "radioss-qs-empty":
+          gateEl.textContent =
+            "Acceptance gate: NOT-YET (Radioss QS golden EMPTY / FAIL-closed — not ABC QS apples)";
+          gateEl.classList.remove("pass");
+          gateEl.classList.add("fail");
+          break;
+        case "playable-not-yet-radioss":
+          gateEl.textContent =
+            "Acceptance gate: NOT-YET (playable; no OpenRadioss tape for this letter)";
+          gateEl.classList.remove("pass");
+          gateEl.classList.add("fail");
+          break;
+        default: {
+          const _exhaustive: never = loaded.stock.validation;
+          throw new Error(`unhandled validation ${String(_exhaustive)}`);
+        }
+      }
       break;
     }
     default: {

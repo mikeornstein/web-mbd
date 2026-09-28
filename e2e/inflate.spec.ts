@@ -30,6 +30,9 @@ test("letter A inflate: mesh edges default ON and warn mark at λ≥2", async ({
   await expect(
     page.getByLabel("Solve metrics").getByText("dynamic-pload-40ms", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByLabel("Solve metrics").getByText("type19-class-node-to-segment", { exact: true }),
+  ).toBeVisible();
   const post = page.getByRole("region", { name: "Post-processor" });
   await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
   const postMesh = page.getByRole("img", { name: /Deformed mesh/ });

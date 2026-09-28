@@ -1,7 +1,16 @@
 import goldenRaw from "./inflate-a-radioss-golden.json" with { type: "json" };
-import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS } from "../inflate/constants.js";
-import { lockedLawCard } from "../inflate/lawCard.js";
-import type { InflateLawCard, RadiossInflateGolden } from "../inflate/types.js";
+import qsGoldenRaw from "./inflate-a-radioss-qs-golden.json" with { type: "json" };
+import {
+  LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+  LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+} from "../inflate/constants.js";
+import { lockedLawCard, lockedLawCardQsIsh } from "../inflate/lawCard.js";
+import type {
+  InflateLawCard,
+  InflateLoadFamily,
+  RadiossInflateGolden,
+  RadiossQsGolden,
+} from "../inflate/types.js";
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
@@ -17,11 +26,11 @@ function str(v: unknown, label: string): string {
   return v;
 }
 
-function parseLaw(raw: unknown): InflateLawCard {
+function parseLaw(raw: unknown, expected: InflateLoadFamily): InflateLawCard {
   if (!isRecord(raw)) throw new Error("golden: law not an object");
   const loadFamily = str(raw["loadFamily"], "law.loadFamily");
-  if (loadFamily !== LOAD_FAMILY_DYNAMIC_PLOAD_40MS) {
-    throw new Error(`golden: unsupported load family ${loadFamily}`);
+  if (loadFamily !== expected) {
+    throw new Error(`golden: unsupported load family ${loadFamily} (expected ${expected})`);
   }
   return {
     mu1: num(raw["mu1"], "mu1"),
@@ -37,10 +46,28 @@ function parseLaw(raw: unknown): InflateLawCard {
     ishell: num(raw["ishell"], "ishell"),
     ismstr: num(raw["ismstr"], "ismstr"),
     ithick: num(raw["ithick"], "ithick"),
-    loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+    loadFamily: expected,
     pMax: num(raw["pMax"], "pMax"),
     tRamp: num(raw["tRamp"], "tRamp"),
     rayleighAlpha: num(raw["rayleighAlpha"], "rayleighAlpha"),
+  };
+}
+
+function parseMesh(meshRaw: Record<string, unknown>): RadiossInflateGolden["mesh"] {
+  return {
+    nNodes: num(meshRaw["nNodes"], "nNodes"),
+    nShellQuads: num(meshRaw["nShellQuads"], "nShellQuads"),
+    NUMELC: num(meshRaw["NUMELC"], "NUMELC"),
+    NUMELTG: num(meshRaw["NUMELTG"], "NUMELTG"),
+    fingerprint: str(meshRaw["fingerprint"], "fingerprint"),
+  };
+}
+
+function parseBands(bandsRaw: Record<string, unknown>): RadiossInflateGolden["bands"] {
+  return {
+    lambdaRel: num(bandsRaw["lambdaRel"], "lambdaRel"),
+    volumeRel: num(bandsRaw["volumeRel"], "volumeRel"),
+    pressureRel: num(bandsRaw["pressureRel"], "pressureRel"),
   };
 }
 
@@ -65,14 +92,8 @@ export function parseInflateGolden(raw: unknown): RadiossInflateGolden {
       note: str(provenanceRaw["note"], "note"),
     },
     loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
-    law: parseLaw(raw["law"]),
-    mesh: {
-      nNodes: num(meshRaw["nNodes"], "nNodes"),
-      nShellQuads: num(meshRaw["nShellQuads"], "nShellQuads"),
-      NUMELC: num(meshRaw["NUMELC"], "NUMELC"),
-      NUMELTG: num(meshRaw["NUMELTG"], "NUMELTG"),
-      fingerprint: str(meshRaw["fingerprint"], "fingerprint"),
-    },
+    law: parseLaw(raw["law"], LOAD_FAMILY_DYNAMIC_PLOAD_40MS),
+    mesh: parseMesh(meshRaw),
     warn: {
       frame: num(warnRaw["frame"], "frame"),
       t: num(warnRaw["t"], "t"),
@@ -81,16 +102,76 @@ export function parseInflateGolden(raw: unknown): RadiossInflateGolden {
       volume_mL: num(warnRaw["volume_mL"], "volume_mL"),
       psi_J: num(warnRaw["psi_J"], "psi_J"),
     },
-    bands: {
-      lambdaRel: num(bandsRaw["lambdaRel"], "lambdaRel"),
-      volumeRel: num(bandsRaw["volumeRel"], "volumeRel"),
-      pressureRel: num(bandsRaw["pressureRel"], "pressureRel"),
-    },
+    bands: parseBands(bandsRaw),
   };
 }
 
 export function loadInflateGolden(): RadiossInflateGolden {
   return parseInflateGolden(goldenRaw);
+}
+
+export function parseInflateQsGolden(raw: unknown): RadiossQsGolden {
+  if (!isRecord(raw)) throw new Error("qs golden: not an object");
+  const status = str(raw["status"], "status");
+  const provenanceRaw = raw["provenance"];
+  const meshRaw = raw["mesh"];
+  const bandsRaw = raw["bands"];
+  if (!isRecord(provenanceRaw) || !isRecord(meshRaw) || !isRecord(bandsRaw)) {
+    throw new Error("qs golden: missing sections");
+  }
+  const loadFamily = str(raw["loadFamily"], "loadFamily");
+  if (loadFamily !== LOAD_FAMILY_QS_ISH_DEAD_PRESSURE) {
+    throw new Error(`qs golden: loadFamily ${loadFamily}`);
+  }
+  const law = parseLaw(raw["law"], LOAD_FAMILY_QS_ISH_DEAD_PRESSURE);
+  const mesh = parseMesh(meshRaw);
+  const bands = parseBands(bandsRaw);
+  const provenanceNote = str(provenanceRaw["note"], "note");
+  if (status === "EMPTY") {
+    return {
+      status: "EMPTY",
+      loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+      law,
+      mesh,
+      bands,
+      provenance: {
+        source: "none",
+        desk: str(provenanceRaw["desk"], "desk"),
+        branch: str(provenanceRaw["branch"], "branch"),
+        note: provenanceNote,
+      },
+    };
+  }
+  if (status !== "filled") throw new Error(`qs golden: bad status ${status}`);
+  const warnRaw = raw["warn"];
+  if (!isRecord(warnRaw)) throw new Error("qs golden: filled but missing warn");
+  const source = str(provenanceRaw["source"], "source");
+  if (source !== "openradioss") throw new Error("qs golden: filled source must be openradioss");
+  return {
+    status: "filled",
+    provenance: {
+      source: "openradioss",
+      desk: str(provenanceRaw["desk"], "desk"),
+      branch: str(provenanceRaw["branch"], "branch"),
+      note: provenanceNote,
+    },
+    loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+    law,
+    mesh,
+    warn: {
+      frame: num(warnRaw["frame"], "frame"),
+      t: num(warnRaw["t"], "t"),
+      lambdaMax: num(warnRaw["lambdaMax"], "lambdaMax"),
+      p: num(warnRaw["p"], "p"),
+      volume_mL: num(warnRaw["volume_mL"], "volume_mL"),
+      psi_J: num(warnRaw["psi_J"], "psi_J"),
+    },
+    bands,
+  };
+}
+
+export function loadInflateQsGolden(): RadiossQsGolden {
+  return parseInflateQsGolden(qsGoldenRaw);
 }
 
 /** Checked-in law card must match the locked formula module bit-for-bit. */
@@ -99,6 +180,15 @@ export function assertGoldenLawMatchesLock(golden: RadiossInflateGolden = loadIn
   for (const key of Object.keys(lock) as (keyof InflateLawCard)[]) {
     if (!Object.is(lock[key], golden.law[key])) {
       throw new Error(`golden law.${key} drifted from lockedLawCard()`);
+    }
+  }
+}
+
+export function assertQsGoldenLawMatchesLock(golden: RadiossQsGolden = loadInflateQsGolden()): void {
+  const lock = lockedLawCardQsIsh();
+  for (const key of Object.keys(lock) as (keyof InflateLawCard)[]) {
+    if (!Object.is(lock[key], golden.law[key])) {
+      throw new Error(`qs golden law.${key} drifted from lockedLawCardQsIsh()`);
     }
   }
 }

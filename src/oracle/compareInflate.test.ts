@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS, MU, RHO, SHIP_SHELL_QUADS } from "../inflate/constants.js";
-import { lockedLawCard } from "../inflate/lawCard.js";
-import { enclosedVolume, loadShipMeshA } from "../inflate/meshA.js";
-import { compareInflateToGolden } from "./compareInflate.js";
-import { assertGoldenLawMatchesLock, loadInflateGolden } from "./inflateGolden.js";
+import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_DEAD_PRESSURE, MU, RHO, SHIP_SHELL_QUADS } from "../inflate/constants.js";
+import { lockedLawCard, lockedLawCardQsIsh } from "../inflate/lawCard.js";
+import { enclosedVolume, loadShipMesh, loadShipMeshA } from "../inflate/meshA.js";
+import { compareInflateToGolden, compareInflateToQsGolden } from "./compareInflate.js";
+import {
+  assertGoldenLawMatchesLock,
+  assertQsGoldenLawMatchesLock,
+  loadInflateGolden,
+  loadInflateQsGolden,
+} from "./inflateGolden.js";
 import type { InflateLawCard, InflateWarnMetrics } from "../inflate/types.js";
 
 describe("inflate Radioss golden + law card", () => {
@@ -25,6 +30,8 @@ describe("inflate Radioss golden + law card", () => {
     expect(mesh.nNodes).toBe(1554);
     expect(mesh.nQuads).toBe(SHIP_SHELL_QUADS);
     expect(mesh.nQuads).toBe(1554);
+    expect(mesh.nTris).toBe(0);
+    expect(mesh.letter).toBe("A");
     expect(mesh.fingerprint).toBe(golden.mesh.fingerprint);
     expect(golden.mesh.NUMELC).toBe(1554);
     expect(golden.mesh.NUMELTG).toBe(0);
@@ -88,15 +95,65 @@ describe("inflate Radioss golden + law card", () => {
     const qsSwap = compareInflateToGolden(
       {
         warn: { ...warn, p: 54100 },
-        loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+        loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
         meshFingerprint: golden.mesh.fingerprint,
         punchedThrough: false,
         psi_J: 9.5,
-        law: { ...lockedLawCard() },
+        law: lockedLawCardQsIsh(),
       },
       golden,
     );
     expect(qsSwap.ok).toBe(false);
+    expect(qsSwap.loadFamilyEqual).toBe(false);
+  });
+
+  it("QS Radioss golden is EMPTY and FAIL-closed", () => {
+    assertQsGoldenLawMatchesLock();
+    const qs = loadInflateQsGolden();
+    expect(qs.status).toBe("EMPTY");
+    expect(qs.loadFamily).toBe(LOAD_FAMILY_QS_ISH_DEAD_PRESSURE);
+    expect(qs.law.mu1).toBe(MU);
+    expect(qs.law.rho).toBe(RHO);
+    expect(qs.law.pMax).toBe(54100);
+    const mesh = loadShipMeshA();
+    const closed = compareInflateToQsGolden(
+      {
+        warn: {
+          frame: 1,
+          t: 0.01,
+          lambdaMax: 2.05,
+          p: 54100,
+          volume_mL: 900,
+          psi_J: 10,
+          warn: true,
+        },
+        loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+        meshFingerprint: mesh.fingerprint,
+        punchedThrough: false,
+        psi_J: 10,
+        law: lockedLawCardQsIsh(),
+      },
+      qs,
+    );
+    expect(closed.ok).toBe(false);
+    expect(closed.reasons.some((r) => r.includes("EMPTY"))).toBe(true);
+    expect(closed.reasons.some((r) => r.includes("ABC QS apples"))).toBe(true);
+  });
+
+  it("B and C ship meshes load with the same constitutive locks", () => {
+    const a = lockedLawCard();
+    const b = loadShipMesh("B");
+    const c = loadShipMesh("C");
+    expect(b.letter).toBe("B");
+    expect(c.letter).toBe("C");
+    expect(b.nNodes).toBe(1087);
+    expect(c.nNodes).toBe(988);
+    expect(b.nTris).toBeGreaterThan(0);
+    expect(c.nTris).toBeGreaterThan(0);
+    expect(a.mu1).toBe(MU);
+    expect(a.gapMin).toBe(0.000762);
+    expect(enclosedVolume(b.coords, b.quads, b.tris)).toBeGreaterThan(0);
+    expect(enclosedVolume(c.coords, c.quads, c.tris)).toBeGreaterThan(0);
   });
 
   it("checked-in golden JSON is the PR#8 dynamic desk, not QS", () => {

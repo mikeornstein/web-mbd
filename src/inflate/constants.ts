@@ -37,12 +37,34 @@ export const CONTACT_KISS = Math.max(2 * H0, 1e-4);
 /** Broadphase engage band (detect / soft-press). Not a standoff hold. */
 export const CONTACT_ENGAGE = 0.003;
 
+/**
+ * Contact class implemented in the toy. OpenRadioss `/INTER/TYPE19` is
+ * TYPE7 (node-to-surface) + TYPE11 (edge-to-edge) with Igap=4, Irem_gap=2,
+ * Inacti=6. This toy is node-to-segment Gapmin projection only — same
+ * CONTACT_KISS number, not bitwise TYPE19.
+ */
+export const CONTACT_CLASS_TYPE19_NODE_TO_SEGMENT = "type19-class-node-to-segment";
+
 export const LOAD_FAMILY_DYNAMIC_PLOAD_40MS = "dynamic-pload-40ms";
+
+/**
+ * Quasi-static-ish dead-pressure family: p = P_WARN_ABC for t>0.
+ * Not a Radioss AMS / true static solve. Not apples with dynamic-pload-40ms.
+ */
+export const LOAD_FAMILY_QS_ISH_DEAD_PRESSURE = "qs-ish-dead-pressure";
 
 /** PR#8 /PLOAD 0 → 65 kPa in 40 ms (dynamic; not ABC QS ~54 kPa). */
 export const P_MAX = 65_000;
 export const T_RAMP = 0.04;
 export const T_END = 0.05;
+
+/**
+ * Inflation ABC ship warn-class pressure (~54.1 kPa). Constitutive lock, not
+ * a fitted μ. Used only by the qs-ish-dead-pressure family.
+ */
+export const P_WARN_ABC = 54_100;
+export const T_RAMP_QS_ISH = 0;
+export const T_END_QS_ISH = 0.08;
 
 /** ANIM-equivalent history stride used for the golden freeze frame. */
 export const ANIM_DT = 0.002;
@@ -66,3 +88,11 @@ export const SHIP_MESH_NODES = 1554;
 export const SHIP_SOURCE_QUADS = 1540;
 export const SHIP_ORPHAN_TRIS = 28;
 export const SHIP_SHELL_QUADS = 1554;
+
+export const SHIP_B_NODES = 1087;
+export const SHIP_B_SOURCE_QUADS = 1026;
+export const SHIP_B_ORPHAN_TRIS = 126;
+
+export const SHIP_C_NODES = 988;
+export const SHIP_C_SOURCE_QUADS = 938;
+export const SHIP_C_ORPHAN_TRIS = 96;

@@ -15,14 +15,43 @@ test("status is mvp", () => {
   expect(statusLabel).toBe("mvp");
 });
 
-test("research catalog exposes the letter-A inflate stock model", () => {
+test("research catalog exposes inflate A/B/C and QS-ish with labeled validation", () => {
   const inflate = getResearchStockModel("inflate-a-desmopan");
   expect(inflate.kind).toBe("inflate-nh-membrane");
   if (inflate.kind !== "inflate-nh-membrane") return;
   const model = inflate.create();
   expect(model.kind).toBe("inflate-nh-membrane");
   expect(model.mesh.nQuads).toBe(1554);
+  expect(model.mesh.nTris).toBe(0);
   expect(model.law.loadFamily).toBe("dynamic-pload-40ms");
+  expect(inflate.validation).toBe("radioss-dynamic-golden");
+
+  const qs = getResearchStockModel("inflate-a-qs-ish");
+  expect(qs.kind).toBe("inflate-nh-membrane");
+  if (qs.kind !== "inflate-nh-membrane") return;
+  expect(qs.validation).toBe("radioss-qs-empty");
+  const qsModel = qs.create();
+  expect(qsModel.law.loadFamily).toBe("qs-ish-dead-pressure");
+  expect(qsModel.law.pMax).toBe(54100);
+  expect(qsModel.law.mu1).toBe(model.law.mu1);
+  expect(qsModel.law.rho).toBe(model.law.rho);
+
+  const b = getResearchStockModel("inflate-b-desmopan");
+  expect(b.kind).toBe("inflate-nh-membrane");
+  if (b.kind !== "inflate-nh-membrane") return;
+  expect(b.validation).toBe("playable-not-yet-radioss");
+  const bModel = b.create();
+  expect(bModel.mesh.letter).toBe("B");
+  expect(bModel.law.mu1).toBe(model.law.mu1);
+  expect(bModel.law.gapMin).toBe(model.law.gapMin);
+
+  const c = getResearchStockModel("inflate-c-desmopan");
+  expect(c.kind).toBe("inflate-nh-membrane");
+  if (c.kind !== "inflate-nh-membrane") return;
+  expect(c.validation).toBe("playable-not-yet-radioss");
+  const cModel = c.create();
+  expect(cModel.mesh.letter).toBe("C");
+  expect(cModel.law.h0).toBe(model.law.h0);
 });
 
 test("research catalog exposes the Taylor bar stock model", () => {

@@ -1,24 +1,52 @@
-import { ANIM_DT, ADYREL_VELOCITY_SCALE, T_END } from "../inflate/constants.js";
-import { lockedLawCard } from "../inflate/lawCard.js";
-import { loadShipMeshA } from "../inflate/meshA.js";
-import type { InflateModelIR } from "../inflate/types.js";
+import {
+  ADYREL_VELOCITY_SCALE,
+  ANIM_DT,
+  T_END,
+  T_END_QS_ISH,
+} from "../inflate/constants.js";
+import { lockedLawCard, lockedLawCardQsIsh } from "../inflate/lawCard.js";
+import { loadShipMesh } from "../inflate/meshA.js";
+import type { InflateLetter, InflateModelIR } from "../inflate/types.js";
 
 export function createInflateAModel(): InflateModelIR {
-  const mesh = loadShipMeshA();
-  const law = lockedLawCard();
+  return createInflateLetterModel("A", "dynamic");
+}
+
+export function createInflateAQsIshModel(): InflateModelIR {
+  return createInflateLetterModel("A", "qs-ish");
+}
+
+export function createInflateBModel(): InflateModelIR {
+  return createInflateLetterModel("B", "dynamic");
+}
+
+export function createInflateCModel(): InflateModelIR {
+  return createInflateLetterModel("C", "dynamic");
+}
+
+function createInflateLetterModel(
+  letter: InflateLetter,
+  family: "dynamic" | "qs-ish",
+): InflateModelIR {
+  const mesh = loadShipMesh(letter);
+  const qs = family === "qs-ish";
+  const law = qs ? lockedLawCardQsIsh() : lockedLawCard();
+  const name = qs ? `inflate-${letter.toLowerCase()}-qs-ish` : `inflate-${letter.toLowerCase()}-desmopan`;
+  const loadNote = qs
+    ? `Load family qs-ish-dead-pressure (dead p = 54100 Pa, ABC warn class). Radioss QS golden EMPTY / FAIL-closed. Not apples with dynamic-pload-40ms. Do not retune μ.`
+    : `Load family dynamic-pload-40ms (PR#8 /PLOAD 0→65 kPa / 40 ms) — not ABC QS ~54 kPa. Do not retune μ.`;
   return {
     kind: "inflate-nh-membrane",
     meta: {
-      name: "inflate-a-desmopan",
+      name,
       version: 1,
       units: "SI",
-      description:
-        "Letter-A neo-Hookean membrane inflate. LAW42 μ₁=MU, α₁=2, H0=0.381 mm, ρ=1130 kg/m³ (Desmopan 85085A). Load family dynamic-pload-40ms (PR#8 /PLOAD 0→65 kPa / 40 ms) — not ABC QS ~54 kPa. Do not retune μ.",
+      description: `Letter-${letter} neo-Hookean membrane inflate. LAW42 μ₁=MU, α₁=2, H0=0.381 mm, ρ=1130 kg/m³ (Desmopan 85085A). ${loadNote}`,
     },
     law,
     mesh,
     controls: {
-      endTime: T_END,
+      endTime: qs ? T_END_QS_ISH : T_END,
       cfl: 0.45,
       maxSteps: 2_000_000,
       historyInterval: ANIM_DT,
