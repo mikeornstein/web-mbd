@@ -11,10 +11,13 @@ import {
   accumulateCstForces,
   accumulatePressureQuad,
   accumulatePressureTri,
+  accumulateQ4Forces,
   buildCstRest,
+  buildQ4Rest,
   cstSample,
   splitQuadCsts,
   type CstRest,
+  type Q4Rest,
 } from "./membraneCst.js";
 import { ploadAt } from "../inflate/lawCard.js";
 import { enclosedVolume } from "../inflate/meshA.js";
@@ -66,6 +69,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const acc = new Float64Array(nNodes * 3);
   const masses = new Float64Array(nNodes);
   const rests: CstRest[] = [];
+  const q4rests: Q4Rest[] = [];
+  const triRests: CstRest[] = [];
 
   let minH = Infinity;
   for (let e = 0; e < mesh.nQuads; e++) {
@@ -76,6 +81,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     const pair = splitQuadCsts(mesh.coords, i0, i1, i2, i3);
     if (!pair) continue;
     rests.push(pair.a, pair.b);
+    const q4 = buildQ4Rest(mesh.coords, i0, i1, i2, i3);
+    if (q4) q4rests.push(q4);
     const massA = (law.rho * law.h0 * pair.a.A0) / 3;
     const massB = (law.rho * law.h0 * pair.b.A0) / 3;
     masses[pair.a.i]! += massA;
@@ -95,6 +102,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     );
     if (!rest) continue;
     rests.push(rest);
+    triRests.push(rest);
     const mass = (law.rho * law.h0 * rest.A0) / 3;
     masses[rest.i]! += mass;
     masses[rest.j]! += mass;
@@ -215,14 +223,11 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const assemble = (p: number): number => {
     f.fill(0);
     let psiStep = 0;
-    for (const rest of rests) {
-      const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
-      psiStep += W;
-      if (contactKind !== "node-segment") {
-        accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
-      }
-    }
     if (contactKind === "node-segment") {
+      for (const rest of q4rests) {
+        const { W } = accumulateQ4Forces(x, rest, f, law.mu1, law.h0);
+        psiStep += W;
+      }
       for (let e = 0; e < mesh.nQuads; e++) {
         accumulatePressureQuad(
           x,
@@ -234,8 +239,16 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
           f,
         );
       }
-      for (let e = 0; e < mesh.nTris; e++) {
-        accumulatePressureTri(x, mesh.tris[e * 3]!, mesh.tris[e * 3 + 1]!, mesh.tris[e * 3 + 2]!, p, f);
+      for (const rest of triRests) {
+        const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
+        psiStep += W;
+        accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
+      }
+    } else {
+      for (const rest of rests) {
+        const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
+        psiStep += W;
+        accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
       }
     }
     if (alpha > 0) {

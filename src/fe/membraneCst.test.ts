@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { H0, MU, WARN_LAM } from "../inflate/constants.js";
 import { membranePsi, restI1PlaneStress } from "./materialNeoHookean.js";
-import { accumulateCstForces, accumulatePressureQuad, accumulatePressureTri, buildCstRest, cstSample } from "./membraneCst.js";
+import { accumulateCstForces, accumulatePressureQuad, accumulatePressureTri, accumulateQ4Forces, buildCstRest, buildQ4Rest, cstSample } from "./membraneCst.js";
 import { enclosedVolume, loadShipMeshA } from "../inflate/meshA.js";
 
 describe("neo-Hookean membrane constitutive", () => {
@@ -101,5 +101,31 @@ describe("neo-Hookean membrane constitutive", () => {
     expect(netQ).toBeCloseTo(p * area, 12);
     expect(Math.abs(fTet[0 * 3 + 2]! - fTet[1 * 3 + 2]!)).toBeGreaterThan(1e-12);
     expect(Math.abs(f[0 * 3 + 2]! - fTet[0 * 3 + 2]!)).toBeGreaterThan(1e-12);
+  });
+
+  it("1-GP Q4 membrane forces match finite-difference −∂Ψ/∂x", () => {
+    const coords0 = [0.1, 0.1, 0, 0.12, 0.1, 0, 0.12, 0.11, 0, 0.1, 0.11, 0];
+    const rest = buildQ4Rest(coords0, 0, 1, 2, 3);
+    expect(rest).not.toBeNull();
+    if (!rest) return;
+    expect(rest.A0).toBeCloseTo(0.02 * 0.01, 12);
+    const coords = Float64Array.from([0.1, 0.1, 0, 0.125, 0.101, 0.002, 0.121, 0.114, 0.001, 0.098, 0.112, 0]);
+    const f = new Float64Array(12);
+    const { W } = accumulateQ4Forces(coords, rest, f, MU, H0);
+    expect(W).toBeGreaterThan(0);
+    const h = 1e-8;
+    const scratch = new Float64Array(12);
+    for (let dof = 0; dof < 12; dof++) {
+      const plus = Float64Array.from(coords);
+      const minus = Float64Array.from(coords);
+      plus[dof]! += h;
+      minus[dof]! -= h;
+      scratch.fill(0);
+      const wp = accumulateQ4Forces(plus, rest, scratch, MU, H0).W;
+      scratch.fill(0);
+      const wm = accumulateQ4Forces(minus, rest, scratch, MU, H0).W;
+      const fd = -(wp - wm) / (2 * h);
+      expect(f[dof]!).toBeCloseTo(fd, 5);
+    }
   });
 });

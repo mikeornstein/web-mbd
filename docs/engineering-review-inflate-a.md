@@ -143,7 +143,7 @@ golden from inflation-abc PR#11; compare CLI exit 1 on mismatch.
 | QS dead p | 54100 Pa | **Ruled out** — CFL-explodes on Radioss | do not vendor; do not chase with μ |
 | QS `/PLOAD` area | Q4 mean-plane ½|(x2−x0)×(x3−x1)|, equal pA/4 | OpenRadioss `cneveci` / `/PLOAD` on `/SHELL`; dynamic stays tet-consistent p∂V/∂x | not a μ lever |
 | QS TYPE7 skip | 1-ring (shared-node). 2-hop skip hid A-hole (rest 5.41 mm vs 3.41 mm) | TYPE7 neighbor exclusion; Gapmin unchanged | not a kiss-gain |
-| QS Kirchhoff hinges | Tried (D from locked μ/H0/ν, f=−∂W/∂x). Over-stiff vs this BT tape (λ=1.65 at 27.6 kPa then snap). **Not assembled.** | Ithick=1 is Belytschko, not a CST plate hinge | not a μ lever |
+| QS 1-GP Q4 membrane | Bilinear center F, same LAW42 Ψ. λ/Ψ compare still CST on ANIM (RUN.md) | Radioss Ishell=1 is 1-GP Q4, not 2 CST | not a μ lever |
 
 No μ or ρ retune between the dynamic golden PASS and this follow-up.
 

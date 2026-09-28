@@ -275,6 +275,146 @@ export function accumulateCstForces(
   return { lam1, lam2, W };
 }
 
+export interface Q4Rest {
+  i0: number;
+  i1: number;
+  i2: number;
+  i3: number;
+  A0: number;
+  inv: readonly [number, number, number, number];
+}
+
+function q4Covariants(coords: ArrayLike<number>, i0: number, i1: number, i2: number, i3: number): {
+  g1x: number;
+  g1y: number;
+  g1z: number;
+  g2x: number;
+  g2y: number;
+  g2z: number;
+} {
+  const a = i0 * 3,
+    b = i1 * 3,
+    c = i2 * 3,
+    d = i3 * 3;
+  return {
+    g1x: 0.25 * (-coords[a]! + coords[b]! + coords[c]! - coords[d]!),
+    g1y: 0.25 * (-coords[a + 1]! + coords[b + 1]! + coords[c + 1]! - coords[d + 1]!),
+    g1z: 0.25 * (-coords[a + 2]! + coords[b + 2]! + coords[c + 2]! - coords[d + 2]!),
+    g2x: 0.25 * (-coords[a]! - coords[b]! + coords[c]! + coords[d]!),
+    g2y: 0.25 * (-coords[a + 1]! - coords[b + 1]! + coords[c + 1]! + coords[d + 1]!),
+    g2z: 0.25 * (-coords[a + 2]! - coords[b + 2]! + coords[c + 2]! + coords[d + 2]!),
+  };
+}
+
+/**
+ * Belytschko 1-GP Q4 membrane rest. A0 = 4 |G1×G2| (ξ,η ∈ [-1,1]).
+ * Same LAW42 Ψ as CST. QS assemble only; λ/Ψ compare still uses CST on ANIM.
+ */
+export function buildQ4Rest(
+  coords0: ArrayLike<number>,
+  i0: number,
+  i1: number,
+  i2: number,
+  i3: number,
+): Q4Rest | null {
+  const g = q4Covariants(coords0, i0, i1, i2, i3);
+  const cx = g.g1y * g.g2z - g.g1z * g.g2y;
+  const cy = g.g1z * g.g2x - g.g1x * g.g2z;
+  const cz = g.g1x * g.g2y - g.g1y * g.g2x;
+  const cl = Math.hypot(cx, cy, cz);
+  if (!(cl > 1e-18)) return null;
+  const { t, b } = orthonormal(cx / cl, cy / cl, cz / cl);
+  const r1x = g.g1x * t[0] + g.g1y * t[1] + g.g1z * t[2];
+  const r1y = g.g1x * b[0] + g.g1y * b[1] + g.g1z * b[2];
+  const r2x = g.g2x * t[0] + g.g2y * t[1] + g.g2z * t[2];
+  const r2y = g.g2x * b[0] + g.g2y * b[1] + g.g2z * b[2];
+  const detR = r1x * r2y - r1y * r2x;
+  if (!Number.isFinite(detR) || Math.abs(detR) < 1e-18) return null;
+  return {
+    i0,
+    i1,
+    i2,
+    i3,
+    A0: 4 * Math.abs(detR),
+    inv: [r2y / detR, -r2x / detR, -r1y / detR, r1x / detR],
+  };
+}
+
+/** 1-GP Q4 neo-Hookean. ∂x/∂ξ, ∂x/∂η at the element center; f = −∂W/∂x. */
+export function accumulateQ4Forces(
+  coords: ArrayLike<number>,
+  rest: Q4Rest,
+  f: Float64Array,
+  mu: number = MU,
+  h0: number = H0,
+): { lam1: number; lam2: number; W: number } {
+  const { i0, i1, i2, i3, A0, inv } = rest;
+  const g = q4Covariants(coords, i0, i1, i2, i3);
+  const F = deformGradient(g.g1x, g.g1y, g.g1z, g.g2x, g.g2y, g.g2z, inv);
+  const { lam1, lam2, wr1, wr2 } = principalStretches(F, true);
+  const scaleW = mu * h0;
+  const lam3 = 1 / (lam1 * lam2);
+  const dWd1 = scaleW * A0 * (lam1 - (lam3 * lam3) / lam1);
+  const dWd2 = scaleW * A0 * (lam2 - (lam3 * lam3) / lam2);
+  const dlam1_dlsq = wr1 ? 0 : 1 / (2 * lam1);
+  const dlam2_dlsq = wr2 ? 0 : 1 / (2 * lam2);
+  const dW_dl1sq = dWd1 * dlam1_dlsq;
+  const dW_dl2sq = dWd2 * dlam2_dlsq;
+  const { C00, C01, C11 } = F;
+  const tr = C00 + C11;
+  const detC = C00 * C11 - C01 * C01;
+  const disc = Math.sqrt(Math.max(0, 0.25 * tr * tr - detC));
+  let dDisc_dC00 = 0,
+    dDisc_dC11 = 0,
+    dDisc_dC01 = 0;
+  if (disc > 1e-14) {
+    const inv2d = 1 / (2 * disc);
+    dDisc_dC00 = inv2d * (0.5 * tr - C11);
+    dDisc_dC11 = inv2d * (0.5 * tr - C00);
+    dDisc_dC01 = inv2d * (2 * C01);
+  }
+  const S00 = dW_dl1sq * (0.5 + dDisc_dC00) + dW_dl2sq * (0.5 - dDisc_dC00);
+  const S11 = dW_dl1sq * (0.5 + dDisc_dC11) + dW_dl2sq * (0.5 - dDisc_dC11);
+  const S01 = dW_dl1sq * dDisc_dC01 + dW_dl2sq * -dDisc_dC01;
+  const { F00, F01, F10, F11, F20, F21 } = F;
+  const P00 = 2 * F00 * S00 + F01 * S01;
+  const P01 = F00 * S01 + 2 * F01 * S11;
+  const P10 = 2 * F10 * S00 + F11 * S01;
+  const P11 = F10 * S01 + 2 * F11 * S11;
+  const P20 = 2 * F20 * S00 + F21 * S01;
+  const P21 = F20 * S01 + 2 * F21 * S11;
+  const i00 = inv[0],
+    i01 = inv[1],
+    i10 = inv[2],
+    i11 = inv[3];
+  const d1x = P00 * i00 + P01 * i01,
+    d1y = P10 * i00 + P11 * i01,
+    d1z = P20 * i00 + P21 * i01;
+  const d2x = P00 * i10 + P01 * i11,
+    d2y = P10 * i10 + P11 * i11,
+    d2z = P20 * i10 + P21 * i11;
+  const s = 0.25;
+  const a = i0 * 3,
+    b = i1 * 3,
+    c = i2 * 3,
+    d = i3 * 3;
+  f[a]! += s * (d1x + d2x);
+  f[a + 1]! += s * (d1y + d2y);
+  f[a + 2]! += s * (d1z + d2z);
+  f[b]! += s * (-d1x + d2x);
+  f[b + 1]! += s * (-d1y + d2y);
+  f[b + 2]! += s * (-d1z + d2z);
+  f[c]! += s * (-d1x - d2x);
+  f[c + 1]! += s * (-d1y - d2y);
+  f[c + 2]! += s * (-d1z - d2z);
+  f[d]! += s * (d1x - d2x);
+  f[d + 1]! += s * (d1y - d2y);
+  f[d + 2]! += s * (d1z - d2z);
+  const I1 = lam1 * lam1 + lam2 * lam2 + lam3 * lam3;
+  const W = 0.5 * mu * (I1 - 3) * h0 * A0;
+  return { lam1, lam2, W };
+}
+
 /**
  * Radioss Q4 `/PLOAD` on the current mean plane: area = ½|(x2−x0)×(x3−x1)|
  * (diagonal cross, Belytschko `cneveci`), equal pA/4 along n at each node.
