@@ -153,6 +153,11 @@ export class MeshCanvas {
       maxR = Math.max(maxR, Math.hypot(x, y, z));
     }
     this.camera.distance = Math.max(maxR * 2.8, 0.02);
+    if (this.topology === "quad") {
+      this.camera.yaw = 0.35;
+      this.camera.pitch = 0.55;
+      this.camera.distance = Math.max(maxR * 3.4, 0.08);
+    }
   }
 
   private bindPointer(): void {
