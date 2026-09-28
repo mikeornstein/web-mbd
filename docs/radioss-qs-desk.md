@@ -21,8 +21,9 @@ Same LAW42 μ, ρ, H0, mesh fingerprint `d9c56487` as `dynamic-pload-40ms`.
 
 `pnpm compare:inflate:qs` compares this family. Green QS (λ≤2% / V≤5% / p≤5%)
 is still required — not waived. Toy QS path: `/DAMP` α=80, `/ADYREL` as
-OpenRadioss ENER_W0+ISTAT=1 (no invented BETATE gain), CST membrane +
-Q4 mean-plane `/PLOAD`
+OpenRadioss ENER_W0+ISTAT=1 (no invented BETATE gain), Belytschko 1-GP Q4
+membrane + CHVIS3 hourglass (Ishell=1 PROP Hm/Hf=0.01, HELAS=HVISC=0.5,
+HVLIN=0; no rotational HOUR), Q4 mean-plane `/PLOAD`
 (equal pA/4, Belytschko diagonal area — not CST tet shares), TYPE7 1-ring
 node-segment Gapmin (same CONTACT_KISS; 2-hop skip hid the A-hole). Kirchhoff
 CST hinges were tried and over-stiffened λ(p) vs this Belytschko tape — not

@@ -7,14 +7,18 @@ import {
   punchedThrough,
 } from "./contactKiss.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
+import { accumulateChvis3Forces, createHourglassState, type HourglassState } from "./belytschkoHourglass.js";
 import {
   accumulateCstForces,
   accumulatePressureQuad,
   accumulatePressureTri,
+  accumulateQ4Forces,
   buildCstRest,
+  buildQ4Rest,
   cstSample,
   splitQuadCsts,
   type CstRest,
+  type Q4Rest,
 } from "./membraneCst.js";
 import { ploadAt } from "../inflate/lawCard.js";
 import { enclosedVolume } from "../inflate/meshA.js";
@@ -67,6 +71,10 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const masses = new Float64Array(nNodes);
   const rests: CstRest[] = [];
   const triRests: CstRest[] = [];
+  const q4Rests: Q4Rest[] = [];
+  const hourStates: HourglassState[] = [];
+  const contactKind = controls.contactKind;
+  const qsShell = contactKind === "node-segment";
 
   let minH = Infinity;
   for (let e = 0; e < mesh.nQuads; e++) {
@@ -74,6 +82,21 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       i1 = mesh.quads[e * 4 + 1]!,
       i2 = mesh.quads[e * 4 + 2]!,
       i3 = mesh.quads[e * 4 + 3]!;
+    if (qsShell) {
+      const q4 = buildQ4Rest(mesh.coords, i0, i1, i2, i3);
+      if (!q4) continue;
+      q4Rests.push(q4);
+      hourStates.push(createHourglassState());
+      const mass = (law.rho * law.h0 * q4.A0) / 4;
+      masses[i0]! += mass;
+      masses[i1]! += mass;
+      masses[i2]! += mass;
+      masses[i3]! += mass;
+      minH = Math.min(minH, Math.sqrt(q4.A0));
+      const pair = splitQuadCsts(mesh.coords, i0, i1, i2, i3);
+      if (pair) rests.push(pair.a, pair.b);
+      continue;
+    }
     const pair = splitQuadCsts(mesh.coords, i0, i1, i2, i3);
     if (!pair) continue;
     rests.push(pair.a, pair.b);
@@ -126,7 +149,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let dt1 = 0;
   let kePrev = 0;
   let kePrev2 = 0;
-  const contactKind = controls.contactKind;
   // TYPE7 skips segments that share a node (1-ring). 2-hop skip hid the
   // A-hole walls (rest min 5.41 mm vs 3.41 mm) so contact never engaged.
   const starSkip =
@@ -217,10 +239,27 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const assemble = (p: number): number => {
     f.fill(0);
     let psiStep = 0;
-    if (contactKind === "node-segment") {
-      for (const rest of rests) {
-        const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
+    if (qsShell) {
+      for (let e = 0; e < q4Rests.length; e++) {
+        const rest = q4Rests[e]!;
+        const { W } = accumulateQ4Forces(x, rest, f, law.mu1, law.h0);
         psiStep += W;
+        accumulateChvis3Forces(
+          x,
+          v,
+          rest.i0,
+          rest.i1,
+          rest.i2,
+          rest.i3,
+          rest.A0,
+          hourStates[e]!,
+          dt,
+          f,
+          law.mu1,
+          law.rho,
+          law.nu,
+          law.h0,
+        );
       }
       for (let e = 0; e < mesh.nQuads; e++) {
         accumulatePressureQuad(
@@ -234,6 +273,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         );
       }
       for (const rest of triRests) {
+        const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
+        psiStep += W;
         accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
       }
     } else {
@@ -255,22 +296,39 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     return psiStep;
   };
 
+  const triMinEdge = (rest: CstRest): number => {
+    const ix = x[rest.i * 3]!,
+      iy = x[rest.i * 3 + 1]!,
+      iz = x[rest.i * 3 + 2]!;
+    const jx = x[rest.j * 3]!,
+      jy = x[rest.j * 3 + 1]!,
+      jz = x[rest.j * 3 + 2]!;
+    const kx = x[rest.k * 3]!,
+      ky = x[rest.k * 3 + 1]!,
+      kz = x[rest.k * 3 + 2]!;
+    return Math.min(
+      Math.hypot(jx - ix, jy - iy, jz - iz),
+      Math.hypot(kx - jx, ky - jy, kz - jz),
+      Math.hypot(ix - kx, iy - ky, iz - kz),
+    );
+  };
   const recomputeDt = (): void => {
     let h = Infinity;
-    for (const rest of rests) {
-      const ix = x[rest.i * 3]!,
-        iy = x[rest.i * 3 + 1]!,
-        iz = x[rest.i * 3 + 2]!;
-      const jx = x[rest.j * 3]!,
-        jy = x[rest.j * 3 + 1]!,
-        jz = x[rest.j * 3 + 2]!;
-      const kx = x[rest.k * 3]!,
-        ky = x[rest.k * 3 + 1]!,
-        kz = x[rest.k * 3 + 2]!;
-      const e1 = Math.hypot(jx - ix, jy - iy, jz - iz);
-      const e2 = Math.hypot(kx - jx, ky - jy, kz - jz);
-      const e3 = Math.hypot(ix - kx, iy - ky, iz - kz);
-      h = Math.min(h, e1, e2, e3);
+    if (qsShell) {
+      for (const rest of q4Rests) {
+        const a = rest.i0 * 3,
+          b = rest.i1 * 3,
+          c = rest.i2 * 3,
+          d = rest.i3 * 3;
+        const e01 = Math.hypot(x[b]! - x[a]!, x[b + 1]! - x[a + 1]!, x[b + 2]! - x[a + 2]!);
+        const e12 = Math.hypot(x[c]! - x[b]!, x[c + 1]! - x[b + 1]!, x[c + 2]! - x[b + 2]!);
+        const e23 = Math.hypot(x[d]! - x[c]!, x[d + 1]! - x[c + 1]!, x[d + 2]! - x[c + 2]!);
+        const e30 = Math.hypot(x[a]! - x[d]!, x[a + 1]! - x[d + 1]!, x[a + 2]! - x[d + 2]!);
+        h = Math.min(h, e01, e12, e23, e30);
+      }
+      for (const rest of triRests) h = Math.min(h, triMinEdge(rest));
+    } else {
+      for (const rest of rests) h = Math.min(h, triMinEdge(rest));
     }
     const dtNew = controls.cfl * (h / c);
     if (dtNew > 0 && Number.isFinite(dtNew)) dt = Math.min(dtNew, 1.1 * dt);

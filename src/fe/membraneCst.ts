@@ -340,8 +340,11 @@ export function buildQ4Rest(
   };
 }
 
-/** 1-GP Q4 neo-Hookean. Not assembled: 1-GP has hourglass modes (Radioss BT
- * ships hourglass control; do not invent a gain). Kept FD-checked. */
+/**
+ * 1-GP Q4 neo-Hookean (same LAW42 Ψ as CST). QS assemble only, with
+ * CHVIS3 hourglass in `belytschkoHourglass.ts`. λ/Ψ compare still uses CST
+ * on ANIM. Dynamic path stays CST.
+ */
 export function accumulateQ4Forces(
   coords: ArrayLike<number>,
   rest: Q4Rest,
