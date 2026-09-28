@@ -2,12 +2,14 @@ import { NU } from "../inflate/constants.js";
 import type { CstRest } from "./membraneCst.js";
 
 /**
- * Kirchhoff hinge bending for QS-ish shells (Radioss `/PROP` Ithick=1).
- * Same locked μ, H0, ν as the membrane — not a μ retune. Dynamic path
- * stays membrane-only so PR#8 bands stay put.
+ * Kirchhoff hinge bending kernel (Radioss `/PROP` Ithick=1 analogue).
+ * Same locked μ, H0, ν as the membrane — not a μ retune.
+ *
+ * Not assembled on the QS inflate path: this discrete plate hinge
+ * over-stiffens λ(p) vs the Belytschko QS-ish tape (λ≈1.65 at 27.6 kPa
+ * then a snap). Kept as an FD-checked kernel. Dynamic path is membrane-only.
  *
  * Hinges live on original mesh edges only (not CST split diagonals).
- * Radioss Q4 Belytschko has no crease on the toy's triangulation diagonal.
  */
 
 export interface ShellHinge {

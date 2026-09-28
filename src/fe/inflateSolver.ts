@@ -7,7 +7,6 @@ import {
   punchedThrough,
 } from "./contactKiss.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
-import { accumulateHingeForces, buildShellHinges, meshEdgeKeys } from "./shellHinge.js";
 import {
   accumulateCstForces,
   accumulatePressureQuad,
@@ -133,10 +132,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       ? buildVertexStar(mesh.quads, nNodes, mesh.tris)
       : buildVertexStar2(mesh.quads, nNodes, mesh.tris);
   const kissSegments = contactKind === "node-segment" ? buildKissSegmentCache(mesh.quads, mesh.tris) : undefined;
-  const hinges =
-    contactKind === "node-segment"
-      ? buildShellHinges(mesh.coords, rests, law.mu1, law.h0, law.nu, meshEdgeKeys(mesh.quads, mesh.tris))
-      : [];
   let lastKiss: {
     pushed: number;
     minGap: number;
@@ -241,9 +236,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       }
       for (let e = 0; e < mesh.nTris; e++) {
         accumulatePressureTri(x, mesh.tris[e * 3]!, mesh.tris[e * 3 + 1]!, mesh.tris[e * 3 + 2]!, p, f);
-      }
-      for (const hinge of hinges) {
-        psiStep += accumulateHingeForces(x, hinge, f);
       }
     }
     if (alpha > 0) {
