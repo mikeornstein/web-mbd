@@ -23,7 +23,7 @@ solver.
 - Plane-stress neo-Hookean CST membrane (`materialNeoHookean.ts`, `membraneCst.ts`)
 - Letter-A shell mesh from inflation-abc `meshes/A.json` (Design-PASS quad; 28 orphan `faceTris` paired → 14 quads; NUMELC=1554, NUMELTG=0)
 - `/PLOAD` follower + Rayleigh α=80 + Underwood `/ADYREL` analogue
-- TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): dynamic **node-node** soft-press (PR#8 desk). QS-ish **node-segment** TYPE7 analogue so staggered hole/leg faces cannot pass through. Same Gapmin; honest post-press viol. **Not** bitwise OpenRadioss `/INTER/TYPE19`
+- TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): dynamic **node-node** soft-press (PR#8 desk). QS-ish **node-segment** TYPE7 analogue, 1-ring skip (2-hop skip hid the A-hole). Same Gapmin; honest post-press viol. **Not** bitwise OpenRadioss `/INTER/TYPE19`
 - Inflate metrics at first ANIM-stride sample with λ_max ≥ 2
 - Letters B/C playable from inflation-abc ship meshes; leftover unpaired cap triangles kept as constant-strain triangles
 - Labeled `qs-ish-pload-400ms` toy path; Radioss QS-ish golden filled (p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)

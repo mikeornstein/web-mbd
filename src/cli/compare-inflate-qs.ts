@@ -53,6 +53,13 @@ function main(): void {
           volume_mL: result.volumeHistory[nearest] !== undefined ? result.volumeHistory[nearest]! * 1e6 : null,
           psi_J: result.psiHistory[nearest] ?? null,
         },
+        tape: [0, 15, 28, 34].map((fr) => ({
+          frame: fr,
+          t: result.history[fr]?.t ?? null,
+          p: result.pressureHistory[fr] ?? null,
+          lambdaMax: result.lambdaHistory[fr] ?? null,
+          volume_mL: result.volumeHistory[fr] !== undefined ? result.volumeHistory[fr]! * 1e6 : null,
+        })),
         minGap_mm: result.metrics.minGap * 1e3,
         contactViol: result.metrics.contactViol,
         contactClass: result.metrics.contactClass,

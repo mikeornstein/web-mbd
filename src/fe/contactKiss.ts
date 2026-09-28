@@ -136,9 +136,11 @@ function contactClassFor(kind: InflateKissKind): InflateContactClass {
 
 /**
  * TYPE19-class Gapmin kiss. Same CONTACT_KISS number as Radioss
- * `/INTER/TYPE19` Gapmin. `node-node` is the dynamic PR#8 desk path.
- * `node-segment` is the QS TYPE7 analogue (staggered faces). Not bitwise
- * TYPE19. `viol` is counted after the press.
+ * `/INTER/TYPE19` Gapmin. `node-node` is the dynamic PR#8 desk path
+ * (2-hop skip). `node-segment` is the QS TYPE7 analogue: skip only
+ * segments that share a node (1-ring), so staggered / A-hole faces
+ * cannot pass through. Gapmin is not weakened. Not bitwise TYPE19.
+ * `viol` is counted after the press.
  */
 export function applyKissProjection(args: {
   coords: Float64Array;
@@ -442,7 +444,7 @@ function applyKissNodeSegment(args: {
   const coords = args.coords;
   const tris = args.tris ?? [];
   const nNodes = coords.length / 3;
-  const star2 = args.star2 ?? buildVertexStar2(args.quads, nNodes, tris);
+  const star2 = args.star2 ?? buildVertexStar(args.quads, nNodes, tris);
   const cache = args.segments ?? buildKissSegmentCache(args.quads, tris);
   const kiss = args.kiss ?? CONTACT_KISS;
   const engage = args.engage ?? CONTACT_ENGAGE;

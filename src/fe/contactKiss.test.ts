@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE, CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT, CONTACT_KISS } from "../inflate/constants.js";
-import { applyKissProjection } from "./contactKiss.js";
+import { applyKissProjection, buildVertexStar2 } from "./contactKiss.js";
 
 describe("TYPE19-class Gapmin kiss", () => {
   it("separates two nodes to Gapmin and reports viol=0 after the press", () => {
@@ -48,5 +48,24 @@ describe("TYPE19-class Gapmin kiss", () => {
     }
     expect(result.viol).toBe(0);
     expect(result.minGap).toBeGreaterThanOrEqual(kiss * 0.99);
+  });
+
+  it("QS 1-ring skip still kisses a U-fold lid that 2-hop skip ignores", () => {
+    const kiss = CONTACT_KISS;
+    const z = kiss * 0.4;
+    const coords = new Float64Array([
+      0, 0, 0, 0.01, 0, 0, 0.01, 0, z, 0, 0, z, 0, 0.01, 0, 0.01, 0.01, 0, 0.01, 0.01, z, 0, 0.01, z,
+    ]);
+    const quads = [0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6];
+    const oneRing = applyKissProjection({ coords: Float64Array.from(coords), quads, kiss, kind: "node-segment" });
+    const twoHop = applyKissProjection({
+      coords: Float64Array.from(coords),
+      quads,
+      kiss,
+      kind: "node-segment",
+      star2: buildVertexStar2(quads, 8),
+    });
+    expect(oneRing.pushed).toBeGreaterThan(0);
+    expect(twoHop.pushed).toBe(0);
   });
 });

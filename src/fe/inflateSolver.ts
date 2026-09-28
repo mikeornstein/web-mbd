@@ -2,6 +2,7 @@ import { applyAdyrelAcceleration, createAdyrelState, stepEnerW0 } from "./adyrel
 import {
   applyKissProjection,
   buildKissSegmentCache,
+  buildVertexStar,
   buildVertexStar2,
   punchedThrough,
 } from "./contactKiss.js";
@@ -125,7 +126,12 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let kePrev = 0;
   let kePrev2 = 0;
   const contactKind = controls.contactKind;
-  const star2 = buildVertexStar2(mesh.quads, nNodes, mesh.tris);
+  // TYPE7 skips segments that share a node (1-ring). 2-hop skip hid the
+  // A-hole walls (rest min 5.41 mm vs 3.41 mm) so contact never engaged.
+  const starSkip =
+    contactKind === "node-segment"
+      ? buildVertexStar(mesh.quads, nNodes, mesh.tris)
+      : buildVertexStar2(mesh.quads, nNodes, mesh.tris);
   const kissSegments = contactKind === "node-segment" ? buildKissSegmentCache(mesh.quads, mesh.tris) : undefined;
   const hinges =
     contactKind === "node-segment"
@@ -304,7 +310,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       tris: mesh.tris,
       kiss: law.gapMin,
       kind: contactKind,
-      star2,
+      star2: starSkip,
       measureGap: contactKind !== "node-segment" || willSample,
       ...(kissSegments ? { segments: kissSegments } : {}),
     });
