@@ -133,4 +133,19 @@ describe("Belytschko CHVIS3 hourglass (Ishell=1)", () => {
     expect(fHg[2]!).toBeLessThan(0);
     expect(Math.abs(fHg[2]!)).toBeGreaterThan(Math.abs(fMem[2]!) + 1e-18);
   });
+
+  it("Ithick=1 uses 1-GP area, so pure warp does not retune THK", () => {
+    const L = 0.01;
+    const coords0 = Float64Array.from([0, 0, 0, L, 0, 0, L, L, 0, 0, L, 0]);
+    const rest = buildQ4Rest(coords0, 0, 1, 2, 3);
+    expect(rest).not.toBeNull();
+    if (!rest) return;
+    const v = Float64Array.from([0, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0, -1]);
+    const f0 = new Float64Array(12);
+    const fW = new Float64Array(12);
+    accumulateChvis3Forces(coords0, v, 0, 1, 2, 3, rest.A0, createHourglassState(), 1e-6, f0, MU, RHO, NU, H0);
+    const warped = Float64Array.from([0, 0, 5e-4, L, 0, -5e-4, L, L, 5e-4, 0, L, -5e-4]);
+    accumulateChvis3Forces(warped, v, 0, 1, 2, 3, rest.A0, createHourglassState(), 1e-6, fW, MU, RHO, NU, H0);
+    expect(fW[2]!).toBeCloseTo(f0[2]!, 6);
+  });
 });

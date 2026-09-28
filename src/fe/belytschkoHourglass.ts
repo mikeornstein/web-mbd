@@ -105,7 +105,8 @@ function cevec3(
 /**
  * CHVIS3 membrane (HOUR 1,2) + flexural (HOUR 3) forces on a Q4.
  * CUPDT3 sign: global F -= H, matching Newton f = −∂W/∂x on the toy.
- * Ismstr=10, IHBE=1 → GAMA from PX/PY/VHX/VHY. Ithick=1 → THK = H0 A0/AREA.
+ * Ismstr=10, IHBE=1 → GAMA from PX/PY/VHX/VHY. Ithick=1 → THK from 1-GP
+ * area (λ₃ = A0/A_gp), not CDERI3 mean-plane area (hourglass-sensitive).
  * Returns the CHVIS3 EHOU increment (DT * force·HG).
  */
 export function accumulateChvis3Forces(
@@ -203,7 +204,17 @@ export function accumulateChvis3Forces(
   const gama2 = -1 - px2v - py2v;
   const gama4 = -1 + px2v + py2v;
 
-  const thk = h0 * a0 / area;
+  const g1x = 0.25 * (-x0 + x1 + x2 - x3);
+  const g1y = 0.25 * (-y0 + y1 + y2 - y3);
+  const g1z = 0.25 * (-z0 + z1 + z2 - z3);
+  const g2x = 0.25 * (-x0 - x1 + x2 + x3);
+  const g2y = 0.25 * (-y0 - y1 + y2 + y3);
+  const g2z = 0.25 * (-z0 - z1 + z2 + z3);
+  const gx = g1y * g2z - g1z * g2y;
+  const gy = g1z * g2x - g1x * g2z;
+  const gz = g1x * g2y - g1y * g2x;
+  const gpArea = 4 * Math.hypot(gx, gy, gz);
+  const thk = h0 * a0 / Math.max(gpArea, EM20);
   const thk02 = thk * thk;
   const ym = law42Young(mu, nu);
   const shfpr3 = AREA_SHEAR / (3 * (1 + nu));
