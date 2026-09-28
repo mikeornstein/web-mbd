@@ -149,6 +149,8 @@ export function applyKissProjection(args: {
   kind?: InflateKissKind;
   star2?: Set<number>[];
   segments?: KissSegmentCache;
+  /** Post-press minGap/viol. Default true. QS skips this except at ANIM samples. */
+  measureGap?: boolean;
 }): KissResult {
   const kind = args.kind ?? "node-node";
   switch (kind) {
@@ -169,6 +171,7 @@ function applyKissNodeNode(args: {
   tris?: ArrayLike<number>;
   kiss?: number;
   engage?: number;
+  measureGap?: boolean;
 }): KissResult {
   const coords = args.coords;
   const skip = buildMeshAdjacency(args.quads, coords.length / 3, args.tris ?? []);
@@ -229,36 +232,39 @@ function applyKissNodeNode(args: {
     }
   }
 
-  let minGap = Infinity;
+  let minGap = engage;
   let viol = 0;
-  const seenGap = new Set<string>();
-  for (let i = 0; i < nNodes; i++) {
-    const ix = Math.floor(coords[i * 3]! * invC);
-    const iy = Math.floor(coords[i * 3 + 1]! * invC);
-    const iz = Math.floor(coords[i * 3 + 2]! * invC);
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dz = -1; dz <= 1; dz++) {
-          const list = buckets.get(pack(ix + dx, iy + dy, iz + dz));
-          if (!list) continue;
-          for (const j of list) {
-            if (j <= i) continue;
-            const key = pairKey(i, j);
-            if (skip.has(key) || seenGap.has(key)) continue;
-            seenGap.add(key);
-            const d = Math.hypot(
-              coords[j * 3]! - coords[i * 3]!,
-              coords[j * 3 + 1]! - coords[i * 3 + 1]!,
-              coords[j * 3 + 2]! - coords[i * 3 + 2]!,
-            );
-            if (d < minGap) minGap = d;
-            if (d < kiss - 1e-9 && d > 1e-12) viol += 1;
+  if (args.measureGap !== false) {
+    minGap = Infinity;
+    const seenGap = new Set<string>();
+    for (let i = 0; i < nNodes; i++) {
+      const ix = Math.floor(coords[i * 3]! * invC);
+      const iy = Math.floor(coords[i * 3 + 1]! * invC);
+      const iz = Math.floor(coords[i * 3 + 2]! * invC);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const list = buckets.get(pack(ix + dx, iy + dy, iz + dz));
+            if (!list) continue;
+            for (const j of list) {
+              if (j <= i) continue;
+              const key = pairKey(i, j);
+              if (skip.has(key) || seenGap.has(key)) continue;
+              seenGap.add(key);
+              const d = Math.hypot(
+                coords[j * 3]! - coords[i * 3]!,
+                coords[j * 3 + 1]! - coords[i * 3 + 1]!,
+                coords[j * 3 + 2]! - coords[i * 3 + 2]!,
+              );
+              if (d < minGap) minGap = d;
+              if (d < kiss - 1e-9 && d > 1e-12) viol += 1;
+            }
           }
         }
       }
     }
+    if (minGap === Infinity) minGap = engage;
   }
-  if (minGap === Infinity) minGap = engage;
   return {
     pushed,
     minGap,
@@ -431,6 +437,7 @@ function applyKissNodeSegment(args: {
   engage?: number;
   star2?: Set<number>[];
   segments?: KissSegmentCache;
+  measureGap?: boolean;
 }): KissResult {
   const coords = args.coords;
   const tris = args.tris ?? [];
@@ -439,7 +446,7 @@ function applyKissNodeSegment(args: {
   const cache = args.segments ?? buildKissSegmentCache(args.quads, tris);
   const kiss = args.kiss ?? CONTACT_KISS;
   const engage = args.engage ?? CONTACT_ENGAGE;
-  const cell = Math.max(engage, 0.01);
+  const cell = engage;
   const invC = 1 / cell;
   const maxPush = engage * 0.9;
   const { ia, ib, ic, stamp } = cache;
@@ -531,52 +538,55 @@ function applyKissNodeSegment(args: {
     }
   }
 
-  let minGap = Infinity;
+  let minGap = engage;
   let viol = 0;
-  for (let i = 0; i < nNodes; i++) {
-    const skip = star2[i]!;
-    const px = coords[i * 3]!,
-      py = coords[i * 3 + 1]!,
-      pz = coords[i * 3 + 2]!;
-    const ix = Math.floor(px * invC);
-    const iy = Math.floor(py * invC);
-    const iz = Math.floor(pz * invC);
-    const mark = nextMark(cache);
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dz = -1; dz <= 1; dz++) {
-          const list = buckets.get(pack(ix + dx, iy + dy, iz + dz));
-          if (!list) continue;
-          for (const s of list) {
-            if (stamp[s] === mark) continue;
-            stamp[s] = mark;
-            const a = ia[s]!,
-              b = ib[s]!,
-              c = ic[s]!;
-            if (skip.has(a) || skip.has(b) || skip.has(c)) continue;
-            const hit = closestPointOnTriangle(
-              px,
-              py,
-              pz,
-              coords[a * 3]!,
-              coords[a * 3 + 1]!,
-              coords[a * 3 + 2]!,
-              coords[b * 3]!,
-              coords[b * 3 + 1]!,
-              coords[b * 3 + 2]!,
-              coords[c * 3]!,
-              coords[c * 3 + 1]!,
-              coords[c * 3 + 2]!,
-            );
-            const d = Math.hypot(px - hit.qx, py - hit.qy, pz - hit.qz);
-            if (d < minGap) minGap = d;
-            if (d < kiss - 1e-9 && d > 1e-12) viol += 1;
+  if (args.measureGap !== false) {
+    minGap = Infinity;
+    for (let i = 0; i < nNodes; i++) {
+      const skip = star2[i]!;
+      const px = coords[i * 3]!,
+        py = coords[i * 3 + 1]!,
+        pz = coords[i * 3 + 2]!;
+      const ix = Math.floor(px * invC);
+      const iy = Math.floor(py * invC);
+      const iz = Math.floor(pz * invC);
+      const mark = nextMark(cache);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            const list = buckets.get(pack(ix + dx, iy + dy, iz + dz));
+            if (!list) continue;
+            for (const s of list) {
+              if (stamp[s] === mark) continue;
+              stamp[s] = mark;
+              const a = ia[s]!,
+                b = ib[s]!,
+                c = ic[s]!;
+              if (skip.has(a) || skip.has(b) || skip.has(c)) continue;
+              const hit = closestPointOnTriangle(
+                px,
+                py,
+                pz,
+                coords[a * 3]!,
+                coords[a * 3 + 1]!,
+                coords[a * 3 + 2]!,
+                coords[b * 3]!,
+                coords[b * 3 + 1]!,
+                coords[b * 3 + 2]!,
+                coords[c * 3]!,
+                coords[c * 3 + 1]!,
+                coords[c * 3 + 2]!,
+              );
+              const d = Math.hypot(px - hit.qx, py - hit.qy, pz - hit.qz);
+              if (d < minGap) minGap = d;
+              if (d < kiss - 1e-9 && d > 1e-12) viol += 1;
+            }
           }
         }
       }
     }
+    if (minGap === Infinity) minGap = engage;
   }
-  if (minGap === Infinity) minGap = engage;
   return {
     pushed,
     minGap,

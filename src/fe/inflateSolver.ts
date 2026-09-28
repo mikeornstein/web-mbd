@@ -6,9 +6,10 @@ import {
   punchedThrough,
 } from "./contactKiss.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
-import { accumulateHingeForces, buildShellHinges } from "./shellHinge.js";
+import { accumulateHingeForces, buildShellHinges, meshEdgeKeys } from "./shellHinge.js";
 import {
   accumulateCstForces,
+  accumulatePressureQuad,
   accumulatePressureTri,
   buildCstRest,
   cstSample,
@@ -127,7 +128,9 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const star2 = buildVertexStar2(mesh.quads, nNodes, mesh.tris);
   const kissSegments = contactKind === "node-segment" ? buildKissSegmentCache(mesh.quads, mesh.tris) : undefined;
   const hinges =
-    contactKind === "node-segment" ? buildShellHinges(mesh.coords, rests, law.mu1, law.h0, law.nu) : [];
+    contactKind === "node-segment"
+      ? buildShellHinges(mesh.coords, rests, law.mu1, law.h0, law.nu, meshEdgeKeys(mesh.quads, mesh.tris))
+      : [];
   let lastKiss: {
     pushed: number;
     minGap: number;
@@ -214,10 +217,28 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     for (const rest of rests) {
       const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
       psiStep += W;
-      accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
+      if (contactKind !== "node-segment") {
+        accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
+      }
     }
-    for (const hinge of hinges) {
-      psiStep += accumulateHingeForces(x, hinge, f);
+    if (contactKind === "node-segment") {
+      for (let e = 0; e < mesh.nQuads; e++) {
+        accumulatePressureQuad(
+          x,
+          mesh.quads[e * 4]!,
+          mesh.quads[e * 4 + 1]!,
+          mesh.quads[e * 4 + 2]!,
+          mesh.quads[e * 4 + 3]!,
+          p,
+          f,
+        );
+      }
+      for (let e = 0; e < mesh.nTris; e++) {
+        accumulatePressureTri(x, mesh.tris[e * 3]!, mesh.tris[e * 3 + 1]!, mesh.tris[e * 3 + 2]!, p, f);
+      }
+      for (const hinge of hinges) {
+        psiStep += accumulateHingeForces(x, hinge, f);
+      }
     }
     if (alpha > 0) {
       for (let i = 0; i < nNodes; i++) {
@@ -275,6 +296,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     }
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
+    const nextT = t + dt;
+    const willSample = nextT + 1e-18 >= nextSample || nextT >= controls.endTime - 1e-18;
     lastKiss = applyKissProjection({
       coords: x,
       quads: mesh.quads,
@@ -282,6 +305,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       kiss: law.gapMin,
       kind: contactKind,
       star2,
+      measureGap: contactKind !== "node-segment" || willSample,
       ...(kissSegments ? { segments: kissSegments } : {}),
     });
     t += dt;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { H0, MU, WARN_LAM } from "../inflate/constants.js";
 import { membranePsi, restI1PlaneStress } from "./materialNeoHookean.js";
-import { accumulateCstForces, accumulatePressureTri, buildCstRest, cstSample } from "./membraneCst.js";
+import { accumulateCstForces, accumulatePressureQuad, accumulatePressureTri, buildCstRest, cstSample } from "./membraneCst.js";
 import { enclosedVolume, loadShipMeshA } from "../inflate/meshA.js";
 
 describe("neo-Hookean membrane constitutive", () => {
@@ -77,5 +77,29 @@ describe("neo-Hookean membrane constitutive", () => {
         (2 * h);
       expect(f[dof]!).toBeCloseTo(p * dV, 6);
     }
+  });
+
+  it("Q4 mean-plane PLOAD is equal pA/4, not CST tet shares", () => {
+    const coords = [0.1, 0.1, 0, 0.12, 0.1, 0, 0.12, 0.11, 0, 0.1, 0.11, 0];
+    const p = 4000;
+    const f = new Float64Array(12);
+    accumulatePressureQuad(coords, 0, 1, 2, 3, p, f);
+    const area = 0.02 * 0.01;
+    const fz = (p * area) / 4;
+    for (let n = 0; n < 4; n++) {
+      expect(f[n * 3]!).toBeCloseTo(0, 12);
+      expect(f[n * 3 + 1]!).toBeCloseTo(0, 12);
+      expect(f[n * 3 + 2]!).toBeCloseTo(fz, 12);
+    }
+    const fTet = new Float64Array(12);
+    accumulatePressureTri(coords, 0, 1, 2, p, fTet);
+    accumulatePressureTri(coords, 0, 2, 3, p, fTet);
+    let netQ = 0;
+    for (let n = 0; n < 4; n++) {
+      netQ += f[n * 3 + 2]!;
+    }
+    expect(netQ).toBeCloseTo(p * area, 12);
+    expect(Math.abs(fTet[0 * 3 + 2]! - fTet[1 * 3 + 2]!)).toBeGreaterThan(1e-12);
+    expect(Math.abs(f[0 * 3 + 2]! - fTet[0 * 3 + 2]!)).toBeGreaterThan(1e-12);
   });
 });

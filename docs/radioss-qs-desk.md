@@ -21,9 +21,12 @@ Same LAW42 μ, ρ, H0, mesh fingerprint `d9c56487` as `dynamic-pload-40ms`.
 
 `pnpm compare:inflate:qs` compares this family. Green QS (λ≤2% / V≤5% / p≤5%)
 is still required — not waived. Toy QS path: `/DAMP` α=80, `/ADYREL` as
-OpenRadioss ENER_W0+ISTAT=1 (no invented BETATE gain), node-segment Gapmin
-(same CONTACT_KISS). `pnpm compare:inflate` (dynamic) stays the green CI gate
-until QS compare exits 0.
+OpenRadioss ENER_W0+ISTAT=1 (no invented BETATE gain), Q4 mean-plane `/PLOAD`
+(equal pA/4, Belytschko diagonal area — not CST tet shares), Kirchhoff hinges
+on mesh edges (`/PROP` Ithick=1; energy-consistent dihedral gradient), 
+node-segment Gapmin (same CONTACT_KISS). Enclosed V stays the tet sum
+(ANIM/VTK faceted surface; V0=354 mL). `pnpm compare:inflate` (dynamic) stays
+the green CI gate until QS compare exits 0.
 
 ## What this is not
 

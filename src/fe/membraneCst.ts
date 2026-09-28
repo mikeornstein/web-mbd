@@ -275,6 +275,64 @@ export function accumulateCstForces(
   return { lam1, lam2, W };
 }
 
+/**
+ * Radioss Q4 `/PLOAD` on the current mean plane: area = ½|(x2−x0)×(x3−x1)|
+ * (diagonal cross, Belytschko `cneveci`), equal pA/4 along n at each node.
+ * QS-ish path only. Not p ∂V/∂x — OpenRadioss does not tet-share PLOAD on
+ * `/SHELL`. Dynamic path keeps `accumulatePressureTri` (PR#8 bands).
+ */
+export function accumulatePressureQuad(
+  coords: ArrayLike<number>,
+  i0: number,
+  i1: number,
+  i2: number,
+  i3: number,
+  p: number,
+  f: Float64Array,
+): void {
+  const a = i0 * 3,
+    b = i1 * 3,
+    c = i2 * 3,
+    d = i3 * 3;
+  const x0 = coords[a]!,
+    y0 = coords[a + 1]!,
+    z0 = coords[a + 2]!;
+  const x1 = coords[b]!,
+    y1 = coords[b + 1]!,
+    z1 = coords[b + 2]!;
+  const x2 = coords[c]!,
+    y2 = coords[c + 1]!,
+    z2 = coords[c + 2]!;
+  const x3 = coords[d]!,
+    y3 = coords[d + 1]!,
+    z3 = coords[d + 2]!;
+  const d1x = x2 - x0,
+    d1y = y2 - y0,
+    d1z = z2 - z0;
+  const d2x = x3 - x1,
+    d2y = y3 - y1,
+    d2z = z3 - z1;
+  const nx = d1y * d2z - d1z * d2y;
+  const ny = d1z * d2x - d1x * d2z;
+  const nz = d1x * d2y - d1y * d2x;
+  const s = p / 8;
+  const fx = s * nx,
+    fy = s * ny,
+    fz = s * nz;
+  f[a]! += fx;
+  f[a + 1]! += fy;
+  f[a + 2]! += fz;
+  f[b]! += fx;
+  f[b + 1]! += fy;
+  f[b + 2]! += fz;
+  f[c]! += fx;
+  f[c + 1]! += fy;
+  f[c + 2]! += fz;
+  f[d]! += fx;
+  f[d + 1]! += fy;
+  f[d + 2]! += fz;
+}
+
 /** Follower pressure consistent with V = Σ a·(b×c)/6: f = p ∂V/∂x. */
 export function accumulatePressureTri(
   coords: ArrayLike<number>,

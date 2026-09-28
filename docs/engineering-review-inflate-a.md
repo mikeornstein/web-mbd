@@ -141,7 +141,8 @@ golden from inflation-abc PR#11; compare CLI exit 1 on mismatch.
 | `/PLOAD` QS-ish | 0 → 65 kPa / 400 ms | inflation-abc PR#11; p@λ≥2 ≈ 27.6 kPa | not ABC 54 kPa |
 | QS `/ADYREL` analogue | OpenRadioss ENER_W0 BETATE + ISTAT=1 A-update (DT12); **no** invented 1.5× gain | `/DAMP` α=80 kept; Underwood 0.18 is dynamic-only | not on the LAW42 card |
 | QS dead p | 54100 Pa | **Ruled out** — CFL-explodes on Radioss | do not vendor; do not chase with μ |
-| QS shell hinges | Kirchhoff D=E H0³/12(1−ν²) on CST dihedrals | Radioss `/PROP` Ithick=1; QS-only so dynamic PR#8 bands stay | same locked μ/H0/ν |
+| QS shell hinges | Kirchhoff D=E H0³/12(1−ν²), kb=6DL0²/A, mesh edges only; f=−∂W/∂x (barycentric dihedral) | Radioss `/PROP` Ithick=1; QS-only so dynamic PR#8 bands stay | same locked μ/H0/ν |
+| QS `/PLOAD` area | Q4 mean-plane ½|(x2−x0)×(x3−x1)|, equal pA/4 | OpenRadioss `cneveci` / `/PLOAD` on `/SHELL`; dynamic stays tet-consistent p∂V/∂x | not a μ lever |
 
 No μ or ρ retune between the dynamic golden PASS and this follow-up.
 
