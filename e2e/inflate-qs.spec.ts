@@ -23,7 +23,7 @@ test("letter A QS-ish Post still at first λ≥2 vs Radioss qs-ish-pload-400ms",
     page.getByLabel("Solve metrics").getByText("qs-ish-pload-400ms", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByLabel("Solve metrics").getByText("type19-class-gapmin-node-node", { exact: true }),
+    page.getByLabel("Solve metrics").getByText("type19-class-gapmin-node-segment", { exact: true }),
   ).toBeVisible();
   const post = page.getByRole("region", { name: "Post-processor" });
   await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();

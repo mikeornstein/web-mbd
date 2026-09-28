@@ -1,5 +1,5 @@
-import { applyKissProjection, punchedThrough } from "./contactKiss.js";
-import { ADYREL_BETATE_GAIN_QS_ISH, CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE } from "../inflate/constants.js";
+import { applyAdyrelAcceleration, createAdyrelState, stepEnerW0 } from "./adyrel.js";
+import { applyKissProjection, buildVertexStar2, punchedThrough } from "./contactKiss.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
 import {
   accumulateCstForces,
@@ -36,6 +36,16 @@ export function assertInflateModel(model: InflateModelIR): void {
   if (!(model.law.rho > 0)) throw new Error("rho must be > 0");
   if (!(model.controls.endTime > 0)) throw new Error("endTime must be > 0");
   if (!(model.controls.cfl > 0 && model.controls.cfl <= 1)) throw new Error("cfl must be in (0, 1]");
+  const kind = model.controls.contactKind;
+  switch (kind) {
+    case "node-node":
+    case "node-segment":
+      break;
+    default: {
+      const _exhaustive: never = kind;
+      throw new Error(`unhandled contactKind ${String(_exhaustive)}`);
+    }
+  }
 }
 
 export function solveInflate(model: InflateModelIR, options: InflateSolveOptions = {}): InflateSolveResult {
@@ -107,16 +117,18 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let dt1 = 0;
   let kePrev = 0;
   let kePrev2 = 0;
+  const contactKind = controls.contactKind;
+  const star2 = buildVertexStar2(mesh.quads, nNodes, mesh.tris);
   let lastKiss: {
     pushed: number;
     minGap: number;
     viol: number;
-    contactClass: typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
+    contactClass: InflateSolveMetrics["contactClass"];
   } = {
     pushed: 0,
     minGap: law.gapMin,
     viol: 0,
-    contactClass: CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
+    contactClass: contactKind === "node-segment" ? "type19-class-gapmin-node-segment" : "type19-class-gapmin-node-node",
   };
   let punched = false;
   let incompressResidualMax = 0;
@@ -127,10 +139,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const alpha = law.rayleighAlpha;
   const keInterval = controls.kineticDampingMinInterval;
   let tKeDamp = -Infinity;
-  /** Adaptive `/DYREL` β (1/s) — OpenRadioss ENER_W0 / STATIC ISTAT=1 analogue. */
-  let betate = 0;
-  let tKePeriod = 0;
-  let adyrelFirst = 0;
+  const adyrel = createAdyrelState();
+  let lastPsiStep = 0;
 
   const measure = (): {
     lambdaMax: number;
@@ -189,10 +199,12 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     }
   };
 
-  const assemble = (p: number): void => {
+  const assemble = (p: number): number => {
     f.fill(0);
+    let psiStep = 0;
     for (const rest of rests) {
-      accumulateCstForces(x, rest, f, law.mu1, law.h0);
+      const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
+      psiStep += W;
       accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
     }
     if (alpha > 0) {
@@ -203,6 +215,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         f[i * 3 + 2]! -= alpha * m * v[i * 3 + 2]!;
       }
     }
+    lastPsiStep = psiStep;
+    return psiStep;
   };
 
   const recomputeDt = (): void => {
@@ -243,18 +257,10 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       acc[i * 3 + 2] = f[i * 3 + 2]! * rtmp;
     }
     recomputeDt();
-    if (controls.adaptiveRelaxation && betate > 0) {
-      const beta = betate * ADYREL_BETATE_GAIN_QS_ISH;
-      const omega = beta * dt;
-      const uomega = 1 - omega;
-      const domega = 2 * beta;
-      for (let i = 0; i < nNodes; i++) {
-        acc[i * 3]! = uomega * acc[i * 3]! - domega * v[i * 3]!;
-        acc[i * 3 + 1]! = uomega * acc[i * 3 + 1]! - domega * v[i * 3 + 1]!;
-        acc[i * 3 + 2]! = uomega * acc[i * 3 + 2]! - domega * v[i * 3 + 2]!;
-      }
-    }
     const dt12 = 0.5 * (dt1 + dt);
+    if (controls.adaptiveRelaxation) {
+      applyAdyrelAcceleration(acc, v, adyrel.betate, dt12);
+    }
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
     lastKiss = applyKissProjection({
@@ -262,6 +268,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       quads: mesh.quads,
       tris: mesh.tris,
       kiss: law.gapMin,
+      kind: contactKind,
+      star2,
     });
     t += dt;
     step += 1;
@@ -275,31 +283,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       ke += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
     }
     if (controls.adaptiveRelaxation) {
-      if (step === 200 && betate === 0 && dt > 0) {
-        betate = 1e-4 / dt;
-        adyrelFirst = 1;
-      }
-      if (ke < kePrev && kePrev >= kePrev2 && kePrev > 0 && t > dt) {
-        const period = t - tKePeriod;
-        if (tKePeriod > 0 && period > 0 && dt > 0) {
-          const fMax = 0.01 / dt;
-          const bn = Math.min(fMax, 1 / period);
-          if (betate === 0) {
-            if (step >= 200) {
-              betate = Math.min(1e-4 / dt, bn);
-              adyrelFirst = 1;
-            }
-          } else if (adyrelFirst === 1) {
-            betate = bn;
-            adyrelFirst = 2;
-          } else {
-            const half = 0.5 * betate;
-            betate = Math.min(betate, bn);
-            betate = Math.max(betate, half);
-          }
-        }
-        tKePeriod = t;
-      }
+      stepEnerW0(adyrel, { ke, ie: lastPsiStep, dt, ncycle: step });
     }
     if (
       controls.kineticDamping &&

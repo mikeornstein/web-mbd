@@ -70,7 +70,7 @@ export const LAW_CARD_DUMP_LINES: readonly string[] = [
   `  Gapmin  = ${CONTACT_KISS} m  # CONTACT_KISS = max(2*H0, 1e-4)`,
   "  WARN_LAM= 2",
   "  /PROP   N=1  Ismstr=10  Ishell=1 (Belytschko)  Ithick=1",
-  "  Contact : TYPE19-class Gapmin=CONTACT_KISS node-node (not bitwise /INTER/TYPE19)",
+  "  Contact : TYPE19-class Gapmin=CONTACT_KISS (dynamic node-node; QS node-segment TYPE7 analogue; not bitwise /INTER/TYPE19)",
   "  /PLOAD  0 → 65000 Pa in 0.04 s (dynamic-pload-40ms; not MONVOL; not ABC QS)",
   "  /PLOAD  0 → 65000 Pa in 0.40 s (qs-ish-pload-400ms; p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)",
 ];

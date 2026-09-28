@@ -36,6 +36,8 @@ test("research catalog exposes inflate A/B/C and QS-ish with labeled validation"
   expect(qsModel.law.tRamp).toBe(0.4);
   expect(qsModel.law.mu1).toBe(model.law.mu1);
   expect(qsModel.law.rho).toBe(model.law.rho);
+  expect(qsModel.controls.contactKind).toBe("node-segment");
+  expect(model.controls.contactKind).toBe("node-node");
 
   const b = getResearchStockModel("inflate-b-desmopan");
   expect(b.kind).toBe("inflate-nh-membrane");

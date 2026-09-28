@@ -197,7 +197,7 @@ export function accumulateCstForces(
   f: Float64Array,
   mu: number = MU,
   h0: number = H0,
-): { lam1: number; lam2: number } {
+): { lam1: number; lam2: number; W: number } {
   const { i, j, k, A0, inv } = rest;
   const x0x = coords[i * 3]!,
     x0y = coords[i * 3 + 1]!,
@@ -270,7 +270,9 @@ export function accumulateCstForces(
   f[k * 3]! -= g2x;
   f[k * 3 + 1]! -= g2y;
   f[k * 3 + 2]! -= g2z;
-  return { lam1, lam2 };
+  const I1 = lam1 * lam1 + lam2 * lam2 + lam3 * lam3;
+  const W = 0.5 * mu * (I1 - 3) * h0 * A0;
+  return { lam1, lam2, W };
 }
 
 /** Follower pressure consistent with V = Σ a·(b×c)/6: f = p ∂V/∂x. */

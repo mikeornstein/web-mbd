@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { H0, MU, WARN_LAM } from "../inflate/constants.js";
 import { membranePsi, restI1PlaneStress } from "./materialNeoHookean.js";
-import { accumulateCstForces, buildCstRest, cstSample } from "./membraneCst.js";
+import { accumulateCstForces, accumulatePressureTri, buildCstRest, cstSample } from "./membraneCst.js";
+import { enclosedVolume, loadShipMeshA } from "../inflate/meshA.js";
 
 describe("neo-Hookean membrane constitutive", () => {
   it("is zero at the identity (Ψ ≈ 0, I1 = 3)", () => {
@@ -49,5 +50,32 @@ describe("neo-Hookean membrane constitutive", () => {
 
   it("does not treat WARN_LAM as a constitutive knob", () => {
     expect(WARN_LAM).toBe(2);
+  });
+
+  it("PLOAD tet gradient matches p ∂V/∂x on the closed ship-A surface", () => {
+    const mesh = loadShipMeshA();
+    const x = Float64Array.from(mesh.coords);
+    const p = 2500;
+    const f = new Float64Array(x.length);
+    for (let e = 0; e < mesh.nQuads; e++) {
+      const i0 = mesh.quads[e * 4]!,
+        i1 = mesh.quads[e * 4 + 1]!,
+        i2 = mesh.quads[e * 4 + 2]!,
+        i3 = mesh.quads[e * 4 + 3]!;
+      accumulatePressureTri(x, i0, i1, i2, p, f);
+      accumulatePressureTri(x, i0, i2, i3, p, f);
+    }
+    const h = 1e-8;
+    const dofs = [0, 1, 2, 17 * 3 + 1, 400 * 3 + 2, 1553 * 3];
+    for (const dof of dofs) {
+      const plus = Float64Array.from(x);
+      const minus = Float64Array.from(x);
+      plus[dof]! += h;
+      minus[dof]! -= h;
+      const dV =
+        (enclosedVolume(plus, mesh.quads, mesh.tris) - enclosedVolume(minus, mesh.quads, mesh.tris)) /
+        (2 * h);
+      expect(f[dof]!).toBeCloseTo(p * dV, 6);
+    }
   });
 });

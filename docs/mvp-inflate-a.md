@@ -23,7 +23,7 @@ solver.
 - Plane-stress neo-Hookean CST membrane (`materialNeoHookean.ts`, `membraneCst.ts`)
 - Letter-A shell mesh from inflation-abc `meshes/A.json` (Design-PASS quad; 28 orphan `faceTris` paired → 14 quads; NUMELC=1554, NUMELTG=0)
 - `/PLOAD` follower + Rayleigh α=80 + Underwood `/ADYREL` analogue
-- TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): node-node soft-press with **honest post-press viol**. A node-to-segment analogue moved λ/V outside Themis bands vs the PR#8 TYPE19 desk, so it is not the default. **Not** bitwise OpenRadioss `/INTER/TYPE19`
+- TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): dynamic **node-node** soft-press (PR#8 desk). QS-ish **node-segment** TYPE7 analogue so staggered hole/leg faces cannot pass through. Same Gapmin; honest post-press viol. **Not** bitwise OpenRadioss `/INTER/TYPE19`
 - Inflate metrics at first ANIM-stride sample with λ_max ≥ 2
 - Letters B/C playable from inflation-abc ship meshes; leftover unpaired cap triangles kept as constant-strain triangles
 - Labeled `qs-ish-pload-400ms` toy path; Radioss QS-ish golden filled (p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)
@@ -113,10 +113,10 @@ golden still happens offline on a desk with linux64 OpenRadioss (AGPL).
 | A constitutive Ψ≥0, rest Ψ≈0, λ₃ condensed | PASS on this path |
 | B warn freeze at first λ≥2 | PASS (ANIM-stride, labeled) |
 | C V and p reported | PASS |
-| D kiss / no punch-through | TYPE19-class Gapmin=CONTACT_KISS node-node soft-press; honest post-press viol. Node-to-segment analogue failed Themis bands vs PR#8. **Not** bitwise Radioss TYPE19 |
-| E same-class vs Radioss dynamic golden | PASS for `dynamic-pload-40ms`. **QS-ish `qs-ish-pload-400ms` filled** (p@λ≥2 ≈ 27.6 kPa). ABC ~54 kPa is not a load-schedule result on this film |
+| D kiss / no punch-through | TYPE19-class Gapmin=CONTACT_KISS; dynamic node-node; QS node-segment TYPE7 analogue; honest post-press viol. **Not** bitwise Radioss TYPE19 |
+| E same-class vs Radioss dynamic golden | PASS for `dynamic-pload-40ms`. **QS-ish `qs-ish-pload-400ms` filled** (p@λ≥2 ≈ 27.6 kPa). Green QS (`pnpm compare:inflate:qs` exit 0) is required. ABC ~54 kPa is not a load-schedule result on this film |
 | Letters B/C | Playable; same μ/ρ/H0/kiss/warn; OpenRadioss goldens NOT-YET (no tapes) |
 | Mesh refine ladder | NOT-YET (PR#9) |
-| `/ADYREL` bitwise | NOT-YET — Underwood residual-velocity scale is an analogue, not the Radioss engine keyword |
+| `/ADYREL` bitwise | NOT-YET — dynamic Underwood analogue; QS ENER_W0+ISTAT=1 as written, not the engine keyword |
 | Engineering Review pack | Filed at [`engineering-review-inflate-a.md`](engineering-review-inflate-a.md). Aletheia cleared by Zeus for this ingest |
 | Pages / done-live | NOT-YET (do not publish Pages) |

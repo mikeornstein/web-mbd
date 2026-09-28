@@ -113,8 +113,9 @@ What would make a false PASS:
 - Hashing a different mesh and calling it ship A.
 - Counting kiss violations **before** the projection and calling them zero
   after. (Mitigation: viol is post-press.)
-- Shipping a node-to-segment analogue that misses the PR#8 TYPE19 desk
-  bands and calling it same-class.
+- Shipping a node-to-segment analogue **as the dynamic default** that misses
+  the PR#8 TYPE19 desk bands and calling it same-class. (QS-ish uses
+  node-segment; dynamic stays node-node.)
 - Checking in a hand-written “Radioss” QS JSON with no engine run.
 - Shipping dead p=54100 Pa after it CFL-exploded on Radioss.
 
@@ -138,9 +139,9 @@ golden from inflation-abc PR#11; compare CLI exit 1 on mismatch.
 | Underwood scale | 0.18 at kinetic-energy peaks | `/ADYREL` **analogue**; full reset overdamps vs PR#8 | not on the LAW42 card |
 | Rayleigh α | 80 1/s | Starter `/DAMP` | ρ unchanged |
 | `/PLOAD` QS-ish | 0 → 65 kPa / 400 ms | inflation-abc PR#11; p@λ≥2 ≈ 27.6 kPa | not ABC 54 kPa |
-| QS `/ADYREL` analogue | adaptive `/DYREL` A-update (static.F ISTAT=1) × 1.5 | Underwood 0.18 every peak overdamps the 400 ms run | not on the LAW42 card |
+| QS `/ADYREL` analogue | OpenRadioss ENER_W0 BETATE + ISTAT=1 A-update (DT12); **no** invented 1.5× gain | `/DAMP` α=80 kept; Underwood 0.18 is dynamic-only | not on the LAW42 card |
 | QS dead p | 54100 Pa | **Ruled out** — CFL-explodes on Radioss | do not vendor; do not chase with μ |
-| Kiss algorithm | node-node Gapmin projection | TYPE19-**class** Gapmin=CONTACT_KISS; node-to-segment analogue failed Themis bands vs PR#8 TYPE19 desk | — |
+| Kiss algorithm | dynamic: node-node; QS: node-segment Gapmin=CONTACT_KISS | TYPE19-**class**; QS TYPE7 analogue so staggered A-hole/leg faces cannot pass through. Gapmin not weakened. Not bitwise TYPE19 | — |
 
 No μ or ρ retune between the dynamic golden PASS and this follow-up.
 
@@ -152,11 +153,11 @@ No μ or ρ retune between the dynamic golden PASS and this follow-up.
 | --- | --- | --- |
 | Dynamic letter-A toy vs PR#8 golden inside λ 2% / V 5% / p 5% | **High** | Machine gate `pnpm compare:inflate`; Themis desk PASS on head 8223978 |
 | Constitutive lock (μ, H0, λ₃ = 1/(λ₁λ₂), Ψ ≥ 0 at rest) | **High** | Unit kernel + golden law Object.is |
-| TYPE19-class kiss stops punch-through on the dynamic tape | **Medium** | Post-press viol; node-node Gapmin (node-to-segment analogue failed bands vs PR#8) |
+| TYPE19-class kiss stops punch-through on the dynamic tape | **Medium** | Post-press viol; node-node Gapmin on dynamic (QS uses node-segment TYPE7 analogue; same Gapmin) |
 | ABC quasi-static ~54 kPa apples | **Low** | Not a load-schedule result on this film. QS-ish p@λ≥2 ≈ 27.6 kPa |
-| `qs-ish-pload-400ms` vs filled Radioss tape | **Medium** | Law/mesh/family lock. λ in 2% band. V/p not yet (no μ retune). `compare:inflate:qs` exit 1 |
+| `qs-ish-pload-400ms` vs filled Radioss tape | **Medium** | Law/mesh/family lock. Green QS (`compare:inflate:qs` exit 0) is still required; not waived. |
 | Letters B/C vs Radioss | **Low** | Playable; no tapes. Leftover cap triangles are CST, not SH3N Radioss |
-| `/ADYREL` bitwise | **Low** | Underwood analogue only |
+| `/ADYREL` bitwise | **Low** | Dynamic: Underwood analogue. QS: ENER_W0 + ISTAT=1 as written, not the engine keyword |
 | Pages / done-live | **Low** | Explicitly NOT-YET |
 
 ---
@@ -167,7 +168,7 @@ No μ or ρ retune between the dynamic golden PASS and this follow-up.
 pnpm install
 pnpm lint && pnpm typecheck && pnpm test
 pnpm compare:inflate      # must exit 0 (dynamic)
-pnpm compare:inflate:qs   # filled qs-ish-pload-400ms; λ in band, V/p not yet
+pnpm compare:inflate:qs   # must exit 0 vs filled qs-ish-pload-400ms (Themis green-QS)
 pnpm test:e2e
 ```
 

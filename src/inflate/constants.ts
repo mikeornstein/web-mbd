@@ -40,12 +40,13 @@ export const CONTACT_ENGAGE = 0.003;
 /**
  * Contact class implemented in the toy. OpenRadioss `/INTER/TYPE19` is
  * TYPE7 (node-to-surface) + TYPE11 (edge-to-edge) with Igap=4, Irem_gap=2,
- * Inacti=6. The toy uses the same CONTACT_KISS Gapmin with a node-node
- * soft-press (the response that stays in Themis bands vs the PR#8 TYPE19
- * desk). A node-to-segment analogue was tried and failed those bands — not
- * the default. Not bitwise TYPE19.
+ * Inacti=6. Same CONTACT_KISS Gapmin. Dynamic tape uses node-node (the
+ * response that stays in Themis bands vs the PR#8 TYPE19 desk). QS-ish
+ * uses a node-to-segment TYPE7 analogue so staggered hole/leg faces cannot
+ * pass through; Gapmin is not weakened. Not bitwise TYPE19.
  */
 export const CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE = "type19-class-gapmin-node-node";
+export const CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT = "type19-class-gapmin-node-segment";
 
 export const LOAD_FAMILY_DYNAMIC_PLOAD_40MS = "dynamic-pload-40ms";
 
@@ -86,16 +87,9 @@ export const RAYLEIGH_ALPHA = 80;
  * Underwood residual-velocity scale at kinetic-energy peaks.
  * Explicit analogue of engine `/ADYREL` (not a μ/ρ lever; not on the LAW42 card).
  * Full reset (0) overdamps vs the PR#8 desk; 0.18 lands the ANIM-stride freeze
- * on the same load family without touching MU.
+ * on the same load family without touching MU. Dynamic path only.
  */
 export const ADYREL_VELOCITY_SCALE = 0.18;
-
-/**
- * QS-ish `/ADYREL` analogue gain on OpenRadioss BETATE (static.F ISTAT=1).
- * 1 = formula as written; 1.5 lands λ nearer the 400 ms tape without touching μ.
- * Not on the LAW42 card. Not bitwise `/ADYREL`.
- */
-export const ADYREL_BETATE_GAIN_QS_ISH = 1.5;
 
 export const MU_LABEL = "grill eng. μ = (800 * 6894.757) / 1.75 ; not invented";
 export const RHO_LABEL =

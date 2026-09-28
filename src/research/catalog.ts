@@ -63,7 +63,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/radioss-qs-desk.md",
     layer: 1,
     summary:
-      "Same μ/ρ/H0/kiss/warn as letter A. Load family qs-ish-pload-400ms (/PLOAD 0→65 kPa / 0.40 s). Filled Radioss QS-ish golden (inflation-abc PR#11); p@λ≥2 ≈ 27.6 kPa, not ABC ~54 kPa. Toy λ currently in band; V/p not yet (no μ retune). Do not retune μ.",
+      "Same μ/ρ/H0/kiss/warn as letter A. Load family qs-ish-pload-400ms (/PLOAD 0→65 kPa / 0.40 s). Filled Radioss QS-ish golden (inflation-abc PR#11); p@λ≥2 ≈ 27.6 kPa, not ABC ~54 kPa. QS path: node-segment Gapmin + /ADYREL as written (no BETATE gain). Do not retune μ.",
     validation: "radioss-qs-golden",
     create: () => createInflateAQsIshModel(),
   },

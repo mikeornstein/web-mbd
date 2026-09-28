@@ -55,6 +55,7 @@ function createInflateLetterModel(
       kineticDampingScale: ADYREL_VELOCITY_SCALE,
       kineticDampingMinInterval: 0,
       adaptiveRelaxation: qs,
+      contactKind: qs ? "node-segment" : "node-node",
     },
   };
 }

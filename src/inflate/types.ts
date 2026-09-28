@@ -1,6 +1,7 @@
 import type { EnergySample } from "../ir/types.js";
 import type {
   CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
+  CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT,
   LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
   LOAD_FAMILY_QS_ISH_PLOAD_400MS,
 } from "./constants.js";
@@ -16,7 +17,11 @@ export type InflateValidationStatus =
   | "radioss-qs-golden"
   | "playable-not-yet-radioss";
 
-export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
+export type InflateContactClass =
+  | typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE
+  | typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT;
+
+export type InflateKissKind = "node-node" | "node-segment";
 
 export interface InflateLawCard {
   mu1: number;
@@ -76,9 +81,15 @@ export interface InflateModelIR {
     kineticDampingMinInterval: number;
     /**
      * Engine `/ADYREL` analogue: adaptive `/DYREL` acceleration update
-     * (OpenRadioss `static.F` ISTAT=1). QS-ish only. Not bitwise `/ADYREL`.
+     * (OpenRadioss `static.F` ISTAT=1, ENER_W0 BETATE as written). QS-ish
+     * only. Not bitwise `/ADYREL`. No invented BETATE gain.
      */
     adaptiveRelaxation: boolean;
+    /**
+     * TYPE19-class Gapmin pairing. `node-node` is the dynamic PR#8 desk
+     * path. `node-segment` is the QS TYPE7 analogue (same CONTACT_KISS).
+     */
+    contactKind: InflateKissKind;
   };
 }
 
