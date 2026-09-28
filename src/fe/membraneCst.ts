@@ -340,7 +340,8 @@ export function buildQ4Rest(
   };
 }
 
-/** 1-GP Q4 neo-Hookean. ∂x/∂ξ, ∂x/∂η at the element center; f = −∂W/∂x. */
+/** 1-GP Q4 neo-Hookean. Not assembled: 1-GP has hourglass modes (Radioss BT
+ * ships hourglass control; do not invent a gain). Kept FD-checked. */
 export function accumulateQ4Forces(
   coords: ArrayLike<number>,
   rest: Q4Rest,
