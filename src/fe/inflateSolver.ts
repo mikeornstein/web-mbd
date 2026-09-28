@@ -1,6 +1,12 @@
 import { applyAdyrelAcceleration, createAdyrelState, stepEnerW0 } from "./adyrel.js";
-import { applyKissProjection, buildVertexStar2, punchedThrough } from "./contactKiss.js";
+import {
+  applyKissProjection,
+  buildKissSegmentCache,
+  buildVertexStar2,
+  punchedThrough,
+} from "./contactKiss.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
+import { accumulateHingeForces, buildShellHinges } from "./shellHinge.js";
 import {
   accumulateCstForces,
   accumulatePressureTri,
@@ -119,6 +125,9 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let kePrev2 = 0;
   const contactKind = controls.contactKind;
   const star2 = buildVertexStar2(mesh.quads, nNodes, mesh.tris);
+  const kissSegments = contactKind === "node-segment" ? buildKissSegmentCache(mesh.quads, mesh.tris) : undefined;
+  const hinges =
+    contactKind === "node-segment" ? buildShellHinges(mesh.coords, rests, law.mu1, law.h0, law.nu) : [];
   let lastKiss: {
     pushed: number;
     minGap: number;
@@ -207,6 +216,9 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       psiStep += W;
       accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
     }
+    for (const hinge of hinges) {
+      psiStep += accumulateHingeForces(x, hinge, f);
+    }
     if (alpha > 0) {
       for (let i = 0; i < nNodes; i++) {
         const m = masses[i]!;
@@ -270,6 +282,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       kiss: law.gapMin,
       kind: contactKind,
       star2,
+      ...(kissSegments ? { segments: kissSegments } : {}),
     });
     t += dt;
     step += 1;
