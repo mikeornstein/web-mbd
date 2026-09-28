@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-test("letters B/C and QS-ish A load in pre with locks and NOT-YET goldens", async ({ page }) => {
+test("letters B/C and QS-ish A load in pre with locks and labeled goldens", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "web-mbd" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Load Letter A inflate (QS-ish dead pressure)" }).click();
+  await page.getByRole("button", { name: "Load Letter A inflate (QS-ish 400 ms PLOAD)" }).click();
   await expect(page.getByRole("heading", { name: "Pre — model inspection" })).toBeVisible();
   await expect(page.getByText("inflate-a-qs-ish")).toBeVisible();
-  await expect(page.getByLabel("Model tree").getByText("qs-ish-dead-pressure", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Radioss QS EMPTY/)).toBeVisible();
+  await expect(page.getByLabel("Model tree").getByText("qs-ish-pload-400ms", { exact: true })).toBeVisible();
+  await expect(page.getByText(/p@λ≥2 ≈ 27\.6 kPa, not ABC 54 kPa/)).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(page.getByText(/TYPE19-class Gapmin/)).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });

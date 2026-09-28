@@ -1,40 +1,43 @@
-# OpenRadioss quasi-static desk tape (EMPTY)
+# OpenRadioss quasi-static-ish desk tape (`qs-ish-pload-400ms`)
 
-This repository does **not** ship an OpenRadioss quasi-static (QS) golden for
-letter A. The checked-in file
-`src/oracle/inflate-a-radioss-qs-golden.json` is **EMPTY** and **FAIL-closed**.
+Checked-in golden: `src/oracle/inflate-a-radioss-qs-golden.json` (`status: filled`).
+Source: inflation-abc PR #11, desk `radioss/A-inflate-qs-ish`, branch
+`cursor/openradioss-a-qs-ish-b1bc`. OpenRadioss AGPL stays offline — JSON only.
 
-`pnpm compare:inflate` stays the **dynamic** gate (`dynamic-pload-40ms`) and
-must remain exit 0. `pnpm compare:inflate:qs` exits 1 until this file is
-filled from a real offline engine run.
+Load family **`qs-ish-pload-400ms`**: `/PLOAD` 0 → 65 kPa in 0.40 s + `/ADYREL`.
+Same LAW42 μ, ρ, H0, mesh fingerprint `d9c56487` as `dynamic-pload-40ms`.
+**No μ/ρ retune.**
 
-## Why EMPTY
+## Warn freeze (first λ ≥ 2)
 
-PR#8 (`radioss-desk-pr8-quadir`, branch `cursor/openradioss-a-inflate-0e92`)
-is a **dynamic** `/PLOAD` 0 → 65 kPa in 40 ms with `/ADYREL`. At first
-animation frame with stretch λ ≥ 2 the desk pressure is ~36 kPa. Inflation ABC
-quasi-static warn is ~54.1 kPa (P_WARN_ABC). Those are different load
-families. Closing the gap by changing μ (shear modulus) or ρ (mass density)
-is forbidden.
+| Qty | Radioss QS-ish golden |
+| --- | --- |
+| t | 0.170001 s (frame 34) |
+| λ_max | 2.327123518375924 |
+| p | 27625.1625 Pa |
+| V | 752.6256176704242 mL |
+| Ψ | 8.042896684001748 J (≥ 0) |
+| punch | false |
 
-This cloud box has no OpenRadioss binary. Inventing a QS ANIM (animation)
-tape would be a fake golden.
+`pnpm compare:inflate:qs` compares this family. Desk today: λ inside 2%;
+V/p not yet (no μ retune). `pnpm compare:inflate` (dynamic) stays the green
+CI gate.
 
-## What to run on a desk (when linux64 OpenRadioss is available)
+## What this is not
 
-Reuse the PR#8 LAW42 card and letter-A quad mesh. Do **not** retune μ.
+ABC ship warn ~54.1 kPa (`P_WARN_ABC`) is **not** a load-schedule result on
+this film. 10× slower PLOAD moved p@λ≥2 **down** (36 → 28 kPa), away from
+54 kPa. Reaching 54 kPa at first λ_max ≥ 2 would require a μ/kinematics
+change, which is forbidden.
 
-Suggested engine intent (label the deck `qs-ish-dead-pressure`):
+Dead p = 54100 Pa **CFL-explodes** on Radioss (`forks/dead-pressure`). Do not
+vendor that dump. Do not retune μ to chase ~54 kPa. A toy still on
+`qs-ish-dead-pressure` at 54100 Pa would fail the p band vs this golden
+(~49%) — that is the honest FAIL.
+
+## Reproduce (desk linux64 OpenRadioss)
 
 1. Same `/MAT/LAW42` μ₁ = (800 × 6894.757) / 1.75 Pa, α₁ = 2, ρ = 1130 kg/m³.
 2. Same `/PROP` shell, H0 = 0.381 mm, `/INTER/TYPE19` Gapmin = CONTACT_KISS.
-3. Replace the 40 ms ramp with a **dead** (or very slow) pressure at 54.1 kPa,
-   or a true quasi-static / AMS (Advanced Mass Scaling) schedule if the desk
-   already has one. Do not invent μ to hit 54 kPa on the dynamic tape.
-4. ANIM_DT = 0.002 s. Freeze the first frame with λ_max ≥ 2.
-5. Record λ_max, enclosed V (mL), p (Pa), Ψ (J), mesh fingerprint `d9c56487`.
-6. Set `status` to `"filled"`, `provenance.source` to `"openradioss"`, and
-   populate `warn` with those numbers.
-
-Until that tape exists, Themis must **not** grade ABC QS apples-to-apples.
-The toy path `qs-ish-dead-pressure` is playable and labeled.
+3. `/PLOAD` 0 → 65000 Pa in 0.40 s. `/ADYREL`. ANIM_DT = 0.005 s.
+4. Freeze the first frame with λ_max ≥ 2. Do not invent μ.

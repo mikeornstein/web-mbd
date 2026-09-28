@@ -1,5 +1,5 @@
 import { applyKissProjection, punchedThrough } from "./contactKiss.js";
-import { CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE } from "../inflate/constants.js";
+import { ADYREL_BETATE_GAIN_QS_ISH, CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE } from "../inflate/constants.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
 import {
   accumulateCstForces,
@@ -125,6 +125,12 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const maxSteps = controls.maxSteps;
   const maxWallMs = options.maxWallMs ?? 180_000;
   const alpha = law.rayleighAlpha;
+  const keInterval = controls.kineticDampingMinInterval;
+  let tKeDamp = -Infinity;
+  /** Adaptive `/DYREL` β (1/s) — OpenRadioss ENER_W0 / STATIC ISTAT=1 analogue. */
+  let betate = 0;
+  let tKePeriod = 0;
+  let adyrelFirst = 0;
 
   const measure = (): {
     lambdaMax: number;
@@ -237,6 +243,17 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       acc[i * 3 + 2] = f[i * 3 + 2]! * rtmp;
     }
     recomputeDt();
+    if (controls.adaptiveRelaxation && betate > 0) {
+      const beta = betate * ADYREL_BETATE_GAIN_QS_ISH;
+      const omega = beta * dt;
+      const uomega = 1 - omega;
+      const domega = 2 * beta;
+      for (let i = 0; i < nNodes; i++) {
+        acc[i * 3]! = uomega * acc[i * 3]! - domega * v[i * 3]!;
+        acc[i * 3 + 1]! = uomega * acc[i * 3 + 1]! - domega * v[i * 3 + 1]!;
+        acc[i * 3 + 2]! = uomega * acc[i * 3 + 2]! - domega * v[i * 3 + 2]!;
+      }
+    }
     const dt12 = 0.5 * (dt1 + dt);
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
@@ -257,7 +274,41 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         vz = v[i * 3 + 2]!;
       ke += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
     }
-    if (controls.kineticDamping && ke < kePrev && kePrev >= kePrev2 && kePrev > 0 && t > dt) {
+    if (controls.adaptiveRelaxation) {
+      if (step === 200 && betate === 0 && dt > 0) {
+        betate = 1e-4 / dt;
+        adyrelFirst = 1;
+      }
+      if (ke < kePrev && kePrev >= kePrev2 && kePrev > 0 && t > dt) {
+        const period = t - tKePeriod;
+        if (tKePeriod > 0 && period > 0 && dt > 0) {
+          const fMax = 0.01 / dt;
+          const bn = Math.min(fMax, 1 / period);
+          if (betate === 0) {
+            if (step >= 200) {
+              betate = Math.min(1e-4 / dt, bn);
+              adyrelFirst = 1;
+            }
+          } else if (adyrelFirst === 1) {
+            betate = bn;
+            adyrelFirst = 2;
+          } else {
+            const half = 0.5 * betate;
+            betate = Math.min(betate, bn);
+            betate = Math.max(betate, half);
+          }
+        }
+        tKePeriod = t;
+      }
+    }
+    if (
+      controls.kineticDamping &&
+      ke < kePrev &&
+      kePrev >= kePrev2 &&
+      kePrev > 0 &&
+      t > dt &&
+      t - tKeDamp >= keInterval
+    ) {
       const scale = controls.kineticDampingScale;
       if (scale === 0) {
         v.fill(0);
@@ -266,6 +317,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         for (let i = 0; i < v.length; i++) v[i]! *= scale;
         ke *= scale * scale;
       }
+      tKeDamp = t;
     }
     kePrev2 = kePrev;
     kePrev = ke;

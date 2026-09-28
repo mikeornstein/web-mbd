@@ -52,10 +52,10 @@ pnpm test:e2e      # Playwright proof of the same path
 Second stock family: letters **A / B / C** neo-Hookean inflate. Locked μ/ρ/H0;
 load family **`dynamic-pload-40ms`** is the filled OpenRadioss golden (PR#8
 `/PLOAD` 0→65 kPa / 40 ms — not ABC QS ~54 kPa). A labeled
-**`qs-ish-dead-pressure`** path exists; its Radioss golden is **EMPTY** /
-FAIL-closed. B/C are playable with the same constitutive locks; no Radioss
-tapes yet. Default view shows **mesh edges**. OpenRadioss stays offline: the
-Pages app never bundles the AGPL solver. See
+**`qs-ish-pload-400ms`** path matches a filled Radioss QS-ish golden (p@λ≥2 ≈
+27.6 kPa, not 54 kPa). B/C are playable with the same constitutive locks; no
+Radioss tapes yet. Default view shows **mesh edges**. OpenRadioss stays
+offline: the Pages app never bundles the AGPL solver. See
 [`docs/mvp-inflate-a.md`](docs/mvp-inflate-a.md) and
 [`docs/engineering-review-inflate-a.md`](docs/engineering-review-inflate-a.md).
 

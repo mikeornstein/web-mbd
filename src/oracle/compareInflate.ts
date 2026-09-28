@@ -170,7 +170,7 @@ const EMPTY_QS_REASON =
 /**
  * Quasi-static-ish harness. EMPTY golden always FAIL-closes. A filled tape
  * uses the same λ/V/p bands as the dynamic gate, on load family
- * qs-ish-dead-pressure only.
+ * qs-ish-pload-400ms only. Do not compare to ABC ~54 kPa.
  */
 export function compareInflateToQsGolden(
   toy: Pick<InflateSolveMetrics, "warn" | "loadFamily" | "meshFingerprint" | "punchedThrough" | "psi_J"> & {

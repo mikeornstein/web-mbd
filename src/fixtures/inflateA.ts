@@ -1,6 +1,7 @@
 import {
   ADYREL_VELOCITY_SCALE,
   ANIM_DT,
+  ANIM_DT_QS_ISH,
   T_END,
   T_END_QS_ISH,
 } from "../inflate/constants.js";
@@ -33,7 +34,7 @@ function createInflateLetterModel(
   const law = qs ? lockedLawCardQsIsh() : lockedLawCard();
   const name = qs ? `inflate-${letter.toLowerCase()}-qs-ish` : `inflate-${letter.toLowerCase()}-desmopan`;
   const loadNote = qs
-    ? `Load family qs-ish-dead-pressure (dead p = 54100 Pa, ABC warn class). Radioss QS golden EMPTY / FAIL-closed. Not apples with dynamic-pload-40ms. Do not retune μ.`
+    ? `Load family qs-ish-pload-400ms (/PLOAD 0→65 kPa / 0.40 s + /ADYREL analogue). Radioss golden filled; p@λ≥2 ≈ 27.6 kPa, not ABC QS ~54 kPa. Dead p=54100 Pa CFL-explodes — not shipped. Do not retune μ.`
     : `Load family dynamic-pload-40ms (PR#8 /PLOAD 0→65 kPa / 40 ms) — not ABC QS ~54 kPa. Do not retune μ.`;
   return {
     kind: "inflate-nh-membrane",
@@ -49,9 +50,11 @@ function createInflateLetterModel(
       endTime: qs ? T_END_QS_ISH : T_END,
       cfl: 0.45,
       maxSteps: 2_000_000,
-      historyInterval: ANIM_DT,
-      kineticDamping: true,
+      historyInterval: qs ? ANIM_DT_QS_ISH : ANIM_DT,
+      kineticDamping: !qs,
       kineticDampingScale: ADYREL_VELOCITY_SCALE,
+      kineticDampingMinInterval: 0,
+      adaptiveRelaxation: qs,
     },
   };
 }

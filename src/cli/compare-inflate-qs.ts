@@ -2,7 +2,6 @@ import { createInflateAQsIshModel } from "../fixtures/inflateA.js";
 import { solveInflate } from "../fe/inflateSolver.js";
 import { compareInflateToQsGolden, formatInflateCompare } from "../oracle/compareInflate.js";
 import { assertQsGoldenLawMatchesLock, loadInflateQsGolden } from "../oracle/inflateGolden.js";
-import { LOAD_FAMILY_QS_ISH_DEAD_PRESSURE } from "../inflate/constants.js";
 
 function main(): void {
   assertQsGoldenLawMatchesLock();
@@ -14,7 +13,7 @@ function main(): void {
     const cmp = compareInflateToQsGolden(
       {
         warn: null,
-        loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+        loadFamily: model.law.loadFamily,
         meshFingerprint: model.mesh.fingerprint,
         punchedThrough: false,
         psi_J: 0,

@@ -5,12 +5,11 @@ import {
   H0,
   IFORM,
   LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
-  LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+  LOAD_FAMILY_QS_ISH_PLOAD_400MS,
   MU,
   MU_OTHER,
   NU,
   P_MAX,
-  P_WARN_ABC,
   PRONY_M,
   RAYLEIGH_ALPHA,
   RHO,
@@ -48,12 +47,12 @@ export function lockedLawCard(): InflateLawCard {
   };
 }
 
-/** Same μ/ρ/H0/kiss/warn. Dead pressure at ABC ~54.1 kPa. Not a μ retune. */
+/** Same μ/ρ/H0/kiss/warn. `/PLOAD` 0→65 kPa in 0.40 s. Not a μ retune. */
 export function lockedLawCardQsIsh(): InflateLawCard {
   return {
     ...constitutiveLocks(),
-    loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
-    pMax: P_WARN_ABC,
+    loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
+    pMax: P_MAX,
     tRamp: T_RAMP_QS_ISH,
   };
 }
@@ -73,6 +72,7 @@ export const LAW_CARD_DUMP_LINES: readonly string[] = [
   "  /PROP   N=1  Ismstr=10  Ishell=1 (Belytschko)  Ithick=1",
   "  Contact : TYPE19-class Gapmin=CONTACT_KISS node-node (not bitwise /INTER/TYPE19)",
   "  /PLOAD  0 → 65000 Pa in 0.04 s (dynamic-pload-40ms; not MONVOL; not ABC QS)",
+  "  /PLOAD  0 → 65000 Pa in 0.40 s (qs-ish-pload-400ms; p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)",
 ];
 
 export function ploadAt(t: number, law: InflateLawCard = lockedLawCard()): number {

@@ -29,10 +29,11 @@ test("research catalog exposes inflate A/B/C and QS-ish with labeled validation"
   const qs = getResearchStockModel("inflate-a-qs-ish");
   expect(qs.kind).toBe("inflate-nh-membrane");
   if (qs.kind !== "inflate-nh-membrane") return;
-  expect(qs.validation).toBe("radioss-qs-empty");
+  expect(qs.validation).toBe("radioss-qs-golden");
   const qsModel = qs.create();
-  expect(qsModel.law.loadFamily).toBe("qs-ish-dead-pressure");
-  expect(qsModel.law.pMax).toBe(54100);
+  expect(qsModel.law.loadFamily).toBe("qs-ish-pload-400ms");
+  expect(qsModel.law.pMax).toBe(65000);
+  expect(qsModel.law.tRamp).toBe(0.4);
   expect(qsModel.law.mu1).toBe(model.law.mu1);
   expect(qsModel.law.rho).toBe(model.law.rho);
 

@@ -59,12 +59,12 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
   {
     kind: "inflate-nh-membrane",
     id: "inflate-a-qs-ish",
-    title: "Letter A inflate (QS-ish dead pressure)",
+    title: "Letter A inflate (QS-ish 400 ms PLOAD)",
     researchPath: "docs/radioss-qs-desk.md",
     layer: 1,
     summary:
-      "Same μ/ρ/H0/kiss/warn as letter A. Dead pressure at ABC ~54.1 kPa (qs-ish-dead-pressure). OpenRadioss QS golden EMPTY / FAIL-closed — not ABC QS apples.",
-    validation: "radioss-qs-empty",
+      "Same μ/ρ/H0/kiss/warn as letter A. Load family qs-ish-pload-400ms (/PLOAD 0→65 kPa / 0.40 s). Filled Radioss QS-ish golden (inflation-abc PR#11); p@λ≥2 ≈ 27.6 kPa, not ABC ~54 kPa. Toy λ currently in band; V/p not yet (no μ retune). Do not retune μ.",
+    validation: "radioss-qs-golden",
     create: () => createInflateAQsIshModel(),
   },
   {

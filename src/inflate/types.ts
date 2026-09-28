@@ -2,18 +2,18 @@ import type { EnergySample } from "../ir/types.js";
 import type {
   CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
   LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
-  LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+  LOAD_FAMILY_QS_ISH_PLOAD_400MS,
 } from "./constants.js";
 
 export type InflateLoadFamily =
   | typeof LOAD_FAMILY_DYNAMIC_PLOAD_40MS
-  | typeof LOAD_FAMILY_QS_ISH_DEAD_PRESSURE;
+  | typeof LOAD_FAMILY_QS_ISH_PLOAD_400MS;
 
 export type InflateLetter = "A" | "B" | "C";
 
 export type InflateValidationStatus =
   | "radioss-dynamic-golden"
-  | "radioss-qs-empty"
+  | "radioss-qs-golden"
   | "playable-not-yet-radioss";
 
 export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
@@ -66,10 +66,19 @@ export interface InflateModelIR {
     cfl: number;
     maxSteps: number;
     historyInterval: number;
-    /** When true, scale velocities at kinetic-energy peaks (/ADYREL analogue). */
+    /** When true, scale velocities at kinetic-energy peaks (Underwood /ADYREL analogue). */
     kineticDamping: boolean;
     /** Velocity scale at a KE peak. 0 = full reset (classic Underwood). */
     kineticDampingScale: number;
+    /**
+     * Minimum time between Underwood peaks. 0 = every local KE max (dynamic).
+     */
+    kineticDampingMinInterval: number;
+    /**
+     * Engine `/ADYREL` analogue: adaptive `/DYREL` acceleration update
+     * (OpenRadioss `static.F` ISTAT=1). QS-ish only. Not bitwise `/ADYREL`.
+     */
+    adaptiveRelaxation: boolean;
   };
 }
 
@@ -147,11 +156,11 @@ export interface RadiossInflateGolden {
   };
 }
 
-/** FAIL-closed until a desk OpenRadioss quasi-static tape exists. */
+/** FAIL-closed while status is EMPTY. Filled tape is qs-ish-pload-400ms. */
 export type RadiossQsGolden =
   | {
       status: "EMPTY";
-      loadFamily: typeof LOAD_FAMILY_QS_ISH_DEAD_PRESSURE;
+      loadFamily: typeof LOAD_FAMILY_QS_ISH_PLOAD_400MS;
       law: InflateLawCard;
       mesh: RadiossInflateGolden["mesh"];
       bands: RadiossInflateGolden["bands"];
@@ -164,5 +173,5 @@ export type RadiossQsGolden =
     }
   | (Omit<RadiossInflateGolden, "loadFamily"> & {
       status: "filled";
-      loadFamily: typeof LOAD_FAMILY_QS_ISH_DEAD_PRESSURE;
+      loadFamily: typeof LOAD_FAMILY_QS_ISH_PLOAD_400MS;
     });

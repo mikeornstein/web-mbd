@@ -2,7 +2,7 @@ import goldenRaw from "./inflate-a-radioss-golden.json" with { type: "json" };
 import qsGoldenRaw from "./inflate-a-radioss-qs-golden.json" with { type: "json" };
 import {
   LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
-  LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+  LOAD_FAMILY_QS_ISH_PLOAD_400MS,
 } from "../inflate/constants.js";
 import { lockedLawCard, lockedLawCardQsIsh } from "../inflate/lawCard.js";
 import type {
@@ -120,17 +120,17 @@ export function parseInflateQsGolden(raw: unknown): RadiossQsGolden {
     throw new Error("qs golden: missing sections");
   }
   const loadFamily = str(raw["loadFamily"], "loadFamily");
-  if (loadFamily !== LOAD_FAMILY_QS_ISH_DEAD_PRESSURE) {
+  if (loadFamily !== LOAD_FAMILY_QS_ISH_PLOAD_400MS) {
     throw new Error(`qs golden: loadFamily ${loadFamily}`);
   }
-  const law = parseLaw(raw["law"], LOAD_FAMILY_QS_ISH_DEAD_PRESSURE);
+  const law = parseLaw(raw["law"], LOAD_FAMILY_QS_ISH_PLOAD_400MS);
   const mesh = parseMesh(meshRaw);
   const bands = parseBands(bandsRaw);
   const provenanceNote = str(provenanceRaw["note"], "note");
   if (status === "EMPTY") {
     return {
       status: "EMPTY",
-      loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+      loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
       law,
       mesh,
       bands,
@@ -155,7 +155,7 @@ export function parseInflateQsGolden(raw: unknown): RadiossQsGolden {
       branch: str(provenanceRaw["branch"], "branch"),
       note: provenanceNote,
     },
-    loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+    loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
     law,
     mesh,
     warn: {

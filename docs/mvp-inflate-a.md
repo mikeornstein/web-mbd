@@ -26,7 +26,7 @@ solver.
 - TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): node-node soft-press with **honest post-press viol**. A node-to-segment analogue moved λ/V outside Themis bands vs the PR#8 TYPE19 desk, so it is not the default. **Not** bitwise OpenRadioss `/INTER/TYPE19`
 - Inflate metrics at first ANIM-stride sample with λ_max ≥ 2
 - Letters B/C playable from inflation-abc ship meshes; leftover unpaired cap triangles kept as constant-strain triangles
-- Labeled `qs-ish-dead-pressure` toy path; Radioss QS golden EMPTY / FAIL-closed
+- Labeled `qs-ish-pload-400ms` toy path; Radioss QS-ish golden filled (p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)
 
 Taylor J2 hex + rigid wall is unchanged.
 
@@ -58,9 +58,21 @@ At first ANIM frame with λ≥2 (frame 11, t≈0.022 s):
 | Ψ | 9.502 J (≥0) |
 
 This is **dynamic**, not ABC quasi-static warn (~54 kPa). Do not close that gap
-by changing μ. A QS-ish Radioss tape is still **EMPTY** (`inflate-a-radioss-qs-golden.json`,
-FAIL-closed). Toy path `qs-ish-dead-pressure` is labeled and uses dead p = 54100 Pa
-on the same constitutive card. See [`radioss-qs-desk.md`](radioss-qs-desk.md).
+by changing μ.
+
+A second filled tape is **`qs-ish-pload-400ms`**: `/PLOAD` 0 → 65 kPa in 0.40 s
++ `/ADYREL`. At first ANIM frame with λ≥2 (frame 34, t≈0.170 s):
+
+| Qty | Radioss QS-ish golden |
+| --- | --- |
+| λ_max | 2.327123518375924 |
+| p | 27625.1625 Pa |
+| V | 752.6256176704242 mL |
+| Ψ | 8.042896684001748 J (≥0) |
+
+10× slower PLOAD moved p@λ≥2 **down** (36 → 28 kPa), away from ABC ~54 kPa.
+Dead p = 54100 Pa CFL-explodes on Radioss — not shipped. See
+[`radioss-qs-desk.md`](radioss-qs-desk.md).
 
 ## Themis tooling gate
 
@@ -85,8 +97,8 @@ not a physics loophole.
 ```bash
 pnpm inflate          # headless solve + metrics JSON (letter A, dynamic-pload-40ms)
 pnpm compare:inflate  # machine-diff vs checked-in Radioss dynamic golden (exit 0/1)
-pnpm compare:inflate:qs  # FAIL-closed while qs golden is EMPTY (expected exit 1)
-pnpm inflate:qs       # toy qs-ish-dead-pressure path (not a Radioss apple)
+pnpm compare:inflate:qs  # machine-diff vs filled qs-ish-pload-400ms golden (exit 0/1)
+pnpm inflate:qs       # toy qs-ish-pload-400ms path
 pnpm test             # includes the inflate oracle gate
 pnpm dev              # workbench: load “Letter A inflate (neo-Hookean)”
 ```
@@ -102,9 +114,9 @@ golden still happens offline on a desk with linux64 OpenRadioss (AGPL).
 | B warn freeze at first λ≥2 | PASS (ANIM-stride, labeled) |
 | C V and p reported | PASS |
 | D kiss / no punch-through | TYPE19-class Gapmin=CONTACT_KISS node-node soft-press; honest post-press viol. Node-to-segment analogue failed Themis bands vs PR#8. **Not** bitwise Radioss TYPE19 |
-| E same-class vs Radioss dynamic golden | PASS for `dynamic-pload-40ms`. **QS apples vs ABC ~54 kPa still EMPTY** — labeled, μ not retuned |
+| E same-class vs Radioss dynamic golden | PASS for `dynamic-pload-40ms`. **QS-ish `qs-ish-pload-400ms` filled** (p@λ≥2 ≈ 27.6 kPa). ABC ~54 kPa is not a load-schedule result on this film |
 | Letters B/C | Playable; same μ/ρ/H0/kiss/warn; OpenRadioss goldens NOT-YET (no tapes) |
 | Mesh refine ladder | NOT-YET (PR#9) |
 | `/ADYREL` bitwise | NOT-YET — Underwood residual-velocity scale is an analogue, not the Radioss engine keyword |
-| Engineering Review pack | Filed at [`engineering-review-inflate-a.md`](engineering-review-inflate-a.md). Aletheia independent audit pending Zeus |
-| Pages / done-live | NOT-YET (Themis desk PASS on dynamic golden does not ship Pages) |
+| Engineering Review pack | Filed at [`engineering-review-inflate-a.md`](engineering-review-inflate-a.md). Aletheia cleared by Zeus for this ingest |
+| Pages / done-live | NOT-YET (do not publish Pages) |

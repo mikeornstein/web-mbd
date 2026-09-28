@@ -3,8 +3,8 @@ import { solveInflate } from "../fe/inflateSolver.js";
 import { solveExplicitAsync } from "../fe/solveAsync.js";
 import type { InflateModelIR, InflateSolveResult } from "../inflate/types.js";
 import type { EnergySample, ModelIR, SolveResult } from "../ir/types.js";
-import { compareInflateToGolden } from "../oracle/compareInflate.js";
-import { loadInflateGolden } from "../oracle/inflateGolden.js";
+import { compareInflateToGolden, compareInflateToQsGolden } from "../oracle/compareInflate.js";
+import { loadInflateGolden, loadInflateQsGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
   metricsPassAcceptance,
@@ -294,6 +294,7 @@ export function mountWorkbench(root: HTMLElement): void {
           await yieldToBrowser();
           progress.textContent = "Starting neo-Hookean inflate…";
           const result = solveInflate(loaded.model, {
+            maxWallMs: 600_000,
             onProgress: ({ t, endTime, step, lambdaMax }) => {
               progress.textContent = `t = ${(t * 1e3).toFixed(1)} / ${(endTime * 1e3).toFixed(1)} ms · λ_max=${lambdaMax.toFixed(3)} · ${String(step)} steps`;
             },
@@ -546,8 +547,8 @@ function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
       return "dynamic-pload-40ms · λ≤2% · V≤5% · p≤5%";
-    case "radioss-qs-empty":
-      return "qs-ish-dead-pressure · Radioss golden EMPTY / FAIL-closed";
+    case "radioss-qs-golden":
+      return "qs-ish-pload-400ms · Radioss golden filled · p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa";
     case "playable-not-yet-radioss":
       return "playable · OpenRadioss golden NOT-YET";
     default: {
@@ -594,8 +595,8 @@ function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { ki
         ["Load family", model.law.loadFamily],
         [
           "PLOAD",
-          model.law.loadFamily === "qs-ish-dead-pressure"
-            ? `dead ${model.law.pMax} Pa (qs-ish; ABC warn class; Radioss QS EMPTY)`
+          model.law.loadFamily === "qs-ish-pload-400ms"
+            ? `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (qs-ish-pload-400ms; p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)`
             : `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (dynamic; not ABC QS)`,
         ],
         [
@@ -718,12 +719,16 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
           gateEl.classList.toggle("fail", !cmp.ok);
           break;
         }
-        case "radioss-qs-empty":
-          gateEl.textContent =
-            "Acceptance gate: NOT-YET (Radioss QS golden EMPTY / FAIL-closed — not ABC QS apples)";
-          gateEl.classList.remove("pass");
-          gateEl.classList.add("fail");
+        case "radioss-qs-golden": {
+          const golden = loadInflateQsGolden();
+          const cmp = compareInflateToQsGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
+          gateEl.textContent = cmp.ok
+            ? "Acceptance gate: PASS (Radioss golden · qs-ish-pload-400ms · λ/V/p bands)"
+            : `Acceptance gate: FAIL vs Radioss QS golden (${cmp.reasons[0] ?? "see compare:inflate:qs"})`;
+          gateEl.classList.toggle("pass", cmp.ok);
+          gateEl.classList.toggle("fail", !cmp.ok);
           break;
+        }
         case "playable-not-yet-radioss":
           gateEl.textContent =
             "Acceptance gate: NOT-YET (playable; no OpenRadioss tape for this letter)";

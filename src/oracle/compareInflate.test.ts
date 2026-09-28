@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_DEAD_PRESSURE, MU, RHO, SHIP_SHELL_QUADS } from "../inflate/constants.js";
+import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_PLOAD_400MS, MU, RHO, SHIP_SHELL_QUADS } from "../inflate/constants.js";
 import { lockedLawCard, lockedLawCardQsIsh } from "../inflate/lawCard.js";
 import { enclosedVolume, loadShipMesh, loadShipMeshA } from "../inflate/meshA.js";
 import { compareInflateToGolden, compareInflateToQsGolden } from "./compareInflate.js";
@@ -95,7 +95,7 @@ describe("inflate Radioss golden + law card", () => {
     const qsSwap = compareInflateToGolden(
       {
         warn: { ...warn, p: 54100 },
-        loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+        loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
         meshFingerprint: golden.mesh.fingerprint,
         punchedThrough: false,
         psi_J: 9.5,
@@ -107,37 +107,68 @@ describe("inflate Radioss golden + law card", () => {
     expect(qsSwap.loadFamilyEqual).toBe(false);
   });
 
-  it("QS Radioss golden is EMPTY and FAIL-closed", () => {
+  it("QS Radioss golden is filled qs-ish-pload-400ms (not ABC 54 kPa)", () => {
     assertQsGoldenLawMatchesLock();
     const qs = loadInflateQsGolden();
-    expect(qs.status).toBe("EMPTY");
-    expect(qs.loadFamily).toBe(LOAD_FAMILY_QS_ISH_DEAD_PRESSURE);
+    expect(qs.status).toBe("filled");
+    expect(qs.loadFamily).toBe(LOAD_FAMILY_QS_ISH_PLOAD_400MS);
     expect(qs.law.mu1).toBe(MU);
     expect(qs.law.rho).toBe(RHO);
-    expect(qs.law.pMax).toBe(54100);
+    expect(qs.law.pMax).toBe(65_000);
+    expect(qs.law.tRamp).toBe(0.4);
+    expect(qs.law.mu1).toBe(lockedLawCard().mu1);
+    if (qs.status !== "filled") return;
+    expect(qs.warn.lambdaMax).toBe(2.327123518375924);
+    expect(qs.warn.p).toBe(27625.1625);
+    expect(qs.warn.volume_mL).toBe(752.6256176704242);
+    expect(qs.warn.psi_J).toBe(8.042896684001748);
+    expect(qs.warn.psi_J).toBeGreaterThanOrEqual(0);
+    expect(qs.provenance.source).toBe("openradioss");
+    expect(qs.provenance.note).toContain("Do not retune");
     const mesh = loadShipMeshA();
-    const closed = compareInflateToQsGolden(
+    const pass = compareInflateToQsGolden(
       {
         warn: {
-          frame: 1,
-          t: 0.01,
-          lambdaMax: 2.05,
-          p: 54100,
-          volume_mL: 900,
-          psi_J: 10,
+          frame: qs.warn.frame,
+          t: qs.warn.t,
+          lambdaMax: qs.warn.lambdaMax,
+          p: qs.warn.p,
+          volume_mL: qs.warn.volume_mL,
+          psi_J: qs.warn.psi_J,
           warn: true,
         },
-        loadFamily: LOAD_FAMILY_QS_ISH_DEAD_PRESSURE,
+        loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
         meshFingerprint: mesh.fingerprint,
         punchedThrough: false,
-        psi_J: 10,
+        psi_J: qs.warn.psi_J,
         law: lockedLawCardQsIsh(),
       },
       qs,
     );
-    expect(closed.ok).toBe(false);
-    expect(closed.reasons.some((r) => r.includes("EMPTY"))).toBe(true);
-    expect(closed.reasons.some((r) => r.includes("ABC QS apples"))).toBe(true);
+    expect(pass.ok).toBe(true);
+
+    const deadP = compareInflateToQsGolden(
+      {
+        warn: {
+          frame: qs.warn.frame,
+          t: qs.warn.t,
+          lambdaMax: qs.warn.lambdaMax,
+          p: 54100,
+          volume_mL: qs.warn.volume_mL,
+          psi_J: qs.warn.psi_J,
+          warn: true,
+        },
+        loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
+        meshFingerprint: mesh.fingerprint,
+        punchedThrough: false,
+        psi_J: qs.warn.psi_J,
+        law: lockedLawCardQsIsh(),
+      },
+      qs,
+    );
+    expect(deadP.ok).toBe(false);
+    expect(deadP.pressureRelError).not.toBeNull();
+    expect(deadP.pressureRelError ?? 0).toBeGreaterThan(0.05);
   });
 
   it("B and C ship meshes load with the same constitutive locks", () => {

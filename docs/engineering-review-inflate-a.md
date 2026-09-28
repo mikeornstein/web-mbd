@@ -4,8 +4,9 @@
 **Subject:** Inflation Sim letter-A (then B/C) neo-Hookean membrane inflate,
 validated by an **offline** OpenRadioss golden — not Radioss in the page.
 **Date:** 2026-09-28.
-**Status:** desk candidate on load family `dynamic-pload-40ms`. Pages / done-live
-**NOT-YET**. **Aletheia** independent audit is **pending Zeus**.
+**Status:** desk candidate on load families `dynamic-pload-40ms` and
+`qs-ish-pload-400ms`. Pages / done-live **NOT-YET**. **Aletheia** independent
+audit **cleared by Zeus** for this ingest (not a Pages publish).
 
 Acronyms are spelled out on first use (Mike A.S.S. rule: always spell the short
 stuff).
@@ -48,9 +49,11 @@ offline truth seat.
 | --- | --- |
 | Retune μ or ρ to close λ / V / p | Forbidden by the Chiron bar and this card |
 | Treat PR#8 ~36 kPa at warn as ABC quasi-static ~54 kPa | Different load law; unlabeled swap is a FAIL |
+| Dead p=54100 Pa as a Radioss QS tape | CFL-explodes on this engine; 10× slower PLOAD moved p@λ≥2 *down* to ~28 kPa |
+| Retune μ to chase ABC ~54 kPa | Forbidden. 54 kPa is not a load-schedule result on this film |
 | Ship OpenRadioss in GitHub Pages | GNU Affero General Public License 3.0; oracle stays offline |
 | Call node-node projection “TYPE19” | Radioss `/INTER/TYPE19` is TYPE7 + TYPE11 with Igap=4, Irem_gap=2, Inacti=6 |
-| Invent a quasi-static ANIM tape on a box with no engine | Fake golden; EMPTY / FAIL-closed instead |
+| Invent a quasi-static ANIM tape on a box with no engine | Fake golden. The filled tape is inflation-abc PR#11 desk JSON |
 | Solid hex J2 as “hyperelastic ABC” | Wrong kinematics and constitutive class |
 | Wrinkle clamp as contact | In-plane compression kill ≠ self-contact |
 
@@ -67,8 +70,8 @@ strategy; Chiron physics bar.
 Themis **desk PASS** on this rewrite requires all of:
 
 1. Law-card μ, ρ, H0, α₁, Gapmin, WARN_LAM match the lock (Object.is / 1e-12).
-2. Load-family tag is declared and compared; `dynamic-pload-40ms` is the
-   only filled Radioss golden.
+2. Load-family tag is declared and compared. Filled goldens:
+   `dynamic-pload-40ms` and `qs-ish-pload-400ms` are separate apples.
 3. Mesh fingerprint matches ship A; NUMELC = NUMELTG-free on that tape.
 4. At first λ ≥ 2: relative error λ ≤ 2%, V ≤ 5%, p ≤ 5% **only if** the
    same load law.
@@ -79,9 +82,11 @@ Themis **desk PASS** on this rewrite requires all of:
 **FAIL** on μ/ρ retune, unlabeled load swap, GIF-only compare, or claiming
 ABC quasi-static apples against the dynamic tape.
 
-`pnpm compare:inflate:qs` is **FAIL-closed** while
-`inflate-a-radioss-qs-golden.json` has `status: EMPTY`. That expected exit 1
-is **not** wired as the green CI gate. Dynamic `pnpm compare:inflate` is.
+`pnpm compare:inflate:qs` is the filled `qs-ish-pload-400ms` harness (same
+μ/mesh; λ currently inside 2%). V/p vs this tape are **not** in band yet —
+do not close them with μ. Dynamic `pnpm compare:inflate` stays the green CI
+gate. Do not grade ABC ~54 kPa apples against either tape
+(p@λ≥2 is ~36 kPa dynamic / ~28 kPa Radioss QS-ish / ~23 kPa toy QS-ish).
 
 ---
 
@@ -104,17 +109,18 @@ No single GIF, no single agent transcript, no McMaster density guess as μ.
 What would make a false PASS:
 
 - Softening CONTACT_KISS or WARN_LAM to hide punch-through.
-- Comparing pressure across load families (36 kPa dynamic vs 54 kPa QS).
+- Comparing pressure across load families (36 kPa dynamic vs 28 kPa QS-ish vs 54 kPa ABC).
 - Hashing a different mesh and calling it ship A.
 - Counting kiss violations **before** the projection and calling them zero
   after. (Mitigation: viol is post-press.)
 - Shipping a node-to-segment analogue that misses the PR#8 TYPE19 desk
   bands and calling it same-class.
 - Checking in a hand-written “Radioss” QS JSON with no engine run.
+- Shipping dead p=54100 Pa after it CFL-exploded on Radioss.
 
 Mitigations in-tree: law-card Object.is lock; load-family tag; mesh
-fingerprint; viol counted **after** the TYPE19-class press; QS golden EMPTY
-until a desk tape exists; compare CLI exit 1 on mismatch.
+fingerprint; viol counted **after** the TYPE19-class press; filled QS-ish
+golden from inflation-abc PR#11; compare CLI exit 1 on mismatch.
 
 ---
 
@@ -131,7 +137,9 @@ until a desk tape exists; compare CLI exit 1 on mismatch.
 | `/PLOAD` dynamic | 0 → 65 kPa / 40 ms | PR#8 desk | load family tag |
 | Underwood scale | 0.18 at kinetic-energy peaks | `/ADYREL` **analogue**; full reset overdamps vs PR#8 | not on the LAW42 card |
 | Rayleigh α | 80 1/s | Starter `/DAMP` | ρ unchanged |
-| QS dead p | 54100 Pa | ABC warn class, toy family `qs-ish-dead-pressure` | EMPTY Radioss tape |
+| `/PLOAD` QS-ish | 0 → 65 kPa / 400 ms | inflation-abc PR#11; p@λ≥2 ≈ 27.6 kPa | not ABC 54 kPa |
+| QS `/ADYREL` analogue | adaptive `/DYREL` A-update (static.F ISTAT=1) × 1.5 | Underwood 0.18 every peak overdamps the 400 ms run | not on the LAW42 card |
+| QS dead p | 54100 Pa | **Ruled out** — CFL-explodes on Radioss | do not vendor; do not chase with μ |
 | Kiss algorithm | node-node Gapmin projection | TYPE19-**class** Gapmin=CONTACT_KISS; node-to-segment analogue failed Themis bands vs PR#8 TYPE19 desk | — |
 
 No μ or ρ retune between the dynamic golden PASS and this follow-up.
@@ -145,7 +153,8 @@ No μ or ρ retune between the dynamic golden PASS and this follow-up.
 | Dynamic letter-A toy vs PR#8 golden inside λ 2% / V 5% / p 5% | **High** | Machine gate `pnpm compare:inflate`; Themis desk PASS on head 8223978 |
 | Constitutive lock (μ, H0, λ₃ = 1/(λ₁λ₂), Ψ ≥ 0 at rest) | **High** | Unit kernel + golden law Object.is |
 | TYPE19-class kiss stops punch-through on the dynamic tape | **Medium** | Post-press viol; node-node Gapmin (node-to-segment analogue failed bands vs PR#8) |
-| ABC quasi-static ~54 kPa apples | **Low** | Radioss QS golden EMPTY. Toy path is labeled QS-ish only |
+| ABC quasi-static ~54 kPa apples | **Low** | Not a load-schedule result on this film. QS-ish p@λ≥2 ≈ 27.6 kPa |
+| `qs-ish-pload-400ms` vs filled Radioss tape | **Medium** | Law/mesh/family lock. λ in 2% band. V/p not yet (no μ retune). `compare:inflate:qs` exit 1 |
 | Letters B/C vs Radioss | **Low** | Playable; no tapes. Leftover cap triangles are CST, not SH3N Radioss |
 | `/ADYREL` bitwise | **Low** | Underwood analogue only |
 | Pages / done-live | **Low** | Explicitly NOT-YET |
@@ -158,7 +167,7 @@ No μ or ρ retune between the dynamic golden PASS and this follow-up.
 pnpm install
 pnpm lint && pnpm typecheck && pnpm test
 pnpm compare:inflate      # must exit 0 (dynamic)
-pnpm compare:inflate:qs   # must exit 1 while EMPTY
+pnpm compare:inflate:qs   # filled qs-ish-pload-400ms; λ in band, V/p not yet
 pnpm test:e2e
 ```
 
@@ -179,7 +188,8 @@ Mesh edges default ON is in `workbench.ts` (`drawMode: "both"`) and e2e.
 | H0 = 0.381 mm | 0.015 in × 0.0254 |
 | CONTACT_KISS | max(2·H0, 1e-4) |
 | WARN_LAM = 2 | ABC / Chiron bar |
-| P_WARN_ABC = 54100 Pa | inflation-abc PRESSURE-LADDER.md (warn still at ~54100 Pa for letter A) |
+| P_WARN_ABC = 54100 Pa | inflation-abc PRESSURE-LADDER.md. **Not** p@λ≥2 on this film (dead fork CFL-explodes) |
+| QS-ish p, λ, V, Ψ at warn | `inflate-a-radioss-qs-golden.json` provenance inflation-abc PR#11 `qs-ish-pload-400ms` |
 | Dynamic p, λ, V, Ψ at warn | `inflate-a-radioss-golden.json` provenance PR#8 `radioss-desk-pr8-quadir` |
 | LAW42 / PROP / TYPE19 keywords | Altair Radioss Theory Manual 2022 + PR#8 deck dump; toy contact labeled **class** |
 | Mesh A/B/C | mikeornstein/inflation-abc `meshes/{A,B,C}.json` |
@@ -189,10 +199,10 @@ Mesh edges default ON is in `workbench.ts` (`drawMode: "both"`) and e2e.
 
 ## 9. Aletheia independent audit
 
-**Pending Zeus.** This packet is the in-repo Engineering Review for Daedalus /
-Themis. It is **not** an Aletheia sign-off. Do not mark done-live or public
-Pages polish as PASS until Zeus schedules that audit (or Mike explicitly
-accepts dynamic-labeled live with the score-sheet flags above).
+**Cleared by Zeus** for this ingest (filled `qs-ish-pload-400ms` golden +
+dynamic gate still green). This is **not** a Pages publish or done-live
+PASS. Do not mark public Pages polish as PASS. Bitwise `/INTER/TYPE19` and
+letters B/C Radioss goldens remain open.
 
 ---
 
@@ -201,6 +211,6 @@ accepts dynamic-labeled live with the score-sheet flags above).
 - Mesh refine ladder (PR#9).
 - Bitwise `/ADYREL`.
 - Bitwise `/INTER/TYPE19`.
-- ABC quasi-static Radioss apples.
+- ABC quasi-static Radioss apples (~54 kPa at first λ≥2 on this film).
 - Letters B/C Radioss goldens.
 - GitHub Pages as the grade surface.

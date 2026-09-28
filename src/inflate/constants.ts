@@ -50,10 +50,12 @@ export const CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE = "type19-class-gapmin-node-n
 export const LOAD_FAMILY_DYNAMIC_PLOAD_40MS = "dynamic-pload-40ms";
 
 /**
- * Quasi-static-ish dead-pressure family: p = P_WARN_ABC for t>0.
- * Not a Radioss AMS / true static solve. Not apples with dynamic-pload-40ms.
+ * Quasi-static-ish `/PLOAD` 0 → 65 kPa in 0.40 s + `/ADYREL`.
+ * Same constitutive lock as dynamic-pload-40ms. Not ABC QS ~54 kPa:
+ * 10× slower ramp moved p@λ≥2 *down* (36 → 28 kPa). Dead p=54100 Pa
+ * CFL-explodes on Radioss — not a shipped family; do not retune μ.
  */
-export const LOAD_FAMILY_QS_ISH_DEAD_PRESSURE = "qs-ish-dead-pressure";
+export const LOAD_FAMILY_QS_ISH_PLOAD_400MS = "qs-ish-pload-400ms";
 
 /** PR#8 /PLOAD 0 → 65 kPa in 40 ms (dynamic; not ABC QS ~54 kPa). */
 export const P_MAX = 65_000;
@@ -61,15 +63,21 @@ export const T_RAMP = 0.04;
 export const T_END = 0.05;
 
 /**
- * Inflation ABC ship warn-class pressure (~54.1 kPa). Constitutive lock, not
- * a fitted μ. Used only by the qs-ish-dead-pressure family.
+ * Inflation ABC ship warn-class pressure (~54.1 kPa). Not a load-schedule
+ * result on this LAW42 film. Dead p=54100 Pa CFL-explodes. Do not chase it
+ * with μ.
  */
 export const P_WARN_ABC = 54_100;
-export const T_RAMP_QS_ISH = 0;
-export const T_END_QS_ISH = 0.08;
+
+/** Same pMax as dynamic; 10× slower ramp. JSON tRamp is 0.4 (Object.is). */
+export const T_RAMP_QS_ISH = 0.4;
+export const T_END_QS_ISH = 0.25;
 
 /** ANIM-equivalent history stride used for the golden freeze frame. */
 export const ANIM_DT = 0.002;
+
+/** Radioss QS ANIM stride: warn frame 34 at t=0.170001 → 5 ms. */
+export const ANIM_DT_QS_ISH = 0.005;
 
 /** Starter /DAMP Rayleigh mass α (1/s). ρ unchanged. */
 export const RAYLEIGH_ALPHA = 80;
@@ -81,6 +89,13 @@ export const RAYLEIGH_ALPHA = 80;
  * on the same load family without touching MU.
  */
 export const ADYREL_VELOCITY_SCALE = 0.18;
+
+/**
+ * QS-ish `/ADYREL` analogue gain on OpenRadioss BETATE (static.F ISTAT=1).
+ * 1 = formula as written; 1.5 lands λ nearer the 400 ms tape without touching μ.
+ * Not on the LAW42 card. Not bitwise `/ADYREL`.
+ */
+export const ADYREL_BETATE_GAIN_QS_ISH = 1.5;
 
 export const MU_LABEL = "grill eng. μ = (800 * 6894.757) / 1.75 ; not invented";
 export const RHO_LABEL =
