@@ -15,9 +15,21 @@ test("status is mvp", () => {
   expect(statusLabel).toBe("mvp");
 });
 
+test("research catalog exposes the letter-A inflate stock model", () => {
+  const inflate = getResearchStockModel("inflate-a-desmopan");
+  expect(inflate.kind).toBe("inflate-nh-membrane");
+  if (inflate.kind !== "inflate-nh-membrane") return;
+  const model = inflate.create();
+  expect(model.kind).toBe("inflate-nh-membrane");
+  expect(model.mesh.nQuads).toBe(1554);
+  expect(model.law.loadFamily).toBe("dynamic-pload-40ms");
+});
+
 test("research catalog exposes the Taylor bar stock model", () => {
   expect(RESEARCH_STOCK_MODELS.length).toBeGreaterThan(0);
   const taylor = getResearchStockModel("taylor-bar-copper");
+  expect(taylor.kind).toBe("taylor-j2-hex");
+  if (taylor.kind !== "taylor-j2-hex") return;
   expect(taylor.researchPath).toContain("04-validation-strategy");
   const model = taylor.create();
   expect(model.meta.name).toBe("taylor-bar-copper");
@@ -26,6 +38,8 @@ test("research catalog exposes the Taylor bar stock model", () => {
 
 test("stock Taylor model solves inside research acceptance bands", () => {
   const taylor = getResearchStockModel("taylor-bar-copper");
+  expect(taylor.kind).toBe("taylor-j2-hex");
+  if (taylor.kind !== "taylor-j2-hex") return;
   const model = taylor.create();
   const result = solveExplicit(model, { maxWallMs: 600_000 });
   expect(metricsPassAcceptance(result.metrics, taylor.acceptance)).toBe(true);

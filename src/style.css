@@ -264,6 +264,13 @@ button:disabled {
   color: var(--warn);
 }
 
+.warn-mark {
+  margin: 0 0 1rem;
+  font-weight: 700;
+  color: var(--warn);
+  letter-spacing: 0.02em;
+}
+
 @media (max-width: 640px) {
   #app.workbench {
     padding: 1.25rem 0.85rem 2rem;

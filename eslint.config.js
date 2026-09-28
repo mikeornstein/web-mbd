@@ -16,6 +16,7 @@ export default defineConfig(
       // Ad-hoc tsx probes under scripts/ — same treatment as tests/cli.
       "scripts/**",
       "src/oracle/**/*.json",
+      "src/fixtures/meshes/**",
       "artifacts/**",
       // Local OpenRadioss PIC extract build tree (gitignore'd but may exist on disk).
       "native/force-kernel/or-extract/build/**",
@@ -37,6 +38,7 @@ export default defineConfig(
   {
     // Dense numerical kernels index fixed-size buffers; assertions and template metrics are intentional.
     files: [
+      "src/inflate/**/*.ts",
       "src/fe/**/*.ts",
       "src/mesh/**/*.ts",
       "src/fixtures/**/*.ts",

@@ -17,6 +17,13 @@ const HEX_EDGES: readonly [number, number][] = [
   [3, 7],
 ];
 
+const QUAD_EDGES: readonly [number, number][] = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 0],
+];
+
 export type MeshDrawMode = "solid" | "wire" | "both";
 
 export interface MeshCanvasOptions {
@@ -35,11 +42,14 @@ export class MeshCanvas {
   private camera: Camera3 = defaultCamera();
   private coords: ArrayLike<number> = [];
   private hexes: number[] = [];
+  private quads: number[] = [];
+  private topology: "hex" | "quad" = "hex";
   private faces: HexQuad[] = [];
   private stroke = "#4cc2ff";
   private fill = "#4cc2ff";
   private drawMode: MeshDrawMode = "both";
   private wallZ: number | undefined;
+  private warnLabel: string | null = null;
   private dragging = false;
   private lastX = 0;
   private lastY = 0;
@@ -82,11 +92,32 @@ export class MeshCanvas {
     this.draw();
   }
 
+  setWarnLabel(label: string | null): void {
+    if (this.warnLabel === label) return;
+    this.warnLabel = label;
+    this.syncAria();
+    this.draw();
+  }
+
   setMesh(mesh: HexMesh, coords?: ArrayLike<number>, wallZ?: number): void {
+    this.topology = "hex";
     this.hexes = mesh.hexes;
+    this.quads = [];
     this.coords = coords ?? mesh.coords;
     this.faces = boundaryHexFaces(this.hexes);
     if (wallZ !== undefined) this.wallZ = wallZ;
+    else this.wallZ = undefined;
+    this.fitCamera();
+    this.draw();
+  }
+
+  setQuadMesh(quads: ArrayLike<number>, coords: ArrayLike<number>): void {
+    this.topology = "quad";
+    this.hexes = [];
+    this.quads = Array.from(quads);
+    this.coords = coords;
+    this.faces = [];
+    this.wallZ = undefined;
     this.fitCamera();
     this.draw();
   }
@@ -99,15 +130,18 @@ export class MeshCanvas {
 
   clear(): void {
     this.hexes = [];
+    this.quads = [];
     this.coords = [];
     this.faces = [];
+    this.warnLabel = null;
     this.draw();
   }
 
   private syncAria(): void {
     const shading = drawModeLabel(this.drawMode);
+    const warn = this.warnLabel ? `, ${this.warnLabel}` : "";
     this.canvas.setAttribute("role", "img");
-    this.canvas.setAttribute("aria-label", `${this.title}, ${shading} shading`);
+    this.canvas.setAttribute("aria-label", `${this.title}, ${shading} shading${warn}`);
   }
 
   private fitCamera(): void {
@@ -193,7 +227,7 @@ export class MeshCanvas {
       ctx.stroke();
     }
 
-    if (this.hexes.length === 0) {
+    if (this.hexes.length === 0 && this.quads.length === 0) {
       ctx.fillStyle = "#9aa7b5";
       ctx.font = "14px IBM Plex Sans, sans-serif";
       ctx.fillText("No mesh loaded", 24, h / 2);
@@ -202,6 +236,7 @@ export class MeshCanvas {
 
     if (wantsFill(this.drawMode)) this.drawFaces(w, h);
     if (wantsWire(this.drawMode)) this.drawEdges(w, h);
+    this.drawWarn();
   }
 
   private drawFaces(w: number, h: number): void {
@@ -209,26 +244,20 @@ export class MeshCanvas {
     const rgb = parseHexRgb(this.fill);
     const projected: { pts: { x: number; y: number }[]; depth: number; shade: number }[] = [];
 
-    for (const face of this.faces) {
-      const pts: { x: number; y: number }[] = [];
-      let depth = 0;
-      for (const node of face) {
-        const p = projectPoint(
-          this.coords[node * 3]!,
-          this.coords[node * 3 + 1]!,
-          this.coords[node * 3 + 2]!,
-          this.camera,
-          w,
-          h,
-        );
-        pts.push({ x: p.x, y: p.y });
-        depth += p.depth;
+    if (this.topology === "quad") {
+      for (let e = 0; e < this.quads.length; e += 4) {
+        const face: HexQuad = [
+          this.quads[e]!,
+          this.quads[e + 1]!,
+          this.quads[e + 2]!,
+          this.quads[e + 3]!,
+        ];
+        projected.push(projectFace(this.coords, face, this.camera, w, h, LIGHT));
       }
-      const n = faceNormal(this.coords, face);
-      const nv = toViewSpace(n[0], n[1], n[2], this.camera);
-      const ndotl = nv.x * LIGHT[0] + nv.y * LIGHT[1] + nv.z * LIGHT[2];
-      const shade = 0.18 + 0.82 * Math.max(0, ndotl);
-      projected.push({ pts, depth: depth / 4, shade });
+    } else {
+      for (const face of this.faces) {
+        projected.push(projectFace(this.coords, face, this.camera, w, h, LIGHT));
+      }
     }
     projected.sort((a, b) => b.depth - a.depth);
 
@@ -247,34 +276,10 @@ export class MeshCanvas {
   private drawEdges(w: number, h: number): void {
     const { ctx } = this;
     const edges: { x0: number; y0: number; x1: number; y1: number; depth: number }[] = [];
-    for (let e = 0; e < this.hexes.length; e += 8) {
-      for (const [a, b] of HEX_EDGES) {
-        const ia = this.hexes[e + a]!;
-        const ib = this.hexes[e + b]!;
-        const pa = projectPoint(
-          this.coords[ia * 3]!,
-          this.coords[ia * 3 + 1]!,
-          this.coords[ia * 3 + 2]!,
-          this.camera,
-          w,
-          h,
-        );
-        const pb = projectPoint(
-          this.coords[ib * 3]!,
-          this.coords[ib * 3 + 1]!,
-          this.coords[ib * 3 + 2]!,
-          this.camera,
-          w,
-          h,
-        );
-        edges.push({
-          x0: pa.x,
-          y0: pa.y,
-          x1: pb.x,
-          y1: pb.y,
-          depth: (pa.depth + pb.depth) * 0.5,
-        });
-      }
+    if (this.topology === "quad") {
+      collectEdges(this.coords, this.quads, 4, QUAD_EDGES, this.camera, w, h, edges);
+    } else {
+      collectEdges(this.coords, this.hexes, 8, HEX_EDGES, this.camera, w, h, edges);
     }
     edges.sort((u, v) => v.depth - u.depth);
 
@@ -285,6 +290,73 @@ export class MeshCanvas {
       ctx.moveTo(edge.x0, edge.y0);
       ctx.lineTo(edge.x1, edge.y1);
       ctx.stroke();
+    }
+  }
+
+  private drawWarn(): void {
+    if (!this.warnLabel) return;
+    const { ctx } = this;
+    ctx.fillStyle = "rgba(255, 120, 80, 0.92)";
+    ctx.font = "600 16px IBM Plex Sans, sans-serif";
+    ctx.fillText(this.warnLabel, 16, 28);
+    ctx.font = "12px IBM Plex Sans, sans-serif";
+    ctx.fillStyle = "#ffb39a";
+    ctx.fillText("mesh edges default ON", 16, 46);
+  }
+}
+
+function projectFace(
+  coords: ArrayLike<number>,
+  face: HexQuad,
+  camera: Camera3,
+  w: number,
+  h: number,
+  light: readonly [number, number, number],
+): { pts: { x: number; y: number }[]; depth: number; shade: number } {
+  const pts: { x: number; y: number }[] = [];
+  let depth = 0;
+  for (const node of face) {
+    const p = projectPoint(
+      coords[node * 3]!,
+      coords[node * 3 + 1]!,
+      coords[node * 3 + 2]!,
+      camera,
+      w,
+      h,
+    );
+    pts.push({ x: p.x, y: p.y });
+    depth += p.depth;
+  }
+  const n = faceNormal(coords, face);
+  const nv = toViewSpace(n[0], n[1], n[2], camera);
+  const ndotl = nv.x * light[0] + nv.y * light[1] + nv.z * light[2];
+  const shade = 0.18 + 0.82 * Math.max(0, ndotl);
+  return { pts, depth: depth / 4, shade };
+}
+
+function collectEdges(
+  coords: ArrayLike<number>,
+  conn: ArrayLike<number>,
+  stride: number,
+  localEdges: readonly (readonly [number, number])[],
+  camera: Camera3,
+  w: number,
+  h: number,
+  out: { x0: number; y0: number; x1: number; y1: number; depth: number }[],
+): void {
+  for (let e = 0; e < conn.length; e += stride) {
+    for (const [a, b] of localEdges) {
+      const ia = conn[e + a]!;
+      const ib = conn[e + b]!;
+      const pa = projectPoint(coords[ia * 3]!, coords[ia * 3 + 1]!, coords[ia * 3 + 2]!, camera, w, h);
+      const pb = projectPoint(coords[ib * 3]!, coords[ib * 3 + 1]!, coords[ib * 3 + 2]!, camera, w, h);
+      out.push({
+        x0: pa.x,
+        y0: pa.y,
+        x1: pb.x,
+        y1: pb.y,
+        depth: (pa.depth + pb.depth) * 0.5,
+      });
     }
   }
 }

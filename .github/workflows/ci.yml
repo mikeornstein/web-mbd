@@ -43,6 +43,9 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      - name: Inflate vs Radioss golden
+        run: pnpm compare:inflate
+
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
