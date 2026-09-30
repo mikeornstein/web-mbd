@@ -22,9 +22,9 @@ Research and design notes for building a client-side flexible multibody / explic
 | Doc | What it covers |
 | --- | --- |
 | [Taylor bar](mvp-taylor-bar.md) | J2 hex + rigid wall + OpenRadioss bitwise oracle |
-| [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + dynamic PLOAD + banded Radioss golden |
-| [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; Aletheia pending Zeus |
-| [Radioss QS desk](radioss-qs-desk.md) | EMPTY FAIL-closed recipe for a quasi-static tape |
+| [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + fast-load (dynamic) pressure ramp + banded OpenRadioss golden. Slow-load is not validated. The Inflation ABC ~54 kPa figure is not claimed. |
+| [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; fast-load only |
+| [Radioss slow-load desk](radioss-qs-desk.md) | Reference-only OpenRadioss slow-load tape (`gate: none`; not used by any gate) |
 
 ## Sources
 

@@ -1,6 +1,5 @@
 import {
   createInflateAModel,
-  createInflateAQsIshModel,
   createInflateBModel,
   createInflateCModel,
 } from "../fixtures/inflateA.js";
@@ -52,20 +51,9 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "Desmopan 85085A film letter A. Locked μ/ρ/H0, dynamic PLOAD 0→65 kPa / 40 ms (not ABC QS). Mesh edges default ON. OpenRadioss is the offline golden only.",
+      "Desmopan 85085A film letter A. Locked shear modulus, density, and thickness. Fast-load (dynamic) pressure ramp 0→65 kPa / 40 ms matches the OpenRadioss reference at first stretch ≥ 2. Slow-load (quasi-static) is not validated: last measured at head 8a05992 the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded; that code was removed, not fixed. The Inflation ABC ~54 kPa figure is not claimed. Mesh edges default ON. OpenRadioss is the offline golden only.",
     validation: "radioss-dynamic-golden",
     create: () => createInflateAModel(),
-  },
-  {
-    kind: "inflate-nh-membrane",
-    id: "inflate-a-qs-ish",
-    title: "Letter A inflate (QS-ish 400 ms PLOAD)",
-    researchPath: "docs/radioss-qs-desk.md",
-    layer: 1,
-    summary:
-      "Same μ/ρ/H0/kiss/warn as letter A. Load family qs-ish-pload-400ms (/PLOAD 0→65 kPa / 0.40 s). Filled Radioss QS-ish golden (inflation-abc PR#11); p@λ≥2 ≈ 27.6 kPa, not ABC ~54 kPa. QS path: Belytschko 1-GP Q4 + CHVIS3 hourglass, Q4 mean-plane PLOAD, TYPE7 1-ring node-segment Gapmin, /ADYREL as written. Do not retune μ.",
-    validation: "radioss-qs-golden",
-    create: () => createInflateAQsIshModel(),
   },
   {
     kind: "inflate-nh-membrane",
@@ -74,7 +62,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. Playable; OpenRadioss golden NOT-YET (no tape).",
+      "Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. Playable; OpenRadioss golden NOT-YET (no tape). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
     validation: "playable-not-yet-radioss",
     create: () => createInflateBModel(),
   },
@@ -85,7 +73,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "Desmopan 85085A film letter C from inflation-abc meshes/C.json. Same constitutive locks. Playable; OpenRadioss golden NOT-YET (no tape).",
+      "Desmopan 85085A film letter C from inflation-abc meshes/C.json. Same constitutive locks. Playable; OpenRadioss golden NOT-YET (no tape). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
     validation: "playable-not-yet-radioss",
     create: () => createInflateCModel(),
   },

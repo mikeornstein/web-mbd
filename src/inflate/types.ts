@@ -1,10 +1,5 @@
 import type { EnergySample } from "../ir/types.js";
-import type {
-  CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE,
-  CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT,
-  LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
-  LOAD_FAMILY_QS_ISH_PLOAD_400MS,
-} from "./constants.js";
+import type { CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE, LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_PLOAD_400MS } from "./constants.js";
 
 export type InflateLoadFamily =
   | typeof LOAD_FAMILY_DYNAMIC_PLOAD_40MS
@@ -12,16 +7,11 @@ export type InflateLoadFamily =
 
 export type InflateLetter = "A" | "B" | "C";
 
-export type InflateValidationStatus =
-  | "radioss-dynamic-golden"
-  | "radioss-qs-golden"
-  | "playable-not-yet-radioss";
+export type InflateValidationStatus = "radioss-dynamic-golden" | "playable-not-yet-radioss";
 
-export type InflateContactClass =
-  | typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE
-  | typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT;
+export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
 
-export type InflateKissKind = "node-node" | "node-segment";
+export type InflateKissKind = "node-node";
 
 export interface InflateLawCard {
   mu1: number;
@@ -80,14 +70,7 @@ export interface InflateModelIR {
      */
     kineticDampingMinInterval: number;
     /**
-     * Engine `/ADYREL` analogue: adaptive `/DYREL` acceleration update
-     * (OpenRadioss `static.F` ISTAT=1, ENER_W0 BETATE as written). QS-ish
-     * only. Not bitwise `/ADYREL`. No invented BETATE gain.
-     */
-    adaptiveRelaxation: boolean;
-    /**
-     * TYPE19-class Gapmin pairing. `node-node` is the dynamic PR#8 desk
-     * path. `node-segment` is the QS TYPE7 analogue (same CONTACT_KISS).
+     * TYPE19-class Gapmin pairing. Fast-load (dynamic) path is node-node.
      */
     contactKind: InflateKissKind;
   };
@@ -166,23 +149,3 @@ export interface RadiossInflateGolden {
     pressureRel: number;
   };
 }
-
-/** FAIL-closed while status is EMPTY. Filled tape is qs-ish-pload-400ms. */
-export type RadiossQsGolden =
-  | {
-      status: "EMPTY";
-      loadFamily: typeof LOAD_FAMILY_QS_ISH_PLOAD_400MS;
-      law: InflateLawCard;
-      mesh: RadiossInflateGolden["mesh"];
-      bands: RadiossInflateGolden["bands"];
-      provenance: {
-        source: "none";
-        desk: string;
-        branch: string;
-        note: string;
-      };
-    }
-  | (Omit<RadiossInflateGolden, "loadFamily"> & {
-      status: "filled";
-      loadFamily: typeof LOAD_FAMILY_QS_ISH_PLOAD_400MS;
-    });

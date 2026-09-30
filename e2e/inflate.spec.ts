@@ -8,6 +8,8 @@ test("letter A inflate: mesh edges default ON and warn mark at λ≥2", async ({
   await expect(page.getByRole("heading", { name: "Pre — model inspection" })).toBeVisible();
   await expect(page.getByText("inflate-a-desmopan")).toBeVisible();
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Slow-load \(quasi-static\) is not validated/)).toBeVisible();
+  await expect(page.getByText(/Inflation ABC ~54 kPa figure is not claimed/)).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();

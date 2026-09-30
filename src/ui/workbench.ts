@@ -3,8 +3,8 @@ import { solveInflate } from "../fe/inflateSolver.js";
 import { solveExplicitAsync } from "../fe/solveAsync.js";
 import type { InflateModelIR, InflateSolveResult } from "../inflate/types.js";
 import type { EnergySample, ModelIR, SolveResult } from "../ir/types.js";
-import { compareInflateToGolden, compareInflateToQsGolden } from "../oracle/compareInflate.js";
-import { loadInflateGolden, loadInflateQsGolden } from "../oracle/inflateGolden.js";
+import { compareInflateToGolden } from "../oracle/compareInflate.js";
+import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
   metricsPassAcceptance,
@@ -546,11 +546,9 @@ function createTimeScrubber(onIndex: (index: number) => void): {
 function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
-      return "dynamic-pload-40ms · λ≤2% · V≤5% · p≤5%";
-    case "radioss-qs-golden":
-      return "qs-ish-pload-400ms · Radioss golden filled · p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa";
+      return "fast-load (dynamic) OpenRadioss reference only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "playable-not-yet-radioss":
-      return "playable · OpenRadioss golden NOT-YET";
+      return "playable · OpenRadioss golden NOT-YET. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     default: {
       const _exhaustive: never = status;
       throw new Error(`unhandled validation ${String(_exhaustive)}`);
@@ -595,15 +593,11 @@ function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { ki
         ["Load family", model.law.loadFamily],
         [
           "PLOAD",
-          model.law.loadFamily === "qs-ish-pload-400ms"
-            ? `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (qs-ish-pload-400ms; p@λ≥2 ≈ 27.6 kPa, not ABC 54 kPa)`
-            : `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (dynamic; not ABC QS)`,
+          `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (fast-load / dynamic; not the Inflation ABC ~54 kPa figure). Slow-load (quasi-static) is not validated.`,
         ],
         [
           "Kiss",
-          model.controls.contactKind === "node-segment"
-            ? `TYPE19-class Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm node-segment (QS TYPE7 analogue; not bitwise TYPE19)`
-            : `TYPE19-class Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm node-node (not bitwise TYPE19)`,
+          `TYPE19-class Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm node-node (not bitwise TYPE19)`,
         ],
         ["Warn", `first λ_max ≥ ${model.law.warnLam}`],
         ["View", "mesh edges default ON"],
@@ -715,25 +709,15 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
           const golden = loadInflateGolden();
           const cmp = compareInflateToGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
           gateEl.textContent = cmp.ok
-            ? "Acceptance gate: PASS (Radioss golden · dynamic-pload-40ms · λ/V/p bands)"
-            : `Acceptance gate: FAIL vs Radioss golden (${cmp.reasons[0] ?? "see compare:inflate"})`;
-          gateEl.classList.toggle("pass", cmp.ok);
-          gateEl.classList.toggle("fail", !cmp.ok);
-          break;
-        }
-        case "radioss-qs-golden": {
-          const golden = loadInflateQsGolden();
-          const cmp = compareInflateToQsGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
-          gateEl.textContent = cmp.ok
-            ? "Acceptance gate: PASS (Radioss golden · qs-ish-pload-400ms · λ/V/p bands)"
-            : `Acceptance gate: FAIL vs Radioss QS golden (${cmp.reasons[0] ?? "see compare:inflate:qs"})`;
+            ? "Acceptance gate: PASS (OpenRadioss fast-load / dynamic reference · stretch / volume / pressure bands). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed."
+            : `Acceptance gate: FAIL vs OpenRadioss fast-load golden (${cmp.reasons[0] ?? "see compare:inflate"}). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.`;
           gateEl.classList.toggle("pass", cmp.ok);
           gateEl.classList.toggle("fail", !cmp.ok);
           break;
         }
         case "playable-not-yet-radioss":
           gateEl.textContent =
-            "Acceptance gate: NOT-YET (playable; no OpenRadioss tape for this letter)";
+            "Acceptance gate: NOT-YET (playable; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
           gateEl.classList.remove("pass");
           gateEl.classList.add("fail");
           break;

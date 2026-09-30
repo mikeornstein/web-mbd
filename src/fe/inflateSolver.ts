@@ -1,24 +1,12 @@
-import { applyAdyrelAcceleration, createAdyrelState, stepEnerW0 } from "./adyrel.js";
-import {
-  applyKissProjection,
-  buildKissSegmentCache,
-  buildVertexStar,
-  buildVertexStar2,
-  punchedThrough,
-} from "./contactKiss.js";
+import { applyKissProjection, punchedThrough } from "./contactKiss.js";
 import { membraneWaveSpeed } from "./materialNeoHookean.js";
-import { accumulateChvis3Forces, createHourglassState, type HourglassState } from "./belytschkoHourglass.js";
 import {
   accumulateCstForces,
-  accumulatePressureQuad,
   accumulatePressureTri,
-  accumulateQ4Forces,
   buildCstRest,
-  buildQ4Rest,
   cstSample,
   splitQuadCsts,
   type CstRest,
-  type Q4Rest,
 } from "./membraneCst.js";
 import { ploadAt } from "../inflate/lawCard.js";
 import { enclosedVolume } from "../inflate/meshA.js";
@@ -50,7 +38,6 @@ export function assertInflateModel(model: InflateModelIR): void {
   const kind = model.controls.contactKind;
   switch (kind) {
     case "node-node":
-    case "node-segment":
       break;
     default: {
       const _exhaustive: never = kind;
@@ -70,11 +57,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const acc = new Float64Array(nNodes * 3);
   const masses = new Float64Array(nNodes);
   const rests: CstRest[] = [];
-  const triRests: CstRest[] = [];
-  const q4Rests: Q4Rest[] = [];
-  const hourStates: HourglassState[] = [];
   const contactKind = controls.contactKind;
-  const qsShell = contactKind === "node-segment";
 
   let minH = Infinity;
   for (let e = 0; e < mesh.nQuads; e++) {
@@ -82,21 +65,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       i1 = mesh.quads[e * 4 + 1]!,
       i2 = mesh.quads[e * 4 + 2]!,
       i3 = mesh.quads[e * 4 + 3]!;
-    if (qsShell) {
-      const q4 = buildQ4Rest(mesh.coords, i0, i1, i2, i3);
-      if (!q4) continue;
-      q4Rests.push(q4);
-      hourStates.push(createHourglassState());
-      const mass = (law.rho * law.h0 * q4.A0) / 4;
-      masses[i0]! += mass;
-      masses[i1]! += mass;
-      masses[i2]! += mass;
-      masses[i3]! += mass;
-      minH = Math.min(minH, Math.sqrt(q4.A0));
-      const pair = splitQuadCsts(mesh.coords, i0, i1, i2, i3);
-      if (pair) rests.push(pair.a, pair.b);
-      continue;
-    }
     const pair = splitQuadCsts(mesh.coords, i0, i1, i2, i3);
     if (!pair) continue;
     rests.push(pair.a, pair.b);
@@ -119,7 +87,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     );
     if (!rest) continue;
     rests.push(rest);
-    triRests.push(rest);
     const mass = (law.rho * law.h0 * rest.A0) / 3;
     masses[rest.i]! += mass;
     masses[rest.j]! += mass;
@@ -149,13 +116,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let dt1 = 0;
   let kePrev = 0;
   let kePrev2 = 0;
-  // TYPE7 skips segments that share a node (1-ring). 2-hop skip hid the
-  // A-hole walls (rest min 5.41 mm vs 3.41 mm) so contact never engaged.
-  const starSkip =
-    contactKind === "node-segment"
-      ? buildVertexStar(mesh.quads, nNodes, mesh.tris)
-      : buildVertexStar2(mesh.quads, nNodes, mesh.tris);
-  const kissSegments = contactKind === "node-segment" ? buildKissSegmentCache(mesh.quads, mesh.tris) : undefined;
   let lastKiss: {
     pushed: number;
     minGap: number;
@@ -165,7 +125,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     pushed: 0,
     minGap: law.gapMin,
     viol: 0,
-    contactClass: contactKind === "node-segment" ? "type19-class-gapmin-node-segment" : "type19-class-gapmin-node-node",
+    contactClass: "type19-class-gapmin-node-node",
   };
   let punched = false;
   let incompressResidualMax = 0;
@@ -175,9 +135,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const maxWallMs = options.maxWallMs ?? 180_000;
   const alpha = law.rayleighAlpha;
   const keInterval = controls.kineticDampingMinInterval;
+
   let tKeDamp = -Infinity;
-  const adyrel = createAdyrelState();
-  let lastPsiStep = 0;
 
   const measure = (): {
     lambdaMax: number;
@@ -236,53 +195,11 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     }
   };
 
-  const assemble = (p: number): number => {
+  const assemble = (p: number): void => {
     f.fill(0);
-    let psiStep = 0;
-    if (qsShell) {
-      for (let e = 0; e < q4Rests.length; e++) {
-        const rest = q4Rests[e]!;
-        const { W } = accumulateQ4Forces(x, rest, f, law.mu1, law.h0);
-        psiStep += W;
-        accumulateChvis3Forces(
-          x,
-          v,
-          rest.i0,
-          rest.i1,
-          rest.i2,
-          rest.i3,
-          rest.A0,
-          hourStates[e]!,
-          dt,
-          f,
-          law.mu1,
-          law.rho,
-          law.nu,
-          law.h0,
-        );
-      }
-      for (let e = 0; e < mesh.nQuads; e++) {
-        accumulatePressureQuad(
-          x,
-          mesh.quads[e * 4]!,
-          mesh.quads[e * 4 + 1]!,
-          mesh.quads[e * 4 + 2]!,
-          mesh.quads[e * 4 + 3]!,
-          p,
-          f,
-        );
-      }
-      for (const rest of triRests) {
-        const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
-        psiStep += W;
-        accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
-      }
-    } else {
-      for (const rest of rests) {
-        const { W } = accumulateCstForces(x, rest, f, law.mu1, law.h0);
-        psiStep += W;
-        accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
-      }
+    for (const rest of rests) {
+      accumulateCstForces(x, rest, f, law.mu1, law.h0);
+      accumulatePressureTri(x, rest.i, rest.j, rest.k, p, f);
     }
     if (alpha > 0) {
       for (let i = 0; i < nNodes; i++) {
@@ -292,8 +209,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         f[i * 3 + 2]! -= alpha * m * v[i * 3 + 2]!;
       }
     }
-    lastPsiStep = psiStep;
-    return psiStep;
   };
 
   const triMinEdge = (rest: CstRest): number => {
@@ -314,22 +229,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   };
   const recomputeDt = (): void => {
     let h = Infinity;
-    if (qsShell) {
-      for (const rest of q4Rests) {
-        const a = rest.i0 * 3,
-          b = rest.i1 * 3,
-          c = rest.i2 * 3,
-          d = rest.i3 * 3;
-        const e01 = Math.hypot(x[b]! - x[a]!, x[b + 1]! - x[a + 1]!, x[b + 2]! - x[a + 2]!);
-        const e12 = Math.hypot(x[c]! - x[b]!, x[c + 1]! - x[b + 1]!, x[c + 2]! - x[b + 2]!);
-        const e23 = Math.hypot(x[d]! - x[c]!, x[d + 1]! - x[c + 1]!, x[d + 2]! - x[c + 2]!);
-        const e30 = Math.hypot(x[a]! - x[d]!, x[a + 1]! - x[d + 1]!, x[a + 2]! - x[d + 2]!);
-        h = Math.min(h, e01, e12, e23, e30);
-      }
-      for (const rest of triRests) h = Math.min(h, triMinEdge(rest));
-    } else {
-      for (const rest of rests) h = Math.min(h, triMinEdge(rest));
-    }
+    for (const rest of rests) h = Math.min(h, triMinEdge(rest));
     const dtNew = controls.cfl * (h / c);
     if (dtNew > 0 && Number.isFinite(dtNew)) dt = Math.min(dtNew, 1.1 * dt);
   };
@@ -352,22 +252,14 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     }
     recomputeDt();
     const dt12 = 0.5 * (dt1 + dt);
-    if (controls.adaptiveRelaxation) {
-      applyAdyrelAcceleration(acc, v, adyrel.betate, dt12);
-    }
     for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
-    const nextT = t + dt;
-    const willSample = nextT + 1e-18 >= nextSample || nextT >= controls.endTime - 1e-18;
     lastKiss = applyKissProjection({
       coords: x,
       quads: mesh.quads,
       tris: mesh.tris,
       kiss: law.gapMin,
       kind: contactKind,
-      star2: starSkip,
-      measureGap: contactKind !== "node-segment" || willSample,
-      ...(kissSegments ? { segments: kissSegments } : {}),
     });
     t += dt;
     step += 1;
@@ -379,9 +271,6 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         vy = v[i * 3 + 1]!,
         vz = v[i * 3 + 2]!;
       ke += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
-    }
-    if (controls.adaptiveRelaxation) {
-      stepEnerW0(adyrel, { ke, ie: lastPsiStep, dt, ncycle: step });
     }
     if (
       controls.kineticDamping &&

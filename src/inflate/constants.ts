@@ -40,21 +40,18 @@ export const CONTACT_ENGAGE = 0.003;
 /**
  * Contact class implemented in the toy. OpenRadioss `/INTER/TYPE19` is
  * TYPE7 (node-to-surface) + TYPE11 (edge-to-edge) with Igap=4, Irem_gap=2,
- * Inacti=6. Same CONTACT_KISS Gapmin. Dynamic tape uses node-node (the
- * response that stays in Themis bands vs the PR#8 TYPE19 desk). QS-ish
- * uses a node-to-segment TYPE7 analogue so staggered hole/leg faces cannot
- * pass through; Gapmin is not weakened. Not bitwise TYPE19.
+ * Inacti=6. Same CONTACT_KISS Gapmin. Fast-load (dynamic) tape uses
+ * node-node (the response that stays in Themis bands vs the PR#8 TYPE19
+ * desk). Not bitwise TYPE19.
  */
 export const CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE = "type19-class-gapmin-node-node";
-export const CONTACT_CLASS_TYPE19_GAPMIN_NODE_SEGMENT = "type19-class-gapmin-node-segment";
 
 export const LOAD_FAMILY_DYNAMIC_PLOAD_40MS = "dynamic-pload-40ms";
 
 /**
- * Quasi-static-ish `/PLOAD` 0 → 65 kPa in 0.40 s + `/ADYREL`.
- * Same constitutive lock as dynamic-pload-40ms. Not ABC QS ~54 kPa:
- * 10× slower ramp moved p@λ≥2 *down* (36 → 28 kPa). Dead p=54100 Pa
- * CFL-explodes on Radioss — not a shipped family; do not retune μ.
+ * Slow-load (quasi-static-ish) family tag kept only so an unlabeled swap
+ * against the fast-load golden is a FAIL. That assemble is not shipped.
+ * Not used by any gate. Not the Inflation ABC ~54 kPa figure.
  */
 export const LOAD_FAMILY_QS_ISH_PLOAD_400MS = "qs-ish-pload-400ms";
 
@@ -66,19 +63,12 @@ export const T_END = 0.05;
 /**
  * Inflation ABC ship warn-class pressure (~54.1 kPa). Not a load-schedule
  * result on this LAW42 film. Dead p=54100 Pa CFL-explodes. Do not chase it
- * with μ.
+ * with μ. This figure is not claimed.
  */
 export const P_WARN_ABC = 54_100;
 
-/** Same pMax as dynamic; 10× slower ramp. JSON tRamp is 0.4 (Object.is). */
-export const T_RAMP_QS_ISH = 0.4;
-export const T_END_QS_ISH = 0.25;
-
 /** ANIM-equivalent history stride used for the golden freeze frame. */
 export const ANIM_DT = 0.002;
-
-/** Radioss QS ANIM stride: warn frame 34 at t=0.170001 → 5 ms. */
-export const ANIM_DT_QS_ISH = 0.005;
 
 /** Starter /DAMP Rayleigh mass α (1/s). ρ unchanged. */
 export const RAYLEIGH_ALPHA = 80;
@@ -87,7 +77,7 @@ export const RAYLEIGH_ALPHA = 80;
  * Underwood residual-velocity scale at kinetic-energy peaks.
  * Explicit analogue of engine `/ADYREL` (not a μ/ρ lever; not on the LAW42 card).
  * Full reset (0) overdamps vs the PR#8 desk; 0.18 lands the ANIM-stride freeze
- * on the same load family without touching MU. Dynamic path only.
+ * on the same load family without touching MU. Fast-load (dynamic) path only.
  */
 export const ADYREL_VELOCITY_SCALE = 0.18;
 

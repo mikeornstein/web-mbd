@@ -15,7 +15,7 @@ test("status is mvp", () => {
   expect(statusLabel).toBe("mvp");
 });
 
-test("research catalog exposes inflate A/B/C and QS-ish with labeled validation", () => {
+test("research catalog exposes inflate A/B/C with labeled validation", () => {
   const inflate = getResearchStockModel("inflate-a-desmopan");
   expect(inflate.kind).toBe("inflate-nh-membrane");
   if (inflate.kind !== "inflate-nh-membrane") return;
@@ -25,19 +25,10 @@ test("research catalog exposes inflate A/B/C and QS-ish with labeled validation"
   expect(model.mesh.nTris).toBe(0);
   expect(model.law.loadFamily).toBe("dynamic-pload-40ms");
   expect(inflate.validation).toBe("radioss-dynamic-golden");
-
-  const qs = getResearchStockModel("inflate-a-qs-ish");
-  expect(qs.kind).toBe("inflate-nh-membrane");
-  if (qs.kind !== "inflate-nh-membrane") return;
-  expect(qs.validation).toBe("radioss-qs-golden");
-  const qsModel = qs.create();
-  expect(qsModel.law.loadFamily).toBe("qs-ish-pload-400ms");
-  expect(qsModel.law.pMax).toBe(65000);
-  expect(qsModel.law.tRamp).toBe(0.4);
-  expect(qsModel.law.mu1).toBe(model.law.mu1);
-  expect(qsModel.law.rho).toBe(model.law.rho);
-  expect(qsModel.controls.contactKind).toBe("node-segment");
+  expect(inflate.summary).toContain("not validated");
+  expect(inflate.summary).toContain("54 kPa figure is not claimed");
   expect(model.controls.contactKind).toBe("node-node");
+  expect(() => getResearchStockModel("inflate-a-qs-ish")).toThrow(/unknown research stock model/);
 
   const b = getResearchStockModel("inflate-b-desmopan");
   expect(b.kind).toBe("inflate-nh-membrane");

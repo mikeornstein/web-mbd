@@ -1,9 +1,4 @@
-import type {
-  InflateLawCard,
-  InflateSolveMetrics,
-  RadiossInflateGolden,
-  RadiossQsGolden,
-} from "../inflate/types.js";
+import type { InflateLawCard, InflateSolveMetrics, RadiossInflateGolden } from "../inflate/types.js";
 
 export const INFLATE_BANDS = {
   lambdaRel: 0.02,
@@ -162,47 +157,4 @@ export function formatInflateCompare(result: InflateCompareResult): string {
     for (const r of result.reasons) lines.push(`  - ${r}`);
   }
   return lines.join("\n");
-}
-
-const EMPTY_QS_REASON =
-  "Radioss QS golden EMPTY — FAIL-closed until an offline OpenRadioss quasi-static tape is checked in. Do not treat dynamic-pload-40ms as ABC QS apples. Do not invent μ.";
-
-/**
- * Quasi-static-ish harness. EMPTY golden always FAIL-closes. A filled tape
- * uses the same λ/V/p bands as the dynamic gate, on load family
- * qs-ish-pload-400ms only. Do not compare to ABC ~54 kPa.
- */
-export function compareInflateToQsGolden(
-  toy: Pick<InflateSolveMetrics, "warn" | "loadFamily" | "meshFingerprint" | "punchedThrough" | "psi_J"> & {
-    law: InflateLawCard;
-  },
-  golden: RadiossQsGolden,
-): InflateCompareResult {
-  if (golden.status === "EMPTY") {
-    const law = lawCardsEqual(toy.law, golden.law);
-    return {
-      ok: false,
-      reasons: [EMPTY_QS_REASON],
-      lawEqual: law.ok,
-      loadFamilyEqual: toy.loadFamily === golden.loadFamily,
-      meshEqual: toy.meshFingerprint === golden.mesh.fingerprint,
-      psiNonNegative: (toy.warn?.psi_J ?? toy.psi_J) >= 0,
-      lambdaRelError: null,
-      volumeRelError: null,
-      pressureRelError: null,
-      bands: INFLATE_BANDS,
-    };
-  }
-  if (golden.status === "filled") {
-    return compareInflateToGolden(toy, {
-      provenance: golden.provenance,
-      loadFamily: golden.loadFamily,
-      law: golden.law,
-      mesh: golden.mesh,
-      warn: golden.warn,
-      bands: golden.bands,
-    });
-  }
-  const _exhaustive: never = golden;
-  throw new Error(`unhandled qs golden ${String(_exhaustive)}`);
 }

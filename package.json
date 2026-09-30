@@ -19,9 +19,7 @@
     "taylor": "tsx src/cli/run-taylor.ts",
     "oracle:taylor": "tsx src/cli/run-oracle-taylor.ts",
     "inflate": "tsx src/cli/run-inflate.ts",
-    "inflate:qs": "tsx src/cli/run-inflate-qs.ts",
-    "compare:inflate": "tsx src/cli/compare-inflate.ts",
-    "compare:inflate:qs": "tsx src/cli/compare-inflate-qs.ts"
+    "compare:inflate": "tsx src/cli/compare-inflate.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

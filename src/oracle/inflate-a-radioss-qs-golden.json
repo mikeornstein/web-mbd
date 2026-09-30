@@ -1,4 +1,6 @@
 {
+  "gate": "none",
+  "gateNote": "REFERENCE ONLY — not used by any compare, test, or continuous-integration gate. The slow-load (quasi-static) toy assemble was removed, not fixed. Last measured at head 8a05992: 7.7% stretch, 8.8% pressure, 65% volume, balloon folded. The Inflation ABC ~54 kPa figure is not claimed.",
   "status": "filled",
   "loadFamily": "qs-ish-pload-400ms",
   "provenance": {
