@@ -148,7 +148,7 @@ No μ or ρ retune. No new knobs on this trim.
 | TYPE19-class kiss stops punch-through on the dynamic tape | **Medium** | Post-press viol; node-node Gapmin |
 | ABC quasi-static ~54 kPa apples | **None claimed** | Not a load-schedule result on this film |
 | Slow-load (quasi-static) vs filled Radioss tape | **Not validated** | Last measured at head `8a05992`: 7.7% stretch, 8.8% pressure, 65% volume, balloon folded. Code **removed, not fixed** |
-| Letters B/C vs Radioss | **Low** | Letter B is an unvalidated demo on the page (no tape). Letter C is hidden (degenerate / unstable). Leftover cap triangles are constant-strain triangles, not SH3N Radioss |
+| Letters B/C vs Radioss | **Low** | Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no tape). Letter C is hidden (degenerate / unstable). Leftover cap triangles are constant-strain triangles, not SH3N Radioss |
 | `/ADYREL` bitwise | **Low** | Fast-load Underwood analogue, not the engine keyword |
 | Pages / done-live | **Low** | Explicitly NOT-YET |
 

@@ -44,7 +44,8 @@ test("research catalog leads with Letter A, labels B, hides C from the page", ()
   if (b.kind !== "inflate-nh-membrane") return;
   expect(b.validation).toBe("unvalidated-demo");
   expect(b.listedOnPage).toBe(true);
-  expect(b.title).toContain("unvalidated demo");
+  expect(b.title).toContain("unvalidated demo, unstable past stretch 2");
+  expect(b.summary).toContain("unstable past stretch 2");
   expect(b.summary.toLowerCase()).not.toContain("playable");
   const bModel = b.create();
   expect(bModel.mesh.letter).toBe("B");

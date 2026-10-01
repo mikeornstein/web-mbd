@@ -30,7 +30,7 @@ claimed**.
 - Follower pressure `f = p ∂V/∂x` (tetrahedron-consistent) + Rayleigh α=80 + Underwood residual-velocity scale 0.18
 - TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): **node-node** soft-press (PR#8 desk). Honest post-press viol. **Not** bitwise OpenRadioss `/INTER/TYPE19`
 - Inflate metrics at first animation-stride sample with stretch λ_max ≥ 2
-- Letters B/C fixtures remain in-tree; leftover unpaired cap triangles kept as constant-strain triangles. The page lists B as an **unvalidated demo** and **hides C** (degenerate / unstable).
+- Letters B/C fixtures remain in-tree; leftover unpaired cap triangles kept as constant-strain triangles. The page lists B as an **unvalidated demo, unstable past stretch 2** and **hides C** (degenerate / unstable).
 
 Taylor J2 hex + rigid wall is unchanged.
 
@@ -109,7 +109,7 @@ golden still happens offline on a desk with linux64 OpenRadioss (AGPL).
 | C volume and pressure reported | PASS |
 | D kiss / no punch-through | TYPE19-class Gapmin=CONTACT_KISS; node-node; honest post-press viol. **Not** bitwise Radioss TYPE19 |
 | E same-class vs OpenRadioss fast-load golden | PASS for `dynamic-pload-40ms`. Slow-load (quasi-static) is **not** validated (code removed, not fixed). The Inflation ABC ~54 kPa figure is not claimed |
-| Letters B/C | B is an unvalidated demo on the page (no Radioss tape). C is hidden (degenerate / unstable; first stretch ≥ 2 ~43,000 at 2 ms) |
+| Letters B/C | B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). C is hidden (degenerate / unstable; first stretch ≥ 2 ~43,000 at 2 ms) |
 | Mesh refine ladder | NOT-YET (PR#9) |
 | `/ADYREL` bitwise | NOT-YET — fast-load Underwood analogue, not the engine keyword |
 | Engineering Review pack | Filed at [`engineering-review-inflate-a.md`](engineering-review-inflate-a.md) |

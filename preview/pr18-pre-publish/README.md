@@ -30,8 +30,8 @@ CAPTURE_PREVIEW=1 pnpm test:e2e -- e2e/preview.spec.ts
 | --- | --- | --- |
 | `landing-letter-a-desktop.png` | 1280×800 | Landing: Letter A in Pre, selected by default |
 | `landing-letter-a-iphone.png` | 390×844 | Same, iPhone width |
-| `research-b-labeled-c-hidden-desktop.png` | 1280×800 | Research catalog: A featured, B unvalidated demo, C hidden |
-| `research-b-labeled-c-hidden-iphone.png` | 390×844 | Same, iPhone width |
+| `research-b-labeled-c-hidden-desktop.png` | 1280×800 | Research catalog: A featured, B unvalidated demo, unstable past stretch 2, C hidden |
+| `research-b-labeled-c-hidden-iphone.png` | 390×844 | Same, iPhone width: B labeled unvalidated demo, unstable past stretch 2 |
 | `letter-a-first-stretch-2-edges-desktop.png` | 1280×800 | Letter A post at first stretch ≥ 2, mesh edges on, WARN |
 | `letter-a-first-stretch-2-edges-iphone.png` | 390×844 | Same, iPhone width |
 | `letter-a-mesh-first-stretch-2-desktop.png` | mesh only | Deformed mesh at the warn freeze |

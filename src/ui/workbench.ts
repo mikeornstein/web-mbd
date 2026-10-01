@@ -120,7 +120,7 @@ export function mountWorkbench(root: HTMLElement): void {
   const researchHelp = document.createElement("p");
   researchHelp.className = "muted";
   researchHelp.textContent =
-    "Letter A inflate is the only validated inflate letter (OpenRadioss fast-load reference at first stretch ≥ 2). Letter B is an unvalidated demo (no Radioss tape). Letter C is hidden: degenerate / unstable. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+    "Letter A inflate is the only validated inflate letter (OpenRadioss fast-load reference at first stretch ≥ 2). Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Letter C is hidden: degenerate / unstable. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
 
   const catalog = document.createElement("ul");
   catalog.className = "catalog";
@@ -163,7 +163,7 @@ export function mountWorkbench(root: HTMLElement): void {
           break;
         case "unvalidated-demo":
           badge.classList.add("warn");
-          badge.textContent = "Unvalidated demo · OpenRadioss golden not yet";
+          badge.textContent = "Unvalidated demo, unstable past stretch 2";
           break;
         case "unvalidated-demo-unstable":
           badge.classList.add("warn");
@@ -584,7 +584,7 @@ function validationLabel(status: InflateStockModel["validation"]): string {
     case "radioss-dynamic-golden":
       return "fast-load (dynamic) OpenRadioss reference only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo":
-      return "unvalidated demo · OpenRadioss golden NOT-YET. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "unvalidated demo, unstable past stretch 2 · OpenRadioss golden NOT-YET. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo-unstable":
       return "unvalidated demo, unstable · not listed on the page. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     default: {
@@ -754,9 +754,14 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
           break;
         }
         case "unvalidated-demo":
+          gateEl.textContent =
+            "Acceptance gate: NOT-YET (unvalidated demo, unstable past stretch 2; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+          gateEl.classList.remove("pass");
+          gateEl.classList.add("fail");
+          break;
         case "unvalidated-demo-unstable":
           gateEl.textContent =
-            "Acceptance gate: NOT-YET (unvalidated demo; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+            "Acceptance gate: NOT-YET (unvalidated demo, unstable; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
           gateEl.classList.remove("pass");
           gateEl.classList.add("fail");
           break;

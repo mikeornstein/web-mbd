@@ -61,11 +61,11 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
   {
     kind: "inflate-nh-membrane",
     id: "inflate-b-desmopan",
-    title: "Letter B inflate (unvalidated demo)",
+    title: "Letter B inflate (unvalidated demo, unstable past stretch 2)",
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "Unvalidated demo. Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. OpenRadioss golden NOT-YET (no tape). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
+      "Unvalidated demo, unstable past stretch 2. First stretch ≥ 2 at 4.4, past the warn line. Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. OpenRadioss golden NOT-YET (no tape). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
     validation: "unvalidated-demo",
     listedOnPage: true,
     create: () => createInflateBModel(),

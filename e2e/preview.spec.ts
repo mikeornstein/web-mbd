@@ -47,7 +47,8 @@ async function shotLandingAndCatalog(
 
   await page.getByRole("button", { name: "Research" }).click();
   await expect(page.getByRole("heading", { name: "Stock models from research" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Load Letter B inflate (unvalidated demo)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Load Letter B inflate (unvalidated demo, unstable past stretch 2)" })).toBeVisible();
+  await expect(page.getByText("Unvalidated demo, unstable past stretch 2")).toBeVisible();
   await expect(page.getByRole("button", { name: /Letter C/ })).toHaveCount(0);
   await page.screenshot({ path: path.join(OUT, `research-b-labeled-c-hidden-${tag}.png`), fullPage: true });
 }
