@@ -3,6 +3,14 @@ import { createInflateAModel } from "../src/fixtures/inflateA.js";
 import { solveInflate } from "../src/fe/inflateSolver.js";
 import { cstSample, splitQuadCsts } from "../src/fe/membraneCst.js";
 import { enclosedVolume } from "../src/inflate/meshA.js";
+import {
+  cstTrianglesFromQuads,
+  edgeConsistency,
+  orientTrianglesOutward,
+  reverseTriangle,
+  shellWindingReport,
+  signedVolumeOfTriangles,
+} from "../src/inflate/orientShell.js";
 import { compareInflateToGolden } from "../src/oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../src/oracle/inflateGolden.js";
 
@@ -55,5 +63,19 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(cmp.lawEqual).toBe(true);
     expect(cmp.loadFamilyEqual).toBe(true);
     expect(cmp.ok).toBe(true);
+
+    const restWind = shellWindingReport(model.mesh.coords, model.mesh.quads, model.mesh.tris);
+    const warnCoords = a.meshHistory[a.metrics.warn.frame];
+    expect(warnCoords).toBeDefined();
+    if (warnCoords === undefined) return;
+    const warnWind = shellWindingReport(warnCoords, model.mesh.quads, model.mesh.tris);
+    expect(warnWind.trianglesNeedingFlip).toBe(restWind.trianglesNeedingFlip);
+    expect(warnWind.trianglesNeedingFlip).toBe(376);
+    expect(warnWind.inconsistentEdgeCount).toBe(456);
+    const source = cstTrianglesFromQuads(model.mesh.quads);
+    const restOrient = orientTrianglesOutward(model.mesh.coords, source);
+    const warnOriented = source.map((tri, i) => (restOrient.flipped[i] ? reverseTriangle(tri) : tri));
+    expect(edgeConsistency(warnOriented).inconsistentEdgeCount).toBe(0);
+    expect(signedVolumeOfTriangles(warnCoords, warnOriented)).toBeGreaterThan(0);
   }, 120_000);
 });

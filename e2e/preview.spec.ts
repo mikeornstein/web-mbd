@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
@@ -20,19 +20,42 @@ test.describe("pre-publish preview shots", () => {
     await page.getByRole("button", { name: "Run solve" }).click();
     await expect(page.getByRole("heading", { name: "Post — results" })).toBeVisible({ timeout: 120_000 });
     await expect(page.getByText("WARN  first stretch ≥ 2", { exact: true })).toBeVisible();
-    await expect(page.getByRole("radio", { name: "Both" }).first()).toBeChecked();
+    const post = page.getByRole("region", { name: "Post-processor" });
+    await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
     const postMesh = page.getByRole("img", { name: /Deformed mesh/ });
     await postMesh.scrollIntoViewIfNeeded();
 
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.screenshot({ path: path.join(OUT, "letter-a-first-stretch-2-edges-desktop.png"), fullPage: true });
-    await postMesh.screenshot({ path: path.join(OUT, "letter-a-mesh-first-stretch-2-desktop.png") });
-
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: path.join(OUT, "letter-a-first-stretch-2-edges-iphone.png"), fullPage: true });
-    await postMesh.screenshot({ path: path.join(OUT, "letter-a-mesh-first-stretch-2-iphone.png") });
+    await captureWarn(page, post, postMesh, "both", "Both");
+    await captureWarn(page, post, postMesh, "solid", "Solid");
+    await post.getByRole("radio", { name: "Both" }).click();
   });
 });
+
+async function captureWarn(
+  page: Page,
+  post: Locator,
+  postMesh: Locator,
+  tag: "both" | "solid",
+  radio: "Both" | "Solid",
+): Promise<void> {
+  await post.getByRole("radio", { name: radio }).click();
+  await expect(post.getByRole("radio", { name: radio })).toBeChecked();
+  await postMesh.scrollIntoViewIfNeeded();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.screenshot({
+    path: path.join(OUT, `after-letter-a-first-stretch-2-${tag}-desktop.png`),
+    fullPage: true,
+  });
+  await postMesh.screenshot({ path: path.join(OUT, `after-letter-a-mesh-first-stretch-2-${tag}-desktop.png`) });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: path.join(OUT, `after-letter-a-first-stretch-2-${tag}-iphone.png`),
+    fullPage: true,
+  });
+  await postMesh.screenshot({ path: path.join(OUT, `after-letter-a-mesh-first-stretch-2-${tag}-iphone.png`) });
+}
 
 async function shotLandingAndCatalog(
   page: Page,

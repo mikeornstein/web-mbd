@@ -36,5 +36,13 @@ CAPTURE_PREVIEW=1 pnpm test:e2e -- e2e/preview.spec.ts
 | `letter-a-first-stretch-2-edges-iphone.png` | 390×844 | Same, iPhone width |
 | `letter-a-mesh-first-stretch-2-desktop.png` | mesh only | Deformed mesh at the warn freeze |
 | `letter-a-mesh-first-stretch-2-iphone.png` | mesh only | Same, iPhone width |
+| `before-letter-a-first-stretch-2-both-desktop.png` | 1280×800 | BEFORE (head 2ec0944): solid plus wire |
+| `before-letter-a-first-stretch-2-both-iphone.png` | 390×844 | BEFORE, iPhone width |
+| `before-letter-a-first-stretch-2-solid-desktop.png` | 1280×800 | BEFORE: solid only |
+| `before-letter-a-first-stretch-2-solid-iphone.png` | 390×844 | BEFORE solid, iPhone width |
+| `after-letter-a-first-stretch-2-both-desktop.png` | 1280×800 | AFTER: outward-oriented fill plus wire |
+| `after-letter-a-first-stretch-2-both-iphone.png` | 390×844 | AFTER both, iPhone width |
+| `after-letter-a-first-stretch-2-solid-desktop.png` | 1280×800 | AFTER: solid only |
+| `after-letter-a-first-stretch-2-solid-iphone.png` | 390×844 | AFTER solid, iPhone width |
 
-Slow-load (quasi-static) is **not validated**. The Inflation ABC ~54 kPa figure is **not claimed**.
+Solver connectivity is unchanged. Shading uses a consistent outward winding computed at rest (376 of 3108 triangles reverse for display only). Slow-load (quasi-static) is **not validated**. The Inflation ABC ~54 kPa figure is **not claimed**.

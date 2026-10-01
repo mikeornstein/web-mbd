@@ -386,7 +386,7 @@ export function mountWorkbench(root: HTMLElement): void {
         postMesh.setMesh(loaded.model.mesh, coords, loaded.model.wall.point[2]);
         break;
       case "inflate":
-        postMesh.setQuadMesh(loaded.model.mesh.quads, coords);
+        postMesh.setQuadMesh(loaded.model.mesh.quads, coords, loaded.model.mesh.coords, loaded.model.mesh.tris);
         break;
       default: {
         const _exhaustive: never = loaded;
@@ -425,7 +425,12 @@ export function mountWorkbench(root: HTMLElement): void {
             preMesh.setMesh(state.loaded.model.mesh, state.loaded.model.mesh.coords, state.loaded.model.wall.point[2]);
             break;
           case "inflate":
-            preMesh.setQuadMesh(state.loaded.model.mesh.quads, state.loaded.model.mesh.coords);
+            preMesh.setQuadMesh(
+              state.loaded.model.mesh.quads,
+              state.loaded.model.mesh.coords,
+              state.loaded.model.mesh.coords,
+              state.loaded.model.mesh.tris,
+            );
             break;
           default: {
             const _exhaustive: never = state.loaded;

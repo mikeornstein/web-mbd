@@ -1,3 +1,4 @@
+import { outwardShadingTriangles, triangleNormal, type ShellTriangle } from "../inflate/orientShell.js";
 import type { HexMesh } from "../ir/types.js";
 import { boundaryHexFaces, faceNormal, type HexQuad } from "./hexFaces.js";
 import { defaultCamera, projectPoint, toViewSpace, type Camera3 } from "./project3d.js";
@@ -43,6 +44,7 @@ export class MeshCanvas {
   private coords: ArrayLike<number> = [];
   private hexes: number[] = [];
   private quads: number[] = [];
+  private shadeTris: ShellTriangle[] = [];
   private topology: "hex" | "quad" = "hex";
   private faces: HexQuad[] = [];
   private stroke = "#4cc2ff";
@@ -103,6 +105,7 @@ export class MeshCanvas {
     this.topology = "hex";
     this.hexes = mesh.hexes;
     this.quads = [];
+    this.shadeTris = [];
     this.coords = coords ?? mesh.coords;
     this.faces = boundaryHexFaces(this.hexes);
     if (wallZ !== undefined) this.wallZ = wallZ;
@@ -111,10 +114,16 @@ export class MeshCanvas {
     this.draw();
   }
 
-  setQuadMesh(quads: ArrayLike<number>, coords: ArrayLike<number>): void {
+  setQuadMesh(
+    quads: ArrayLike<number>,
+    coords: ArrayLike<number>,
+    restCoords: ArrayLike<number> = coords,
+    leftoverTris: ArrayLike<number> = [],
+  ): void {
     this.topology = "quad";
     this.hexes = [];
     this.quads = Array.from(quads);
+    this.shadeTris = outwardShadingTriangles(restCoords, quads, leftoverTris);
     this.coords = coords;
     this.faces = [];
     this.wallZ = undefined;
@@ -131,6 +140,7 @@ export class MeshCanvas {
   clear(): void {
     this.hexes = [];
     this.quads = [];
+    this.shadeTris = [];
     this.coords = [];
     this.faces = [];
     this.warnLabel = null;
@@ -250,14 +260,8 @@ export class MeshCanvas {
     const projected: { pts: { x: number; y: number }[]; depth: number; shade: number }[] = [];
 
     if (this.topology === "quad") {
-      for (let e = 0; e < this.quads.length; e += 4) {
-        const face: HexQuad = [
-          this.quads[e]!,
-          this.quads[e + 1]!,
-          this.quads[e + 2]!,
-          this.quads[e + 3]!,
-        ];
-        projected.push(projectFace(this.coords, face, this.camera, w, h, LIGHT));
+      for (const tri of this.shadeTris) {
+        projected.push(projectTriangle(this.coords, tri, this.camera, w, h, LIGHT));
       }
     } else {
       for (const face of this.faces) {
@@ -310,9 +314,10 @@ export class MeshCanvas {
   }
 }
 
-function projectFace(
+function projectLoop(
   coords: ArrayLike<number>,
-  face: HexQuad,
+  nodes: readonly number[],
+  normal: readonly [number, number, number],
   camera: Camera3,
   w: number,
   h: number,
@@ -320,7 +325,7 @@ function projectFace(
 ): { pts: { x: number; y: number }[]; depth: number; shade: number } {
   const pts: { x: number; y: number }[] = [];
   let depth = 0;
-  for (const node of face) {
+  for (const node of nodes) {
     const p = projectPoint(
       coords[node * 3]!,
       coords[node * 3 + 1]!,
@@ -332,11 +337,32 @@ function projectFace(
     pts.push({ x: p.x, y: p.y });
     depth += p.depth;
   }
-  const n = faceNormal(coords, face);
-  const nv = toViewSpace(n[0], n[1], n[2], camera);
+  const nv = toViewSpace(normal[0], normal[1], normal[2], camera);
   const ndotl = nv.x * light[0] + nv.y * light[1] + nv.z * light[2];
   const shade = 0.18 + 0.82 * Math.max(0, ndotl);
-  return { pts, depth: depth / 4, shade };
+  return { pts, depth: depth / nodes.length, shade };
+}
+
+function projectFace(
+  coords: ArrayLike<number>,
+  face: HexQuad,
+  camera: Camera3,
+  w: number,
+  h: number,
+  light: readonly [number, number, number],
+): { pts: { x: number; y: number }[]; depth: number; shade: number } {
+  return projectLoop(coords, face, faceNormal(coords, face), camera, w, h, light);
+}
+
+function projectTriangle(
+  coords: ArrayLike<number>,
+  tri: ShellTriangle,
+  camera: Camera3,
+  w: number,
+  h: number,
+  light: readonly [number, number, number],
+): { pts: { x: number; y: number }[]; depth: number; shade: number } {
+  return projectLoop(coords, tri, triangleNormal(coords, tri), camera, w, h, light);
 }
 
 function collectEdges(
