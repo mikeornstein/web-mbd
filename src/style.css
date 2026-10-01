@@ -137,6 +137,22 @@ body {
   background: #0c1016;
 }
 
+.catalog li.featured {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.catalog .catalog-badge {
+  margin: 0 0 0.45rem;
+  color: var(--ok);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.catalog .catalog-badge.warn {
+  color: var(--warn);
+}
+
 .catalog strong {
   display: block;
   margin-bottom: 0.35rem;
@@ -262,6 +278,13 @@ button:disabled {
 
 .gate.fail {
   color: var(--warn);
+}
+
+.warn-mark {
+  margin: 0 0 1rem;
+  font-weight: 700;
+  color: var(--warn);
+  letter-spacing: 0.02em;
 }
 
 @media (max-width: 640px) {

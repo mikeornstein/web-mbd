@@ -27,12 +27,12 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 | Flexible bodies (linear modal + nonlinear FE) | planned |
 | Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar, refined mesh) |
 | Implicit dynamics (Newmark / HHT, Newton–Raphson) | planned |
-| Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** |
-| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** |
-| Shells, solids, beams, discrete elements | **hex solids MVP** |
+| Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** + **neo-Hookean membrane inflate (letter A)** |
+| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** + **TYPE19-class Gapmin kiss (node-node; not bitwise TYPE19)** |
+| Shells, solids, beams, discrete elements | **hex solids MVP** + **quad membrane shells (letters A/B/C)** |
 | GPU time integration (WebGPU) | planned |
-| Interactive 3D pre/post | **MVP canvas pre/post** (Taylor workbench) |
-| LS-DYNA / OpenRadioss deck import | planned (oracle export + pin compare) |
+| Interactive 3D pre/post | **MVP canvas pre/post** (Taylor + inflate A/B/C; mesh edges default ON) |
+| LS-DYNA / OpenRadioss deck import | planned (oracle export + pin compare). **Inflate: offline OpenRadioss golden JSON only — solver not in Pages** |
 
 ### First model: Taylor bar
 
@@ -40,12 +40,27 @@ Copper-like cylinder into a rigid wall — the Layer-1 gate from the research no
 
 ```bash
 pnpm install
-pnpm test          # unit + Taylor golden / determinism / oracle pin
+pnpm test          # unit + Taylor golden / determinism / oracle pin + inflate Radioss gate
 pnpm taylor        # headless Taylor bar solve + metrics
+pnpm inflate       # headless letter-A NH inflate + warn metrics
+pnpm compare:inflate # machine-diff vs checked-in OpenRadioss golden (exit 0/1)
 pnpm oracle:taylor # live OpenRadioss bitwise Object.is (needs OPENRADIOSS_PATH)
 pnpm dev           # workbench: research → pre → solve → post
 pnpm test:e2e      # Playwright proof of the same path
 ```
+
+Second stock family: letters **A / B / C** neo-Hookean inflate. Locked μ/ρ/H0;
+load family **`dynamic-pload-40ms`** is the filled OpenRadioss golden (PR#8
+`/PLOAD` 0→65 kPa / 40 ms). This is the **fast-load (dynamic) case only**.
+**Slow-load (quasi-static) is not validated:** last measured at head `8a05992`
+the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded;
+that code was removed, not fixed. The Inflation ABC ~54 kPa figure is **not
+claimed**. The page leads with **letter A** (the only validated letter, selected
+by default). Letter B is an **unvalidated demo, unstable past stretch 2** (no Radioss tape). Letter C is
+**hidden** (degenerate / unstable). Default view shows **mesh edges**.
+OpenRadioss stays offline: the Pages app never bundles the AGPL solver. See
+[`docs/mvp-inflate-a.md`](docs/mvp-inflate-a.md) and
+[`docs/engineering-review-inflate-a.md`](docs/engineering-review-inflate-a.md).
 
 This repository is the product, not a paper. Algorithms land here when they run in the browser on real models.
 
@@ -87,7 +102,15 @@ Prior-art research (OpenRadioss Confluence + broader solver landscape) lives in 
 
 ## Status
 
-Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via `pnpm test` / `pnpm taylor`, and the browser workbench loads that stock research model through pre → solve → post. WebGPU and richer field viz are next.
+Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via
+`pnpm test` / `pnpm taylor`. Letter-A neo-Hookean inflate is gated against a checked-in
+OpenRadioss **fast-load (dynamic)** golden (`pnpm inflate` / `pnpm compare:inflate`).
+The page leads with letter A. Letter B is an **unvalidated demo, unstable past stretch 2**; letter C is
+**hidden** (degenerate / unstable). Slow-load
+(quasi-static) is **not validated** (code removed, not fixed). The Inflation ABC
+~54 kPa figure is **not claimed**. The AGPL solver is not in the browser. The
+workbench loads research models through pre → solve → post. Default mesh shading includes
+edges. WebGPU and richer field viz are next.
 
 If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.
 

@@ -1,0 +1,57 @@
+{
+  "provenance": {
+    "source": "openradioss",
+    "desk": "PR#8 quad+/ADYREL radioss-desk-pr8-quadir",
+    "branch": "cursor/openradioss-a-inflate-0e92",
+    "note": "Offline OpenRadioss linux64_gf latest-20260728. AGPL solver is not shipped in the Pages bundle. Dynamic PLOAD 0→65 kPa / 40 ms — not ABC QS (~54 kPa). Do not retune μ or ρ."
+  },
+  "loadFamily": "dynamic-pload-40ms",
+  "law": {
+    "mu1": 3151888.9142857143,
+    "alpha1": 2,
+    "muOthers": 0,
+    "nu": 0.495,
+    "pronyM": 0,
+    "iform": 1,
+    "h0": 0.000381,
+    "rho": 1130,
+    "gapMin": 0.000762,
+    "warnLam": 2,
+    "ishell": 1,
+    "ismstr": 10,
+    "ithick": 1,
+    "loadFamily": "dynamic-pload-40ms",
+    "pMax": 65000,
+    "tRamp": 0.04,
+    "rayleighAlpha": 80
+  },
+  "mesh": {
+    "nNodes": 1554,
+    "nShellQuads": 1554,
+    "NUMELC": 1554,
+    "NUMELTG": 0,
+    "fingerprint": "d9c56487",
+    "source": "mikeornstein/inflation-abc meshes/A.json Design-PASS quad (orphan 28 paired → 14 quads at convert time)"
+  },
+  "warn": {
+    "frame": 11,
+    "t": 0.022012,
+    "lambdaMax": 2.1404,
+    "p": 35769,
+    "volume_mL": 901.8,
+    "psi_J": 9.502
+  },
+  "rest": {
+    "frame": 0,
+    "t": 0,
+    "lambdaMax": 1,
+    "p": 0,
+    "volume_mL": 354,
+    "psi_J": 0
+  },
+  "bands": {
+    "lambdaRel": 0.02,
+    "volumeRel": 0.05,
+    "pressureRel": 0.05
+  }
+}
