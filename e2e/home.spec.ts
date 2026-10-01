@@ -7,9 +7,27 @@ test("home shows the product heading and mvp status", async ({ page }) => {
   await page.screenshot({ path: "e2e/artifacts/home.png", fullPage: true });
 });
 
+test("landing loads Letter A by default; catalog hides C and labels B", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Pre — model inspection" })).toBeVisible();
+  await expect(page.getByText("inflate-a-desmopan")).toBeVisible();
+  await expect(page.getByText(/only validated letter and is loaded by default/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Research" }).click();
+  await expect(page.getByRole("heading", { name: "Stock models from research" })).toBeVisible();
+  await expect(page.getByText("Validated letter · selected by default")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Load Letter A inflate (neo-Hookean)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Load Letter B inflate (unvalidated demo)" })).toBeVisible();
+  await expect(page.getByText("Unvalidated demo · OpenRadioss golden not yet")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Letter C/ })).toHaveCount(0);
+  await expect(page.getByText(/Letter C is hidden/)).toBeVisible();
+  await page.screenshot({ path: "e2e/artifacts/research-catalog.png", fullPage: true });
+});
+
 test("research → pre → solve → post for Taylor stock model", async ({ page }) => {
   await page.goto("/");
 
+  await page.getByRole("button", { name: "Research" }).click();
   await expect(page.getByRole("heading", { name: "Stock models from research" })).toBeVisible();
   await page.getByRole("button", { name: "Load Taylor bar (OFHC copper)" }).click();
 

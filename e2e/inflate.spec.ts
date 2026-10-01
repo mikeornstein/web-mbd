@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("letter A inflate: mesh edges default ON and warn mark at λ≥2", async ({ page }) => {
+test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥ 2", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "web-mbd" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Load Letter A inflate (neo-Hookean)" }).click();
   await expect(page.getByRole("heading", { name: "Pre — model inspection" })).toBeVisible();
   await expect(page.getByText("inflate-a-desmopan")).toBeVisible();
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
@@ -29,8 +27,8 @@ test("letter A inflate: mesh edges default ON and warn mark at λ≥2", async ({
     timeout: 120_000,
   });
   await expect(page.getByText(/Acceptance gate: PASS/)).toBeVisible();
-  await expect(page.getByText("WARN  first λ_max ≥ 2", { exact: true })).toBeVisible();
-  await expect(page.getByRole("img", { name: /WARN\s+first λ_max ≥ 2/ })).toBeVisible();
+  await expect(page.getByText("WARN  first stretch ≥ 2", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: /WARN\s+first stretch ≥ 2/ })).toBeVisible();
   await expect(page.getByLabel("Solve metrics").getByText("λ_max", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Solve metrics").getByText("dynamic-pload-40ms", { exact: true }),
@@ -38,6 +36,15 @@ test("letter A inflate: mesh edges default ON and warn mark at λ≥2", async ({
   await expect(
     page.getByLabel("Solve metrics").getByText("type19-class-gapmin-node-node", { exact: true }),
   ).toBeVisible();
+  const metrics = page.getByLabel("Solve metrics");
+  await expect(metrics.getByText("Punch-through", { exact: true })).toBeVisible();
+  await expect(metrics.getByText("no", { exact: true })).toBeVisible();
+  const slider = page.getByRole("slider", { name: "Time step" });
+  const max = Number(await slider.getAttribute("max"));
+  expect(max).toBeGreaterThan(0);
+  await expect(page.getByText(new RegExp(`index ${String(max)} / ${String(max)}`))).toBeVisible();
+  await expect(metrics.getByText(new RegExp(`frame ${String(max)}`))).toBeVisible();
+  await expect(metrics.getByText(/λ=2\.\d/)).toBeVisible();
   const post = page.getByRole("region", { name: "Post-processor" });
   await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
   const postMesh = page.getByRole("img", { name: /Deformed mesh/ });

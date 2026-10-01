@@ -3,6 +3,7 @@ import { pageTitle, productName, statusLabel } from "./app.ts";
 import {
   getResearchStockModel,
   metricsPassAcceptance,
+  pageCatalogModels,
   RESEARCH_STOCK_MODELS,
 } from "./research/catalog.ts";
 import { solveExplicit } from "./fe/solver.ts";
@@ -15,7 +16,13 @@ test("status is mvp", () => {
   expect(statusLabel).toBe("mvp");
 });
 
-test("research catalog exposes inflate A/B/C with labeled validation", () => {
+test("research catalog leads with Letter A, labels B, hides C from the page", () => {
+  const pageIds = pageCatalogModels().map((m) => m.id);
+  expect(pageIds[0]).toBe("inflate-a-desmopan");
+  expect(pageIds).toContain("inflate-b-desmopan");
+  expect(pageIds).not.toContain("inflate-c-desmopan");
+  expect(pageIds).toContain("taylor-bar-copper");
+
   const inflate = getResearchStockModel("inflate-a-desmopan");
   expect(inflate.kind).toBe("inflate-nh-membrane");
   if (inflate.kind !== "inflate-nh-membrane") return;
@@ -25,6 +32,8 @@ test("research catalog exposes inflate A/B/C with labeled validation", () => {
   expect(model.mesh.nTris).toBe(0);
   expect(model.law.loadFamily).toBe("dynamic-pload-40ms");
   expect(inflate.validation).toBe("radioss-dynamic-golden");
+  expect(inflate.listedOnPage).toBe(true);
+  expect(inflate.summary).toContain("only validated inflate letter");
   expect(inflate.summary).toContain("not validated");
   expect(inflate.summary).toContain("54 kPa figure is not claimed");
   expect(model.controls.contactKind).toBe("node-node");
@@ -33,7 +42,10 @@ test("research catalog exposes inflate A/B/C with labeled validation", () => {
   const b = getResearchStockModel("inflate-b-desmopan");
   expect(b.kind).toBe("inflate-nh-membrane");
   if (b.kind !== "inflate-nh-membrane") return;
-  expect(b.validation).toBe("playable-not-yet-radioss");
+  expect(b.validation).toBe("unvalidated-demo");
+  expect(b.listedOnPage).toBe(true);
+  expect(b.title).toContain("unvalidated demo");
+  expect(b.summary.toLowerCase()).not.toContain("playable");
   const bModel = b.create();
   expect(bModel.mesh.letter).toBe("B");
   expect(bModel.law.mu1).toBe(model.law.mu1);
@@ -42,10 +54,15 @@ test("research catalog exposes inflate A/B/C with labeled validation", () => {
   const c = getResearchStockModel("inflate-c-desmopan");
   expect(c.kind).toBe("inflate-nh-membrane");
   if (c.kind !== "inflate-nh-membrane") return;
-  expect(c.validation).toBe("playable-not-yet-radioss");
+  expect(c.validation).toBe("unvalidated-demo-unstable");
+  expect(c.listedOnPage).toBe(false);
+  expect(c.title).toContain("unstable");
+  expect(c.summary.toLowerCase()).not.toContain("playable");
   const cModel = c.create();
   expect(cModel.mesh.letter).toBe("C");
   expect(cModel.law.h0).toBe(model.law.h0);
+
+  expect(RESEARCH_STOCK_MODELS.some((m) => m.id === "inflate-c-desmopan")).toBe(true);
 });
 
 test("research catalog exposes the Taylor bar stock model", () => {

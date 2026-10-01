@@ -24,9 +24,10 @@ Preconditions:
 - Preview is healthy at `http://127.0.0.1:4173`.
 - Doctor has confirmed the `web-mbd` heading.
 
-- **Open home.** Go to `/`. Run `page.goto("/")`. The heading `web-mbd` is visible.
+- **Open home.** Go to `/`. Run `page.goto("/")`. The heading `web-mbd` is visible. Letter A inflate is loaded by default into Pre.
 - **Status.** `getByText("mvp", { exact: true })` is visible.
-- **Load research stock.** Click `Load Taylor bar (OFHC copper)`.
+- **Research catalog.** Click `Research`. Letter A is first and featured. Letter B is labeled unvalidated demo. Letter C is not listed.
+- **Load Taylor.** Click `Load Taylor bar (OFHC copper)`.
 - **Pre.** Heading `Pre — model inspection`, label `Model tree`, img `Undeformed mesh`.
 - **Solve.** Click `Continue to solve`, then `Run solve`.
 - **Post.** Heading `Post — results`, text `Acceptance gate: PASS`, imgs `Deformed mesh` and `Energy history`.

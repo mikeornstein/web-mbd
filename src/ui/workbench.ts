@@ -8,8 +8,9 @@ import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
   metricsPassAcceptance,
-  RESEARCH_STOCK_MODELS,
+  pageCatalogModels,
   type InflateStockModel,
+  type ResearchStockModel,
   type TaylorStockModel,
 } from "../research/catalog.js";
 import { EnergyChart } from "../viz/energyChart.js";
@@ -51,7 +52,7 @@ export function mountWorkbench(root: HTMLElement): void {
     loaded: { kind: "none" },
     stage: "research",
     solving: false,
-    statusMessage: "Load a stock model from research to begin.",
+    statusMessage: "Letter A inflate is the only validated letter and is loaded by default.",
     drawMode: "both",
     postFrame: 0,
   };
@@ -119,14 +120,63 @@ export function mountWorkbench(root: HTMLElement): void {
   const researchHelp = document.createElement("p");
   researchHelp.className = "muted";
   researchHelp.textContent =
-    "Layer-1 validation cases from the research notes. Load one into the Model IR for pre → solve → post.";
+    "Letter A inflate is the only validated inflate letter (OpenRadioss fast-load reference at first stretch ≥ 2). Letter B is an unvalidated demo (no Radioss tape). Letter C is hidden: degenerate / unstable. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
 
   const catalog = document.createElement("ul");
   catalog.className = "catalog";
-  for (const entry of RESEARCH_STOCK_MODELS) {
+
+  const loadStock = (stock: ResearchStockModel): void => {
+    switch (stock.kind) {
+      case "taylor-j2-hex":
+        state.loaded = { kind: "taylor", stock, model: stock.create(), result: null };
+        break;
+      case "inflate-nh-membrane":
+        state.loaded = { kind: "inflate", stock, model: stock.create(), result: null };
+        break;
+      default: {
+        const _exhaustive: never = stock;
+        throw new Error(`unhandled stock ${String(_exhaustive)}`);
+      }
+    }
+    state.postFrame = 0;
+    boundPreKey = null;
+    boundPostKey = null;
+    state.drawMode = "both";
+    state.stage = "pre";
+    state.statusMessage = `Loaded ${stock.title} from research. Inspect the model in Pre.`;
+  };
+
+  for (const entry of pageCatalogModels()) {
     const li = document.createElement("li");
+    if (entry.id === "inflate-a-desmopan") {
+      li.classList.add("featured");
+      li.setAttribute("aria-current", "true");
+    }
     const title = document.createElement("strong");
     title.textContent = entry.title;
+    const badge = document.createElement("p");
+    badge.className = "catalog-badge";
+    if (entry.kind === "inflate-nh-membrane") {
+      switch (entry.validation) {
+        case "radioss-dynamic-golden":
+          badge.textContent = "Validated letter · selected by default";
+          break;
+        case "unvalidated-demo":
+          badge.classList.add("warn");
+          badge.textContent = "Unvalidated demo · OpenRadioss golden not yet";
+          break;
+        case "unvalidated-demo-unstable":
+          badge.classList.add("warn");
+          badge.textContent = "Unvalidated demo, unstable";
+          break;
+        default: {
+          const _exhaustive: never = entry.validation;
+          throw new Error(`unhandled validation ${String(_exhaustive)}`);
+        }
+      }
+    } else {
+      badge.textContent = "Layer-1 Taylor gate";
+    }
     const summary = document.createElement("p");
     summary.textContent = entry.summary;
     const meta = document.createElement("p");
@@ -137,28 +187,10 @@ export function mountWorkbench(root: HTMLElement): void {
     loadBtn.textContent = "Load into pre";
     loadBtn.setAttribute("aria-label", `Load ${entry.title}`);
     loadBtn.addEventListener("click", () => {
-      const stock = getResearchStockModel(entry.id);
-      switch (stock.kind) {
-        case "taylor-j2-hex":
-          state.loaded = { kind: "taylor", stock, model: stock.create(), result: null };
-          break;
-        case "inflate-nh-membrane":
-          state.loaded = { kind: "inflate", stock, model: stock.create(), result: null };
-          break;
-        default: {
-          const _exhaustive: never = stock;
-          throw new Error(`unhandled stock ${String(_exhaustive)}`);
-        }
-      }
-      state.postFrame = 0;
-      boundPreKey = null;
-      boundPostKey = null;
-      state.drawMode = "both";
-      state.stage = "pre";
-      state.statusMessage = `Loaded ${stock.title} from research. Inspect the model in Pre.`;
+      loadStock(getResearchStockModel(entry.id));
       render();
     });
-    li.append(title, summary, meta, loadBtn);
+    li.append(title, badge, summary, meta, loadBtn);
     catalog.append(li);
   }
   researchPanel.append(researchHeading, researchHelp, catalog);
@@ -340,7 +372,7 @@ export function mountWorkbench(root: HTMLElement): void {
     postMesh.setDrawMode(state.drawMode);
     if (loaded.kind === "inflate") {
       const lam = loaded.result.lambdaHistory[idx] ?? 1;
-      postMesh.setWarnLabel(lam >= loaded.model.law.warnLam ? "WARN  first λ_max ≥ 2" : null);
+      postMesh.setWarnLabel(lam >= loaded.model.law.warnLam ? "WARN  first stretch ≥ 2" : null);
     } else {
       postMesh.setWarnLabel(null);
     }
@@ -439,6 +471,10 @@ export function mountWorkbench(root: HTMLElement): void {
     }
   }
 
+  const defaultStock = getResearchStockModel("inflate-a-desmopan");
+  loadStock(defaultStock);
+  state.statusMessage =
+    "Letter A inflate is the only validated letter and is loaded by default. Inspect the model in Pre.";
   render();
 }
 
@@ -547,8 +583,10 @@ function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
       return "fast-load (dynamic) OpenRadioss reference only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
-    case "playable-not-yet-radioss":
-      return "playable · OpenRadioss golden NOT-YET. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+    case "unvalidated-demo":
+      return "unvalidated demo · OpenRadioss golden NOT-YET. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+    case "unvalidated-demo-unstable":
+      return "unvalidated demo, unstable · not listed on the page. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     default: {
       const _exhaustive: never = status;
       throw new Error(`unhandled validation ${String(_exhaustive)}`);
@@ -681,7 +719,7 @@ function fillMetrics(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { kind
 function fillWarnMark(el: HTMLParagraphElement, loaded: Exclude<LoadedSession, { kind: "none" }>): void {
   if (loaded.kind === "inflate" && loaded.result?.metrics.warn) {
     el.hidden = false;
-    el.textContent = "WARN  first λ_max ≥ 2";
+    el.textContent = "WARN  first stretch ≥ 2";
     return;
   }
   el.hidden = true;
@@ -715,9 +753,10 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
           gateEl.classList.toggle("fail", !cmp.ok);
           break;
         }
-        case "playable-not-yet-radioss":
+        case "unvalidated-demo":
+        case "unvalidated-demo-unstable":
           gateEl.textContent =
-            "Acceptance gate: NOT-YET (playable; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+            "Acceptance gate: NOT-YET (unvalidated demo; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
           gateEl.classList.remove("pass");
           gateEl.classList.add("fail");
           break;

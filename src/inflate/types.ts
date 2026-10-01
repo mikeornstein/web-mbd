@@ -7,7 +7,10 @@ export type InflateLoadFamily =
 
 export type InflateLetter = "A" | "B" | "C";
 
-export type InflateValidationStatus = "radioss-dynamic-golden" | "playable-not-yet-radioss";
+export type InflateValidationStatus =
+  | "radioss-dynamic-golden"
+  | "unvalidated-demo"
+  | "unvalidated-demo-unstable";
 
 export type InflateContactClass = typeof CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE;
 
