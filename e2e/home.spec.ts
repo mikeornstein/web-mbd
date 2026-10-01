@@ -18,7 +18,7 @@ test("landing loads Letter A by default; catalog hides C and labels B", async ({
   await expect(page.getByText("Validated letter · selected by default")).toBeVisible();
   await expect(page.getByRole("button", { name: "Load Letter A inflate (neo-Hookean)" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Load Letter B inflate (unvalidated demo, unstable past stretch 2)" })).toBeVisible();
-  await expect(page.getByText("Unvalidated demo, unstable past stretch 2")).toBeVisible();
+  await expect(page.getByText("Unvalidated demo, unstable past stretch 2", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /Letter C/ })).toHaveCount(0);
   await expect(page.getByText(/Letter C is hidden/)).toBeVisible();
   await page.screenshot({ path: "e2e/artifacts/research-catalog.png", fullPage: true });
