@@ -23,4 +23,34 @@ describe("time-step convergence check (kill off, listing 2 μs cap)", () => {
     expect(model.controls.damping.kind).toBe("peak-kill");
     expect(model.controls.dtMax).toBeUndefined();
   });
+
+  it("committed capped-Δt table is step-independent at 2, 8, and 16 ms", () => {
+    const md = readFileSync(new URL("dt-convergence-results.md", DIAG), "utf8");
+    expect(md).toContain("step-independent");
+    expect(md).toContain("pinned only to the OpenCourant copy");
+    const raw: unknown = JSON.parse(
+      readFileSync(new URL("dt-convergence-results.json", DIAG), "utf8"),
+    );
+    function isRecord(v: unknown): v is Record<string, unknown> {
+      return typeof v === "object" && v !== null;
+    }
+    function num(v: unknown, label: string): number {
+      if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`dt test: bad ${label}`);
+      return v;
+    }
+    if (!isRecord(raw)) throw new Error("dt json");
+    expect(raw["stepDependent"]).toBe(false);
+    expect(raw["defaultUnchanged"]).toBe("peak-kill-0.18");
+    const rows = raw["rows"];
+    if (!Array.isArray(rows)) throw new Error("rows");
+    const at2 = rows[1];
+    const at16 = rows[8];
+    if (!isRecord(at2) || !isRecord(at16)) throw new Error("key rows");
+    if (!isRecord(at2["capped"]) || !isRecord(at16["capped"]) || !isRecord(at16["current"])) {
+      throw new Error("cells");
+    }
+    expect(num(at2["capped"]["lambdaMax"], "2ms")).toBeCloseTo(1.116, 2);
+    expect(num(at16["capped"]["lambdaMax"], "16ms cap")).toBeCloseTo(2.071, 2);
+    expect(num(at16["current"]["lambdaMax"], "16ms cur")).toBeCloseTo(2.105, 2);
+  });
 });
