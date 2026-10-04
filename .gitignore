@@ -38,6 +38,11 @@ radioss/**/*.zip
 radioss/env.sh
 radioss/A-inflate/oriented-a.json
 
+# Raw engine animation / node / time-history (derived tables live under docs/)
+radioss/**/*.vtk
+radioss/**/*T01
+radioss/**/*T01.csv
+
 docs/research/**/*.f64bin
 docs/research/*-probe.json
 docs/research/mass-vs-live.json

@@ -6,6 +6,7 @@ import type { EnergySample, ModelIR, SolveResult } from "../ir/types.js";
 import { compareInflateToGolden, toySamplesFromSolve } from "../oracle/compareInflate.js";
 import { stretchDiagnosticsPageText } from "../oracle/stretchDiagnosticResults.js";
 import { perStepEnergyPageText } from "../oracle/perStepEnergyResults.js";
+import { deckNodeOutputPageText } from "../oracle/deckNodeOutputResults.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -601,6 +602,7 @@ function createStretchDiagSection(): HTMLElement {
   wrap.append(heading, rules, results);
   const perStep = createPerStepEnergySection();
   wrap.append(perStep);
+  wrap.append(createDeckNodeOutputSection());
   return wrap;
 }
 
@@ -609,6 +611,19 @@ function createPerStepEnergySection(): HTMLElement {
   const heading = document.createElement("h3");
   heading.textContent = "Letter A per-step energy bookkeeping (correctness gate on the toy)";
   const copy = perStepEnergyPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckNodeOutputSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A deck node-output re-run (measurement, not a gate)";
+  const copy = deckNodeOutputPageText();
   const rules = document.createElement("pre");
   rules.textContent = copy.rules;
   const results = document.createElement("pre");

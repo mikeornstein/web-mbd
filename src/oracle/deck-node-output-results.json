@@ -1,0 +1,13 @@
+{
+  "kind": "deck-node-output-measurement",
+  "status": "plan-committed-results-not-yet-run",
+  "notAGate": true,
+  "package": {
+    "tag": "latest-20261003",
+    "zipSha256": "e0d2b8b956ba451b4214b5f04f019922a0bd0bdab134ce171037ae69c0309fa8",
+    "zipBytes": 83864216,
+    "engineCommit": "6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba"
+  },
+  "verdictLine": null,
+  "pageBody": "Results not yet written. Plan was committed first. Quad split locked: primary diagonal is first-to-third node (i0–i2) of each toy-oriented quad. Sensitivity is the other diagonal; it decides nothing. Raw node files stay gitignored."
+}
