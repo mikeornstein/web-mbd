@@ -9,6 +9,15 @@ import {
 
 const DIAG = new URL("../docs/diag-pr18-openradioss-control/", import.meta.url);
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function num(v: unknown, label: string): number {
+  if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`adyrel-period test: bad ${label}`);
+  return v;
+}
+
 describe("adaptive-period option (default still peak-kill)", () => {
   it("prediction file states the per-second port and copied 2.79 ms before any code", () => {
     const text = readFileSync(new URL("adyrel-period-port-prediction.md", DIAG), "utf8");
@@ -37,5 +46,26 @@ describe("adaptive-period option (default still peak-kill)", () => {
     expect(200 * toyMeanDt).toBeCloseTo(0.001646, 5);
     expect(firstOnRatePerSecond(toyMeanDt)).toBeCloseTo(12.15, 1);
     expect(200 * toyMeanDt).not.toBeCloseTo(ENGINE_LISTING_FIRST_ON_TIME_S, 3);
+  });
+
+  it("live rate print stopped because toy Δt makes 10⁻⁴ / Δt far from 51 /s", () => {
+    const raw: unknown = JSON.parse(
+      readFileSync(new URL("adyrel-period-port-results.json", DIAG), "utf8"),
+    );
+    if (!isRecord(raw)) throw new Error("results json");
+    expect(raw["stop"]).toBe(true);
+    expect(raw["defaultChanged"]).toBe(false);
+    expect(raw["sphereCheck"]).toBe("not-run");
+    expect(raw["portApplied"]).toBe("per-second");
+    if (!isRecord(raw["applied"])) throw new Error("applied");
+    if (!isRecord(raw["perStep"])) throw new Error("perStep");
+    if (!isRecord(raw["engineListing"])) throw new Error("listing");
+    const appliedRate = num(raw["applied"]["firstOnRatePerSecond"], "applied.rate");
+    const stepRate = num(raw["perStep"]["firstOnRatePerSecond"], "perStep.rate");
+    const listingRate = num(raw["engineListing"]["ratePerSecond"], "listing.rate");
+    expect(appliedRate).toBeCloseTo(11.86, 1);
+    expect(stepRate).toBeCloseTo(12.01, 1);
+    expect(listingRate).toBeCloseTo(50.7, 0);
+    expect(appliedRate * 2).toBeLessThan(listingRate);
   });
 });
