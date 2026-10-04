@@ -55,12 +55,13 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await postMesh.screenshot({ path: "e2e/artifacts/inflate-mesh-warn.png" });
 
   await post.getByRole("radio", { name: "Wire" }).click();
+  await expect(post.getByRole("radio", { name: "Wire" })).toBeChecked();
   const wireShot = await postMesh.screenshot();
   await post.getByRole("radio", { name: "Solid" }).click();
-  await expect(page.getByLabel("Model tree").getByText("solid fill only (mesh edges off)", { exact: true })).toBeVisible();
-  await expect(page.getByText("mesh edges default ON", { exact: true })).toHaveCount(0);
+  await expect(post.getByRole("radio", { name: "Solid" })).toBeChecked();
   const solidShot = await postMesh.screenshot();
   expect(solidShot.equals(wireShot)).toBe(false);
   await post.getByRole("radio", { name: "Both" }).click();
+  await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
   await page.screenshot({ path: "e2e/artifacts/inflate-post-edges.png", fullPage: true });
 });

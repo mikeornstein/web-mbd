@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_PLOAD_400MS, MU, RHO, SHIP_SHELL_QUADS } from "../inflate/constants.js";
 import { lockedLawCard } from "../inflate/lawCard.js";
 import { enclosedVolume, loadShipMesh, loadShipMeshA } from "../inflate/meshA.js";
-import { compareInflateToGolden } from "./compareInflate.js";
+import { compareInflateToGolden, DIAGNOSIS_TOY_SNAP, diagnosisMissMatchesLock } from "./compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "./inflateGolden.js";
 import type { InflateLawCard, InflateWarnMetrics } from "../inflate/types.js";
 
@@ -130,5 +130,77 @@ describe("inflate Radioss golden + law card", () => {
     expect(golden.provenance.note).toContain("not ABC QS");
     expect(golden.provenance.note).toContain("Do not retune");
     expect(golden.provenance.note.toLowerCase()).toContain("outward");
+  });
+
+  it("diagnosis lock rejects a band-widen PASS and accepts the recorded snap miss", () => {
+    const golden = loadInflateGolden();
+    const snapWarn: InflateWarnMetrics = {
+      frame: DIAGNOSIS_TOY_SNAP.frame,
+      t: 0.02400758092700195,
+      lambdaMax: DIAGNOSIS_TOY_SNAP.lambdaMax,
+      p: 39012.31900637817,
+      volume_mL: DIAGNOSIS_TOY_SNAP.volume_mL,
+      psi_J: 80.91495778156124,
+      warn: true,
+    };
+    const miss = compareInflateToGolden(
+      {
+        warn: snapWarn,
+        loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+        meshFingerprint: golden.mesh.fingerprint,
+        punchedThrough: false,
+        psi_J: snapWarn.psi_J,
+        law: lockedLawCard(),
+      },
+      golden,
+    );
+    expect(miss.ok).toBe(false);
+    const lock = diagnosisMissMatchesLock(miss, golden, snapWarn);
+    expect(lock.ok).toBe(true);
+
+    const matchingWarn: InflateWarnMetrics = {
+      frame: golden.warn.frame,
+      t: golden.warn.t,
+      lambdaMax: golden.warn.lambdaMax,
+      p: golden.warn.p,
+      volume_mL: golden.warn.volume_mL,
+      psi_J: golden.warn.psi_J,
+      warn: true,
+    };
+    const pass = compareInflateToGolden(
+      {
+        warn: matchingWarn,
+        loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+        meshFingerprint: golden.mesh.fingerprint,
+        punchedThrough: false,
+        psi_J: 9.5,
+        law: lockedLawCard(),
+      },
+      golden,
+    );
+    expect(pass.ok).toBe(true);
+    const passLock = diagnosisMissMatchesLock(pass, golden, matchingWarn);
+    expect(passLock.ok).toBe(false);
+    expect(passLock.reasons.some((r) => r.includes("PASS"))).toBe(true);
+
+    const widened = {
+      ...golden,
+      bands: { lambdaRel: 2, volumeRel: 5, pressureRel: 5 },
+    };
+    const fakePass = compareInflateToGolden(
+      {
+        warn: snapWarn,
+        loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
+        meshFingerprint: golden.mesh.fingerprint,
+        punchedThrough: false,
+        psi_J: snapWarn.psi_J,
+        law: lockedLawCard(),
+      },
+      widened,
+    );
+    expect(fakePass.ok).toBe(true);
+    const widenLock = diagnosisMissMatchesLock(fakePass, widened, snapWarn);
+    expect(widenLock.ok).toBe(false);
+    expect(widenLock.reasons.some((r) => r.includes("widen"))).toBe(true);
   });
 });

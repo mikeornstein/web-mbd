@@ -10,7 +10,7 @@ import {
   shellWindingReport,
   signedVolumeOfTriangles,
 } from "../src/inflate/orientShell.js";
-import { compareInflateToGolden } from "../src/oracle/compareInflate.js";
+import { compareInflateToGolden, diagnosisMissMatchesLock } from "../src/oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../src/oracle/inflateGolden.js";
 
 describe("letter-A inflate vs Radioss golden", () => {
@@ -68,11 +68,8 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(cmp.lawEqual).toBe(true);
     expect(cmp.loadFamilyEqual).toBe(true);
     expect(cmp.ok).toBe(false);
-    expect(cmp.lambdaRelError).not.toBeNull();
-    if (cmp.lambdaRelError === null || cmp.volumeRelError === null) return;
-    expect(cmp.lambdaRelError).toBeGreaterThan(golden.bands.lambdaRel);
-    expect(cmp.volumeRelError).toBeGreaterThan(golden.bands.volumeRel);
-    expect(cmp.reasons.some((r) => r.includes("λ rel error"))).toBe(true);
+    const diagnosis = diagnosisMissMatchesLock(cmp, golden, a.metrics.warn);
+    expect(diagnosis.ok).toBe(true);
 
     const restWind = shellWindingReport(model.mesh.coords, model.mesh.quads, model.mesh.tris);
     const warnCoords = a.meshHistory[a.metrics.warn.frame];

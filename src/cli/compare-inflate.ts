@@ -1,6 +1,10 @@
 import { createInflateAModel } from "../fixtures/inflateA.js";
 import { solveInflate } from "../fe/inflateSolver.js";
-import { compareInflateToGolden, formatInflateCompare } from "../oracle/compareInflate.js";
+import {
+  compareInflateToGolden,
+  diagnosisMissMatchesLock,
+  formatInflateCompare,
+} from "../oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../oracle/inflateGolden.js";
 import { LAW_CARD_DUMP_LINES } from "../inflate/lawCard.js";
 
@@ -32,7 +36,15 @@ function main(): void {
   console.log(JSON.stringify(payload, null, 2));
   const cmp = compareInflateToGolden({ ...metrics, law: result.law }, golden);
   console.log(formatInflateCompare(cmp));
-  if (!cmp.ok) process.exit(1);
+  const diagnosis = diagnosisMissMatchesLock(cmp, golden, metrics.warn);
+  if (!diagnosis.ok) {
+    console.log("DIAGNOSIS LOCK: FAIL");
+    for (const r of diagnosis.reasons) console.log(`  - ${r}`);
+    process.exit(1);
+  }
+  console.log(
+    "DIAGNOSIS LOCK: item 1 passed; miss is toy snap-through at frame 12 λ≈4.33. Bands 2/5/5 unchanged. Do not retune μ.",
+  );
 }
 
 main();

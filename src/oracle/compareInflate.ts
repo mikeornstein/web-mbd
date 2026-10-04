@@ -141,6 +141,59 @@ export function compareInflateToGolden(
   };
 }
 
+/**
+ * Locked PR18 diagnosis (Themis Quality four-item table). Item 1 reproduced
+ * the old unoriented golden on this package, so this miss is the toy
+ * snap-through. Bands stay 2/5/5. Do not retune μ. Do not treat a widened
+ * band as a pass.
+ */
+export const DIAGNOSIS_TOY_SNAP = {
+  frame: 12,
+  lambdaMax: 4.332389712832123,
+  volume_mL: 3274.240175723335,
+} as const;
+
+export function diagnosisMissMatchesLock(
+  cmp: InflateCompareResult,
+  golden: RadiossInflateGolden,
+  warn: InflateSolveMetrics["warn"],
+): { ok: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+  if (golden.bands.lambdaRel !== 0.02 || cmp.bands.lambdaRel !== 0.02) {
+    reasons.push("λ band is not the locked 2% (do not widen)");
+  }
+  if (golden.bands.volumeRel !== 0.05 || cmp.bands.volumeRel !== 0.05) {
+    reasons.push("V band is not the locked 5% (do not widen)");
+  }
+  if (golden.bands.pressureRel !== 0.05 || cmp.bands.pressureRel !== 0.05) {
+    reasons.push("p band is not the locked 5% (do not widen)");
+  }
+  if (!cmp.lawEqual) reasons.push("law-card drifted; μ/load law must stay locked");
+  if (cmp.ok) {
+    reasons.push("compare became a PASS; that is not a diagnosis lock (do not widen bands)");
+  }
+  if (warn === null) {
+    reasons.push("toy never crossed WARN_LAM");
+  } else {
+    if (warn.frame !== DIAGNOSIS_TOY_SNAP.frame) {
+      reasons.push(`toy warn frame ${warn.frame} ≠ locked snap frame ${DIAGNOSIS_TOY_SNAP.frame}`);
+    }
+    if (!Object.is(warn.lambdaMax, DIAGNOSIS_TOY_SNAP.lambdaMax)) {
+      reasons.push(`toy warn λ ${warn.lambdaMax} ≠ locked snap ${DIAGNOSIS_TOY_SNAP.lambdaMax}`);
+    }
+    if (!Object.is(warn.volume_mL, DIAGNOSIS_TOY_SNAP.volume_mL)) {
+      reasons.push(`toy warn V ${warn.volume_mL} ≠ locked snap ${DIAGNOSIS_TOY_SNAP.volume_mL}`);
+    }
+  }
+  if (cmp.lambdaRelError === null || cmp.lambdaRelError <= golden.bands.lambdaRel) {
+    reasons.push("λ error is not outside the locked 2% band");
+  }
+  if (cmp.volumeRelError === null || cmp.volumeRelError <= golden.bands.volumeRel) {
+    reasons.push("V error is not outside the locked 5% band");
+  }
+  return { ok: reasons.length === 0, reasons };
+}
+
 export function formatInflateCompare(result: InflateCompareResult): string {
   const lines = [
     result.ok ? "INFLATE ORACLE: PASS" : "INFLATE ORACLE: FAIL",
