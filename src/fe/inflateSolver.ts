@@ -21,6 +21,18 @@ import type { EnergySample } from "../ir/types.js";
 export interface InflateSolveOptions {
   maxWallMs?: number;
   onProgress?: (info: { t: number; endTime: number; step: number; lambdaMax: number }) => void;
+  /**
+   * Diagnosis only. Default (omit/false): stop at the first stretch ≥ 2, same
+   * as the shipped toy. True keeps sampling to endTime so a kill-off curve can
+   * be compared past the warn freeze. Does not change default callers.
+   */
+  continuePastWarn?: boolean;
+  /**
+   * Diagnosis only. Default (omit/false): letter A uses true enclosed volume
+   * (outward shell required). True uses the signed tetrahedron sum so the
+   * as-wound mesh can be run without flipping faces.
+   */
+  signedRestVolume?: boolean;
 }
 
 export function assertInflateModel(model: InflateModelIR): void {
@@ -103,9 +115,10 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   if (!(dt > 0) || dt > dtCrit0) dt = controls.cfl * dtCrit0;
 
   const volume0 =
-    mesh.letter === "A"
-      ? trueEnclosedVolume(x, mesh.quads, mesh.tris)
-      : enclosedVolume(x, mesh.quads, mesh.tris);
+    options.signedRestVolume === true || mesh.letter !== "A"
+      ? enclosedVolume(x, mesh.quads, mesh.tris)
+      : trueEnclosedVolume(x, mesh.quads, mesh.tris);
+  const stopAtWarn = options.continuePastWarn !== true;
   const history: EnergySample[] = [];
   const meshHistory: Float64Array[] = [];
   const lambdaHistory: number[] = [];
@@ -241,7 +254,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   nextSample = controls.historyInterval;
   options.onProgress?.({ t: 0, endTime: controls.endTime, step: 0, lambdaMax: 1 });
 
-  while (t < controls.endTime - 1e-18 && step < maxSteps && warn === null) {
+  while (t < controls.endTime - 1e-18 && step < maxSteps && !(stopAtWarn && warn !== null)) {
     if (performance.now() - wallClock0 > maxWallMs) {
       throw new Error(`inflate solve exceeded ${maxWallMs} ms at t=${t}, step=${step}`);
     }

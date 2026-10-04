@@ -20,7 +20,8 @@
     "oracle:taylor": "tsx src/cli/run-oracle-taylor.ts",
     "inflate": "tsx src/cli/run-inflate.ts",
     "compare:inflate": "tsx src/cli/compare-inflate.ts",
-    "diagnose:inflate-snap": "tsx src/cli/diagnose-inflate-snap.ts"
+    "diagnose:inflate-snap": "tsx src/cli/diagnose-inflate-snap.ts",
+    "diagnose:kill-off": "tsx src/cli/diagnose-kill-off.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
