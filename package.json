@@ -25,6 +25,8 @@
     "diagnose:adyrel-period": "tsx src/cli/diagnose-adyrel-period.ts",
     "diagnose:adyrel-measurement": "tsx src/cli/diagnose-adyrel-measurement.ts",
     "diagnose:dt-convergence": "tsx src/cli/diagnose-dt-convergence.ts",
+    "diagnose:slow-sphere": "tsx src/cli/diagnose-slow-sphere.ts",
+    "diagnose:sphere-probe": "tsx src/cli/diagnose-sphere-probe.ts",
     "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts",
     "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts"
   },
