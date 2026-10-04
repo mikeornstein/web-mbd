@@ -189,3 +189,74 @@ export function createSlowSphereModel(opts: { dtMax?: number } = {}): InflateMod
 }
 
 export const LISTING_DT_CAP_S = ENGINE_LISTING_FIRST_ON_DT_S;
+
+/** Stated rest radius used for the independent closed-form invert. **read from docs.** */
+export const SPHERE_R0_STATED_M = 46.48e-3;
+
+export const SPHERE_HOLD_P_PA = 28_000;
+export const SPHERE_SNAP_P_MAX_PA = 36_000;
+export const SPHERE_SNAP_LAMBDA = 1.6;
+export const SPHERE_SNAP_FAST_RAMP_S = 0.4;
+export const SPHERE_SNAP_SLOW_RAMP_S = 0.8;
+export const SPHERE_SNAP_HOLD_AFTER_S = 0.05;
+export const SPHERE_HOLD_RAMP_S = 0.4;
+export const SPHERE_HOLD_END_S = 0.55;
+export const SPHERE_SETTLE_KE_INTERNAL = 0.001;
+
+/**
+ * Stable-branch invert of p(λ) = 2μ(H0/R0)(λ⁻¹ − λ⁻⁷).
+ * Unique for 0 < p < p(λ*).
+ */
+export function invertNhSphereStretch(p_Pa: number, mu: number, h0: number, r0: number): number {
+  const pStar = nhSpherePressure(SPHERE_LAMBDA_STAR, mu, h0, r0);
+  if (!(p_Pa > 0) || !(p_Pa < pStar)) {
+    throw new Error(`stable-branch invert needs 0 < p < p(λ*); got ${p_Pa} vs ${pStar}`);
+  }
+  let lo = 1;
+  let hi = SPHERE_LAMBDA_STAR;
+  for (let i = 0; i < 80; i++) {
+    const mid = 0.5 * (lo + hi);
+    if (nhSpherePressure(mid, mu, h0, r0) < p_Pa) lo = mid;
+    else hi = mid;
+  }
+  return 0.5 * (lo + hi);
+}
+
+export function createSphereProbeModel(opts: {
+  pMax: number;
+  tRamp: number;
+  endTime: number;
+  rayleighAlpha: number;
+  dtMax?: number;
+}): InflateModelIR {
+  const sph = orientedEquivalentSphere();
+  const mesh = buildSphereMesh(sph.R0_m);
+  const law: InflateLawCard = {
+    ...lockedLawCard(),
+    loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS,
+    pMax: opts.pMax,
+    tRamp: opts.tRamp,
+    rayleighAlpha: opts.rayleighAlpha,
+  };
+  return {
+    kind: "inflate-nh-membrane",
+    meta: {
+      name: "inflate-sphere-probe",
+      version: 1,
+      units: "SI",
+      description:
+        "Diagnosis only. Thin sphere at the oriented equivalent R0/H0. Not Letter A. Kill off. Probe ramps, not the Letter A 40 ms card.",
+    },
+    law,
+    mesh,
+    controls: {
+      endTime: opts.endTime,
+      cfl: 0.45,
+      maxSteps: 2_000_000,
+      historyInterval: ANIM_DT,
+      contactKind: "node-node",
+      damping: { kind: "off" },
+      ...(opts.dtMax !== undefined ? { dtMax: opts.dtMax } : {}),
+    },
+  };
+}

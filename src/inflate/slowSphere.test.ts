@@ -1,14 +1,18 @@
 import { expect, test } from "vitest";
 import { createInflateAModel } from "../fixtures/inflateA.js";
-import { ADYREL_VELOCITY_SCALE, H0, MU } from "./constants.js";
+import { ADYREL_VELOCITY_SCALE, H0, MU, RAYLEIGH_ALPHA } from "./constants.js";
 import { trueEnclosedVolume } from "./meshA.js";
 import {
   SPHERE_LAMBDA_STAR,
   SLOW_SPHERE_RAMP_S,
+  SPHERE_HOLD_P_PA,
+  SPHERE_R0_STATED_M,
   buildSphereMesh,
   createSlowSphereModel,
+  invertNhSphereStretch,
   nhSpherePressure,
   orientedEquivalentSphere,
+  createSphereProbeModel,
   slowSphereRayleighAlpha,
   sphereBreathingPeriodS,
   sphereCircuitPeriodS,
@@ -36,6 +40,16 @@ test("diagnosis sphere mesh is a closed outward shell at that R0, not Letter A",
   expect(mesh.fingerprint).not.toBe(createInflateAModel().mesh.fingerprint);
 });
 
+test("independent closed-form invert at 28 kPa is 1.18757 on the stated 46.48 mm sphere", () => {
+  const lam = invertNhSphereStretch(SPHERE_HOLD_P_PA, MU, H0, SPHERE_R0_STATED_M);
+  expect(lam).toBeCloseTo(1.18757, 5);
+  expect(nhSpherePressure(lam, MU, H0, SPHERE_R0_STATED_M)).toBeCloseTo(SPHERE_HOLD_P_PA, 6);
+  const pStar = nhSpherePressure(SPHERE_LAMBDA_STAR, MU, H0, SPHERE_R0_STATED_M);
+  expect(pStar / 1000).toBeCloseTo(32.023, 3);
+  expect(nhSpherePressure(1.318, MU, H0, SPHERE_R0_STATED_M) / pStar).toBeCloseTo(0.9907, 4);
+  expect(nhSpherePressure(1.34, MU, H0, SPHERE_R0_STATED_M) / pStar).toBeCloseTo(0.9962, 4);
+});
+
 test("slow-sphere model is kill-off, 400 ms to closed-form p_max, and does not change the shipped default", () => {
   const sph = orientedEquivalentSphere();
   const model = createSlowSphereModel();
@@ -52,4 +66,17 @@ test("slow-sphere model is kill-off, 400 ms to closed-form p_max, and does not c
     minInterval: 0,
   });
   expect(createInflateAModel().controls.dtMax).toBeUndefined();
+});
+
+test("sphere probe model is kill-off with starter Rayleigh 80 /s and does not change the shipped default", () => {
+  const model = createSphereProbeModel({
+    pMax: SPHERE_HOLD_P_PA,
+    tRamp: 0.4,
+    endTime: 0.55,
+    rayleighAlpha: RAYLEIGH_ALPHA,
+  });
+  expect(model.controls.damping).toEqual({ kind: "off" });
+  expect(model.law.rayleighAlpha).toBe(80);
+  expect(model.law.pMax).toBe(28_000);
+  expect(createInflateAModel().controls.damping.kind).toBe("peak-kill");
 });
