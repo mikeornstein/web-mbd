@@ -132,7 +132,7 @@ describe("inflate Radioss golden + law card", () => {
     expect(golden.provenance.note.toLowerCase()).toContain("outward");
   });
 
-  it("diagnosis lock rejects a band-widen PASS and accepts the recorded snap miss", () => {
+  it("diagnosis lock (not a physics pass) rejects a band-widen PASS and accepts the recorded snap miss", () => {
     const golden = loadInflateGolden();
     const snapWarn: InflateWarnMetrics = {
       frame: DIAGNOSIS_TOY_SNAP.frame,
