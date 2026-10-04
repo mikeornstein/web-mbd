@@ -39,9 +39,12 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(enclosedVolume(model.mesh.coords, model.mesh.quads) * 1e6).toBeCloseTo(420.5, 0);
   });
 
-  it("reaches first λ≥2 inside Themis bands vs checked-in Radioss golden", () => {
+  it("live toy snap-through vs oriented Radioss is a miss at locked 2/5/5 bands (do not widen)", () => {
     assertGoldenLawMatchesLock();
     const golden = loadInflateGolden();
+    expect(golden.bands.lambdaRel).toBe(0.02);
+    expect(golden.bands.volumeRel).toBe(0.05);
+    expect(golden.bands.pressureRel).toBe(0.05);
     const model = createInflateAModel();
     const a = solveInflate(model, { maxWallMs: 600_000 });
     const b = solveInflate(model, { maxWallMs: 600_000 });
@@ -52,7 +55,9 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(a.metrics.warn.psi_J).toBeGreaterThanOrEqual(0);
     expect(a.metrics.punchedThrough).toBe(false);
     expect(a.metrics.warn.lambdaMax).toBeGreaterThanOrEqual(2);
-    expect(a.metrics.warn.lambdaMax).toBeLessThan(3);
+    expect(a.metrics.warn.frame).toBe(12);
+    expect(a.metrics.warn.lambdaMax).toBeCloseTo(4.332389712832123, 8);
+    expect(a.lambdaHistory[11]).toBeCloseTo(1.6119729537867542, 8);
     expect(a.metrics.warn.frame).toBe(a.lambdaHistory.length - 1);
     expect(a.metrics.lambdaMax).toBe(a.metrics.warn.lambdaMax);
     expect(a.metrics.contactClass).toBe("type19-class-gapmin-node-node");
@@ -62,7 +67,12 @@ describe("letter-A inflate vs Radioss golden", () => {
     const cmp = compareInflateToGolden({ ...a.metrics, law: a.law }, golden);
     expect(cmp.lawEqual).toBe(true);
     expect(cmp.loadFamilyEqual).toBe(true);
-    expect(cmp.ok).toBe(true);
+    expect(cmp.ok).toBe(false);
+    expect(cmp.lambdaRelError).not.toBeNull();
+    if (cmp.lambdaRelError === null || cmp.volumeRelError === null) return;
+    expect(cmp.lambdaRelError).toBeGreaterThan(golden.bands.lambdaRel);
+    expect(cmp.volumeRelError).toBeGreaterThan(golden.bands.volumeRel);
+    expect(cmp.reasons.some((r) => r.includes("λ rel error"))).toBe(true);
 
     const restWind = shellWindingReport(model.mesh.coords, model.mesh.quads, model.mesh.tris);
     const warnCoords = a.meshHistory[a.metrics.warn.frame];

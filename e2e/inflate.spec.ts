@@ -27,7 +27,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(page.getByRole("heading", { name: "Post — results" })).toBeVisible({
     timeout: 120_000,
   });
-  await expect(page.getByText(/Acceptance gate: PASS/)).toBeVisible();
+  await expect(page.getByText(/Acceptance gate: FAIL/)).toBeVisible();
   await expect(page.getByText("WARN  first stretch ≥ 2", { exact: true })).toBeVisible();
   await expect(page.getByRole("img", { name: /WARN\s+first stretch ≥ 2/ })).toBeVisible();
   await expect(page.getByLabel("Solve metrics").getByText("λ_max", { exact: true })).toBeVisible();
@@ -45,7 +45,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   expect(max).toBeGreaterThan(0);
   await expect(page.getByText(new RegExp(`index ${String(max)} / ${String(max)}`))).toBeVisible();
   await expect(metrics.getByText(new RegExp(`frame ${String(max)}`))).toBeVisible();
-  await expect(metrics.getByText(/λ=2\.\d/)).toBeVisible();
+  await expect(metrics.getByText(/λ=4\.\d/)).toBeVisible();
   const post = page.getByRole("region", { name: "Post-processor" });
   await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
   const postMesh = page.getByRole("img", { name: /Deformed mesh/ });

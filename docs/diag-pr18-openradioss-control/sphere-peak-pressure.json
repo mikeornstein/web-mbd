@@ -1,0 +1,33 @@
+{
+  "formula": "p(\u03bb) = 2 \u03bc (H0/R0) (\u03bb^{-1} - \u03bb^{-7}) for an incompressible neo-Hookean thin spherical membrane (Ogden one-term \u03b1=2, \u03bb1=\u03bb2=\u03bb, \u03bb3=1/\u03bb\u00b2, Laplace p=2H\u03c3/R).",
+  "inputs": {
+    "mu_Pa": 3151888.9142857143,
+    "H0_m": 0.000381,
+    "alpha": 2,
+    "V0_oriented_m3": 0.0004205477389711655,
+    "V0_aswound_m3": 0.0003539847819681924,
+    "R0_from": "equivalent sphere of the same rest enclosed volume: (4/3)\u03c0 R0\u00b3 = V0"
+  },
+  "limit_point": {
+    "lambda_star": 1.3830875542684884,
+    "derivation": "d/d\u03bb (\u03bb^{-1} - \u03bb^{-7}) = 0 \u21d2 7 \u03bb^{-8} = \u03bb^{-2} \u21d2 \u03bb^6 = 7 \u21d2 \u03bb* = 7^{1/6}"
+  },
+  "oriented_equivalent_sphere": {
+    "R0_m": 0.04647744343919015,
+    "p_max_Pa": 32024.85559237849,
+    "p_at_lambda": {
+      "1.38": 32024.29241356608,
+      "1.42": 31952.31319502446,
+      "2.00": 25433.973992064264,
+      "2.13": 24000.947393080027,
+      "2.14": 23895.95912626835,
+      "4.33": 11932.456121046895
+    }
+  },
+  "aswound_equivalent_sphere": {
+    "R0_m": 0.04388323755481027,
+    "p_max_Pa": 33918.04017613665,
+    "p_at_lambda_2_14": 25308.595049058673
+  },
+  "note": "Neo-Hookean spherical balloons have no second rising branch: p\u21920 as \u03bb\u2192\u221e. Pressure control past p_max has no static equilibrium. Letter A is not a sphere; this is a sanity bound, not a fit."
+}

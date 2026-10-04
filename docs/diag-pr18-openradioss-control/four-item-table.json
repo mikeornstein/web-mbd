@@ -1,0 +1,268 @@
+{
+  "title": "PR18 OpenCourant control — four locked items (Themis Quality test set)",
+  "diagnosis_only": true,
+  "toy_unchanged": true,
+  "bands_unchanged": {
+    "lambdaRel": 0.02,
+    "volumeRel": 0.05,
+    "pressureRel": 0.05
+  },
+  "mu_and_load_law_untouched": true,
+  "reading_rule": "If item 1 does not reproduce the old golden, the new package is the problem and the new golden does not count. If it does, the toy's snap-through is what needs explaining, and any fix goes in the toy's physics with material stiffness and the load law untouched.",
+  "reading_rule_verdict": "Item 1 reproduced the old golden inside 2/5/5. The new package is not the problem. The new oriented golden counts as a real engine tape. The miss is the toy's snap-through on the oriented mesh.",
+  "items": {
+    "1": {
+      "question": "OLD unoriented deck on this OpenCourant package. Does it reproduce the old golden (stretch 2.14, 901.8 mL, 35,769 Pa at frame 11)?",
+      "old_golden": {
+        "frame": 11,
+        "lambdaMax": 2.1404,
+        "volume_mL": 901.8,
+        "p_Pa": 35769
+      },
+      "measured": {
+        "frame": 11,
+        "t_s": 0.0220118,
+        "lambdaMax": 2.1403635915940185,
+        "volume_mL": 901.8243076553854,
+        "p_Pa": 35769.174999999996,
+        "psi_J": 9.501507844134085
+      },
+      "relative_error": {
+        "lambda": 0.000017010094366298346,
+        "volume": 0.00002695459679022844,
+        "pressure": 0.0000048925046827038615
+      },
+      "bands": {
+        "lambdaRel": 0.02,
+        "volumeRel": 0.05,
+        "pressureRel": 0.05
+      },
+      "reproduces_old_golden": true,
+      "package_is_the_problem": false,
+      "new_oriented_golden_counts": true
+    },
+    "2": {
+      "question": "Oriented deck with starter Ismstr at 10 and at 2 (if the package refuses 10, say so and show the starter message).",
+      "ismstr_10_requested": {
+        "property_card": "radioss/A-inflate/Ainflate_0000.rad Ismstr=10",
+        "starter_refuses_10": true,
+        "warning_id": 3019,
+        "starter_message": "INVALID ISMSTR=10, CHANGE TO 2; CONCERNING 1 PROPERTY(S) PROPERTY ID=1 , PROPERTY TITLE: film membrane N=1 Ismstr=10 QEPH Ithick=1, INCOMPATIBLE TO ISHEL= 2",
+        "starter_excerpt": "WARNING ID :   3019\n** WARNING IN SHELL PROPERTY\nDESCRIPTION :\n   INVALID ISMSTR=10, CHANGE TO 2; CONCERNING 1 PROPERTY(S)\n   PROPERTY ID=1         ,  PROPERTY TITLE: film membrane N=1 Ismstr=10 QEPH Ithick=1, INCOMPATIBLE TO ISHEL= 2\n .. INTERFACES\n .. INTERFACE BUFFER INITIALIZATION"
+      },
+      "ismstr_2_written": {
+        "property_card": "radioss/diag-oriented-ismstr2/Ainflate_0000.rad Ismstr=2",
+        "starter_refuses_10": false
+      },
+      "tapes_identical_every_frame": true,
+      "n_frames": 12
+    },
+    "3": {
+      "question": "Stretch, pressure and volume against time for both solvers, every frame.",
+      "overlapping_frames": 12,
+      "first_divergence": {
+        "frame": 1,
+        "radioss_stretch": 1.7087226934243784,
+        "toy_stretch": 1.1183172586557617
+      },
+      "radioss_warn": {
+        "frame": 8,
+        "stretch": 2.128161758970982,
+        "V_mL": 891.7110015235089,
+        "p_Pa": 26006.175
+      },
+      "toy_snap": {
+        "before": {
+          "frame": 11,
+          "stretch": 1.6119729537867542,
+          "V_mL": 782.5719411981162
+        },
+        "after": {
+          "frame": 12,
+          "stretch": 4.332389712832123,
+          "V_mL": 3274.240175723335
+        }
+      },
+      "every_frame": [
+        {
+          "frame": 0,
+          "t_ms_radioss": 0,
+          "t_ms_toy": 0,
+          "radioss_stretch": 1.0000000074505808,
+          "toy_stretch": 1.0000000074505808,
+          "radioss_V_mL": 420.5477252567505,
+          "toy_V_mL": 420.5477389711655,
+          "radioss_p_Pa": 0,
+          "toy_p_Pa": 0
+        },
+        {
+          "frame": 1,
+          "t_ms_radioss": 2.02219,
+          "t_ms_toy": 2.0029920593279193,
+          "radioss_stretch": 1.7087226934243784,
+          "toy_stretch": 1.1183172586557617,
+          "radioss_V_mL": 526.3324561122758,
+          "toy_V_mL": 520.0139970474382,
+          "radioss_p_Pa": 3286.05875,
+          "toy_p_Pa": 3254.8620964078686
+        },
+        {
+          "frame": 2,
+          "t_ms_radioss": 4.003699999999999,
+          "t_ms_toy": 4.004541821026263,
+          "radioss_stretch": 1.6569898200728108,
+          "toy_stretch": 1.1602836240426124,
+          "radioss_V_mL": 547.5565609104631,
+          "toy_V_mL": 540.188885003065,
+          "radioss_p_Pa": 6506.012499999999,
+          "toy_p_Pa": 6507.380459167677
+        },
+        {
+          "frame": 3,
+          "t_ms_radioss": 6.004930000000001,
+          "t_ms_toy": 6.0032963061170435,
+          "radioss_stretch": 1.5293877296560032,
+          "toy_stretch": 1.1749336037427918,
+          "radioss_V_mL": 586.974184701848,
+          "toy_V_mL": 545.9080775613565,
+          "radioss_p_Pa": 9758.011250000001,
+          "toy_p_Pa": 9755.356497440194
+        },
+        {
+          "frame": 4,
+          "t_ms_radioss": 8.00139,
+          "t_ms_toy": 8.002443764409298,
+          "radioss_stretch": 1.557845750139792,
+          "toy_stretch": 1.2774317289473067,
+          "radioss_V_mL": 623.1138828126411,
+          "toy_V_mL": 588.3520727265898,
+          "radioss_p_Pa": 13002.25875,
+          "toy_p_Pa": 13003.971117165107
+        },
+        {
+          "frame": 5,
+          "t_ms_radioss": 10.000200000000001,
+          "t_ms_toy": 10.001216640265508,
+          "radioss_stretch": 1.6559843425753957,
+          "toy_stretch": 1.2959452396978104,
+          "radioss_V_mL": 666.0530882757834,
+          "toy_V_mL": 596.9773268077705,
+          "radioss_p_Pa": 16250.325000000003,
+          "toy_p_Pa": 16251.977040431448
+        },
+        {
+          "frame": 6,
+          "t_ms_radioss": 12.0007,
+          "t_ms_toy": 12.001704575007933,
+          "radioss_stretch": 1.6798551153354773,
+          "toy_stretch": 1.3284710008313703,
+          "radioss_V_mL": 719.0495233264584,
+          "toy_V_mL": 613.9052928706773,
+          "radioss_p_Pa": 19501.1375,
+          "toy_p_Pa": 19502.769934387892
+        },
+        {
+          "frame": 7,
+          "t_ms_radioss": 14.0025,
+          "t_ms_toy": 14.005822676138198,
+          "radioss_stretch": 1.8290874144196552,
+          "toy_stretch": 1.3715268387902595,
+          "radioss_V_mL": 788.1502814849342,
+          "toy_V_mL": 636.8581973244505,
+          "radioss_p_Pa": 22754.0625,
+          "toy_p_Pa": 22759.46184872457
+        },
+        {
+          "frame": 8,
+          "t_ms_radioss": 16.0038,
+          "t_ms_toy": 16.006004346638814,
+          "radioss_stretch": 2.128161758970982,
+          "toy_stretch": 1.4215922394835492,
+          "radioss_V_mL": 891.7110015235089,
+          "toy_V_mL": 665.1349584168182,
+          "radioss_p_Pa": 26006.175,
+          "toy_p_Pa": 26009.757063288074
+        },
+        {
+          "frame": 9,
+          "t_ms_radioss": 18.0002,
+          "t_ms_toy": 18.0011905615854,
+          "radioss_stretch": 2.534236409313437,
+          "toy_stretch": 1.4771453511484942,
+          "radioss_V_mL": 1054.8680191180379,
+          "toy_V_mL": 697.407995204421,
+          "radioss_p_Pa": 29250.325,
+          "toy_p_Pa": 29251.934662576277
+        },
+        {
+          "frame": 10,
+          "t_ms_radioss": 20.002,
+          "t_ms_toy": 20.007874874954606,
+          "radioss_stretch": 3.377344628587715,
+          "toy_stretch": 1.5383628650521768,
+          "radioss_V_mL": 1479.9922569617597,
+          "toy_V_mL": 735.7037587162956,
+          "radioss_p_Pa": 32503.25,
+          "toy_p_Pa": 32512.796671801236
+        },
+        {
+          "frame": 11,
+          "t_ms_radioss": 22.0004,
+          "t_ms_toy": 22.005402518706312,
+          "radioss_stretch": 19.292309427065707,
+          "toy_stretch": 1.6119729537867542,
+          "radioss_V_mL": 16865.803047060155,
+          "toy_V_mL": 782.5719411981162,
+          "radioss_p_Pa": 35750.65,
+          "toy_p_Pa": 35758.779092897756
+        },
+        {
+          "frame": 12,
+          "t_ms_radioss": null,
+          "t_ms_toy": 24.00758092700195,
+          "radioss_stretch": null,
+          "toy_stretch": 4.332389712832123,
+          "radioss_V_mL": null,
+          "toy_V_mL": 3274.240175723335,
+          "radioss_p_Pa": null,
+          "toy_p_Pa": 39012.31900637817
+        }
+      ]
+    },
+    "4": {
+      "question": "The closed-form peak-pressure estimate, with the formula and inputs written out.",
+      "formula": "p(λ) = 2 μ (H0/R0) (λ^{-1} - λ^{-7})",
+      "derivation": "Incompressible neo-Hookean thin spherical membrane, Ogden one-term α=2. λ1=λ2=λ, λ3=1/λ². Hoop Cauchy σ = μ(λ² - λ^{-4}). H=H0/λ², R=R0 λ. Laplace p=2Hσ/R.",
+      "limit_point": "d/dλ (λ^{-1} - λ^{-7}) = 0 ⇒ 7λ^{-8} = λ^{-2} ⇒ λ* = 7^{1/6}",
+      "inputs": {
+        "mu_Pa": 3151888.9142857143,
+        "H0_m": 0.000381,
+        "alpha": 2,
+        "V0_oriented_m3": 0.0004205477389711655,
+        "V0_aswound_m3": 0.0003539847819681924,
+        "R0_from": "equivalent sphere of the same rest enclosed volume: (4/3)π R0³ = V0"
+      },
+      "limit_point_value": {
+        "lambda_star": 1.3830875542684884,
+        "derivation": "d/dλ (λ^{-1} - λ^{-7}) = 0 ⇒ 7 λ^{-8} = λ^{-2} ⇒ λ^6 = 7 ⇒ λ* = 7^{1/6}"
+      },
+      "oriented_equivalent_sphere": {
+        "R0_m": 0.04647744343919015,
+        "p_max_Pa": 32024.85559237849,
+        "p_at_lambda": {
+          "1.38": 32024.29241356608,
+          "1.42": 31952.31319502446,
+          "2.00": 25433.973992064264,
+          "2.13": 24000.947393080027,
+          "2.14": 23895.95912626835,
+          "4.33": 11932.456121046895
+        }
+      },
+      "aswound_equivalent_sphere": {
+        "R0_m": 0.04388323755481027,
+        "p_max_Pa": 33918.04017613665,
+        "p_at_lambda_2_14": 25308.595049058673
+      }
+    }
+  }
+}

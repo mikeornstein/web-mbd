@@ -1,0 +1,11 @@
+   INVALID ISMSTR=10, CHANGE TO 2; CONCERNING 1 PROPERTY(S)
+   PROPERTY ID=1         ,  PROPERTY TITLE: film membrane N=1 Ismstr=10 QEPH Ithick=1, INCOMPATIBLE TO ISHEL= 2         
+ .. INTERFACES                                                                           
+ .. INTERFACE BUFFER INITIALIZATION                                                      
+ .. RETURNS TO DOMAIN DECOMPOSITION FOR OPTIMIZATION
+--
+   INVALID ISMSTR=10, CHANGE TO 2; CONCERNING 1 PROPERTY(S)
+   PROPERTY ID=1         ,  PROPERTY TITLE: film membrane N=1 Ismstr=10 QEPH Ithick=1, INCOMPATIBLE TO ISHEL= 2         
+ .. INTERFACES                                                                           
+ .. INTERFACE BUFFER INITIALIZATION                                                      
+ .. ELEMENT BUFFER INITIALIZATION                                                        
