@@ -10,6 +10,17 @@ import {
 } from "./membraneCst.js";
 import { ploadAt } from "../inflate/lawCard.js";
 import { enclosedVolume, trueEnclosedVolume } from "../inflate/meshA.js";
+import {
+  createAdaptivePeriodState,
+  firstOnRatePerSecond,
+  mixRelaxedVelocity,
+  omegaFromRate,
+  tickAdaptivePeriod,
+  type RelaxationSample,
+  ENGINE_LISTING_FIRST_ON_TIME_S,
+  ADYREL_FIRST_ON_WAIT_STEPS,
+  type OnsetSnapshot,
+} from "../inflate/adaptivePeriod.js";
 import type {
   InflateModelIR,
   InflateSolveMetrics,
@@ -54,6 +65,41 @@ export function assertInflateModel(model: InflateModelIR): void {
     default: {
       const _exhaustive: never = kind;
       throw new Error(`unhandled contactKind ${String(_exhaustive)}`);
+    }
+  }
+  const damping = model.controls.damping;
+  switch (damping.kind) {
+    case "peak-kill":
+      if (!(damping.scale >= 0) || !Number.isFinite(damping.scale)) {
+        throw new Error("peak-kill scale must be a finite number ≥ 0");
+      }
+      if (!(damping.minInterval >= 0) || !Number.isFinite(damping.minInterval)) {
+        throw new Error("peak-kill minInterval must be a finite number ≥ 0");
+      }
+      break;
+    case "off":
+      break;
+    case "adaptive-period": {
+      const port = damping.port;
+      switch (port) {
+        case "per-second":
+        case "per-step":
+          break;
+        default: {
+          const _exhaustive: never = port;
+          throw new Error(`unhandled adaptive-period port ${String(_exhaustive)}`);
+        }
+      }
+      break;
+    }
+    case "listing-rate-measurement":
+      if (!(damping.ratePerSecond >= 0) || !Number.isFinite(damping.ratePerSecond)) {
+        throw new Error("listing-rate-measurement rate must be a finite number ≥ 0");
+      }
+      break;
+    default: {
+      const _exhaustive: never = damping;
+      throw new Error(`unhandled damping ${String(_exhaustive)}`);
     }
   }
 }
@@ -125,6 +171,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const pressureHistory: number[] = [];
   const volumeHistory: number[] = [];
   const psiHistory: number[] = [];
+  const relaxationHistory: RelaxationSample[] = [];
 
   let warn: InflateWarnMetrics | null = null;
   let step = 0;
@@ -150,9 +197,13 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const maxSteps = controls.maxSteps;
   const maxWallMs = options.maxWallMs ?? 180_000;
   const alpha = law.rayleighAlpha;
-  const keInterval = controls.kineticDampingMinInterval;
-
+  const damping = controls.damping;
   let tKeDamp = -Infinity;
+  let periodState = createAdaptivePeriodState();
+  let lastOmega = 0;
+  let perStepOnset: OnsetSnapshot | null = null;
+  let perSecondOnset: OnsetSnapshot | null = null;
+  let appliedOnset: OnsetSnapshot | null = null;
 
   const measure = (): {
     lambdaMax: number;
@@ -198,6 +249,20 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     pressureHistory.push(p);
     volumeHistory.push(m.volume);
     psiHistory.push(m.psi);
+    if (damping.kind === "adaptive-period") {
+      relaxationHistory.push({
+        step,
+        t,
+        dt,
+        ratePerSecond: periodState.ratePerSecond,
+        omegaPerStep: lastOmega,
+        maxRiseInternal: periodState.maxRiseInternal,
+        maxRiseKinetic: periodState.maxRiseKinetic,
+        periodFrom: periodState.periodFrom,
+        perStepFirstOnRatePerSecond: firstOnRatePerSecond(dt),
+        perSecondFirstOnRatePerSecond: firstOnRatePerSecond(dt),
+      });
+    }
     if (warn === null && m.lambdaMax >= law.warnLam) {
       warn = {
         frame: history.length - 1,
@@ -250,6 +315,17 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     if (dtNew > 0 && Number.isFinite(dtNew)) dt = Math.min(dtNew, 1.1 * dt);
   };
 
+  if (damping.kind === "adaptive-period") {
+    const restMeasure = measure();
+    periodState = tickAdaptivePeriod(periodState, {
+      step: 0,
+      time: 0,
+      dt,
+      internal: restMeasure.psi,
+      kinetic: restMeasure.ke,
+      port: damping.port,
+    }).state;
+  }
   recordSample(0);
   nextSample = controls.historyInterval;
   options.onProgress?.({ t: 0, endTime: controls.endTime, step: 0, lambdaMax: 1 });
@@ -268,7 +344,20 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     }
     recomputeDt();
     const dt12 = 0.5 * (dt1 + dt);
-    for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
+    lastOmega = 0;
+    if (damping.kind === "adaptive-period" && periodState.ratePerSecond > 0) {
+      lastOmega = omegaFromRate(periodState.ratePerSecond, dt12);
+      for (let i = 0; i < v.length; i++) {
+        v[i] = mixRelaxedVelocity(v[i]!, acc[i]!, dt12, lastOmega);
+      }
+    } else if (damping.kind === "listing-rate-measurement" && t >= ENGINE_LISTING_FIRST_ON_TIME_S) {
+      lastOmega = omegaFromRate(damping.ratePerSecond, dt12);
+      for (let i = 0; i < v.length; i++) {
+        v[i] = mixRelaxedVelocity(v[i]!, acc[i]!, dt12, lastOmega);
+      }
+    } else {
+      for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
+    }
     for (let i = 0; i < x.length; i++) x[i]! += dt * v[i]!;
     lastKiss = applyKissProjection({
       coords: x,
@@ -280,6 +369,20 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     t += dt;
     step += 1;
     dt1 = dt;
+    const firstOnRateNow = firstOnRatePerSecond(dt);
+    const onsetSnap = (): OnsetSnapshot => ({
+      step,
+      t,
+      dt,
+      firstOnRatePerSecond: firstOnRateNow,
+      omegaPerStep: omegaFromRate(firstOnRateNow, dt),
+    });
+    if (perStepOnset === null && step >= ADYREL_FIRST_ON_WAIT_STEPS) {
+      perStepOnset = onsetSnap();
+    }
+    if (perSecondOnset === null && t >= ENGINE_LISTING_FIRST_ON_TIME_S) {
+      perSecondOnset = onsetSnap();
+    }
 
     let ke = 0;
     for (let i = 0; i < nNodes; i++) {
@@ -288,26 +391,57 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
         vz = v[i * 3 + 2]!;
       ke += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
     }
-    if (
-      controls.kineticDamping &&
-      ke < kePrev &&
-      kePrev >= kePrev2 &&
-      kePrev > 0 &&
-      t > dt &&
-      t - tKeDamp >= keInterval
-    ) {
-      const scale = controls.kineticDampingScale;
-      if (scale === 0) {
-        v.fill(0);
-        ke = 0;
-      } else {
-        for (let i = 0; i < v.length; i++) v[i]! *= scale;
-        ke *= scale * scale;
+    if (damping.kind === "peak-kill") {
+      if (
+        ke < kePrev &&
+        kePrev >= kePrev2 &&
+        kePrev > 0 &&
+        t > dt &&
+        t - tKeDamp >= damping.minInterval
+      ) {
+        const scale = damping.scale;
+        if (scale === 0) {
+          v.fill(0);
+          ke = 0;
+        } else {
+          for (let i = 0; i < v.length; i++) v[i]! *= scale;
+          ke *= scale * scale;
+        }
+        tKeDamp = t;
       }
-      tKeDamp = t;
+      kePrev2 = kePrev;
+      kePrev = ke;
+    } else if (damping.kind === "off") {
+      kePrev2 = kePrev;
+      kePrev = ke;
+    } else if (damping.kind === "adaptive-period") {
+      let psi = 0;
+      for (const rest of rests) psi += cstSample(x, rest, law.mu1, law.h0).W;
+      const tick = tickAdaptivePeriod(periodState, {
+        step,
+        time: t,
+        dt,
+        internal: psi,
+        kinetic: ke,
+        port: damping.port,
+      });
+      periodState = tick.state;
+      if (tick.firstOn && appliedOnset === null) {
+        appliedOnset = {
+          step,
+          t,
+          dt,
+          firstOnRatePerSecond: periodState.ratePerSecond,
+          omegaPerStep: omegaFromRate(periodState.ratePerSecond, dt),
+        };
+      }
+    } else if (damping.kind === "listing-rate-measurement") {
+      kePrev2 = kePrev;
+      kePrev = ke;
+    } else {
+      const _exhaustive: never = damping;
+      throw new Error(`unhandled damping ${String(_exhaustive)}`);
     }
-    kePrev2 = kePrev;
-    kePrev = ke;
 
     const vol = enclosedVolume(x, mesh.quads, mesh.tris);
     if (punchedThrough(vol, volume0)) {
@@ -361,6 +495,13 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     pressureHistory,
     volumeHistory,
     psiHistory,
+    relaxationHistory,
+    adaptiveOnset: {
+      perStep: perStepOnset,
+      perSecond: perSecondOnset,
+      applied: appliedOnset,
+      periodFrom: periodState.periodFrom,
+    },
     metrics,
     law,
   };

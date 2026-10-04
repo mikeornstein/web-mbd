@@ -33,10 +33,12 @@ function createInflateLetterModel(letter: InflateLetter): InflateModelIR {
       cfl: 0.45,
       maxSteps: 2_000_000,
       historyInterval: ANIM_DT,
-      kineticDamping: true,
-      kineticDampingScale: ADYREL_VELOCITY_SCALE,
-      kineticDampingMinInterval: 0,
       contactKind: "node-node",
+      damping: {
+        kind: "peak-kill",
+        scale: ADYREL_VELOCITY_SCALE,
+        minInterval: 0,
+      },
     },
   };
 }

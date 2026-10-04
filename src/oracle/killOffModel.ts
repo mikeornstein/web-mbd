@@ -54,8 +54,10 @@ export function buildKillOffModel(opts: {
     mesh,
     controls: {
       ...base.controls,
-      kineticDamping: opts.kill === "on",
-      kineticDampingScale: ADYREL_VELOCITY_SCALE,
+      damping:
+        opts.kill === "on"
+          ? { kind: "peak-kill", scale: ADYREL_VELOCITY_SCALE, minInterval: 0 }
+          : { kind: "off" },
     },
   };
 }

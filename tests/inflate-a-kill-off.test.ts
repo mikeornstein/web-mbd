@@ -65,9 +65,12 @@ describe("kill-off diagnosis (default toy unchanged)", () => {
     try {
       expect(parseKillEnv(process.env)).toBe("off");
       const model = createInflateAModel();
-      expect(model.controls.kineticDamping).toBe(true);
-      expect(model.controls.kineticDampingScale).toBe(ADYREL_VELOCITY_SCALE);
-      expect(model.controls.kineticDampingScale).toBe(0.18);
+      expect(model.controls.damping).toEqual({
+        kind: "peak-kill",
+        scale: ADYREL_VELOCITY_SCALE,
+        minInterval: 0,
+      });
+      expect(model.controls.damping.kind === "peak-kill" && model.controls.damping.scale).toBe(0.18);
       expect(model.mesh.fingerprint).toBe("f9635c7f");
     } finally {
       if (prev === undefined) {
@@ -80,18 +83,17 @@ describe("kill-off diagnosis (default toy unchanged)", () => {
 
   it("diagnosis builder can switch kill and mesh without touching the default factory", () => {
     const offOriented = buildKillOffModel({ mesh: "oriented", kill: "off" });
-    expect(offOriented.controls.kineticDamping).toBe(false);
-    expect(offOriented.controls.kineticDampingScale).toBe(0.18);
+    expect(offOriented.controls.damping).toEqual({ kind: "off" });
     expect(offOriented.mesh.fingerprint).toBe("f9635c7f");
     expect(offOriented.law.mu1).toBe(createInflateAModel().law.mu1);
     expect(offOriented.law.pMax).toBe(createInflateAModel().law.pMax);
     expect(offOriented.law.tRamp).toBe(createInflateAModel().law.tRamp);
 
     const onUnoriented = buildKillOffModel({ mesh: "unoriented", kill: "on" });
-    expect(onUnoriented.controls.kineticDamping).toBe(true);
+    expect(onUnoriented.controls.damping.kind).toBe("peak-kill");
     expect(onUnoriented.mesh.fingerprint).toBe("d9c56487");
 
-    expect(createInflateAModel().controls.kineticDamping).toBe(true);
+    expect(createInflateAModel().controls.damping.kind).toBe("peak-kill");
     expect(createInflateAModel().mesh.fingerprint).toBe("f9635c7f");
   });
 

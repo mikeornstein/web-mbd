@@ -134,6 +134,33 @@ jobs:
             echo "This pull request stays a draft. Do not merge. Do not publish GitHub Pages."
           } >> "$GITHUB_STEP_SUMMARY"
 
+  measurement-adyrel:
+    name: "measurement: 0–16 ms relaxation (not a gate)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Print measurement
+        run: |
+          echo "MEASUREMENT. Not a physics pass. Does not gate."
+          echo "The golden's engine commit 6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba is pinned only to the OpenCourant copy, not the original OpenRadioss tree."
+          echo
+          cat docs/diag-pr18-openradioss-control/adyrel-measurement-results.md
+          echo
+          echo "This job always exits 0. It does not count toward a pass."
+
+      - name: Honest status
+        if: always()
+        run: |
+          {
+            echo "# MEASUREMENT, not a gate"
+            echo
+            echo "This job prints the 0–16 ms relaxation measurement. It is not a physics pass."
+            echo "It must not turn a red compare:inflate into a green mark."
+            echo "Default toy is still the 0.18 peak kill."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     name: Deploy Pages
     needs: CI

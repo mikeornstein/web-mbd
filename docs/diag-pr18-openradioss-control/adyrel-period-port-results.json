@@ -1,0 +1,41 @@
+{
+  "kind": "adyrel-period-port-diagnosis",
+  "predictionFile": "docs/diag-pr18-openradioss-control/adyrel-period-port-prediction.md",
+  "predictionCommit": "e53d5cac37afea2bb4f5ebec1b42d70bec040fc0",
+  "portApplied": "per-second",
+  "defaultUnchanged": "peak-kill-0.18",
+  "stop": true,
+  "reason": "onset rate or time differs from the listing table because of the toy step size",
+  "engineListing": {
+    "onsetMs": 2.79,
+    "dt_s": 1.971e-6,
+    "ratePerSecond": 50.73566717402335,
+    "source": "copied from golden listing via adyrel-period-description.md, not computed from the toy"
+  },
+  "rayleighPerSecond": 80,
+  "applied": {
+    "step": 245,
+    "t": 0.0020284008331559232,
+    "dt": 0.000008429314474956211,
+    "firstOnRatePerSecond": 11.863360928946655,
+    "omegaPerStep": 0.0001
+  },
+  "perStep": {
+    "step": 200,
+    "t": 0.001649826334336658,
+    "dt": 0.000008326208354124047,
+    "firstOnRatePerSecond": 12.010268749816847,
+    "omegaPerStep": 0.0001
+  },
+  "perSecondClock": {
+    "step": 346,
+    "t": 0.0027901502635724147,
+    "dt": 0.0000057313183043526046,
+    "firstOnRatePerSecond": 17.447992711215463,
+    "omegaPerStep": 0.0001
+  },
+  "periodFrom": "kinetic-rise",
+  "nSteps": 4882,
+  "sphereCheck": "not-run",
+  "defaultChanged": false
+}

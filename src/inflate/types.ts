@@ -1,4 +1,5 @@
 import type { EnergySample } from "../ir/types.js";
+import type { RelaxationSample, AdaptiveOnsetReport } from "./adaptivePeriod.js";
 import type { CONTACT_CLASS_TYPE19_GAPMIN_NODE_NODE, LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_PLOAD_400MS } from "./constants.js";
 
 export type InflateLoadFamily =
@@ -64,20 +65,39 @@ export interface InflateModelIR {
     cfl: number;
     maxSteps: number;
     historyInterval: number;
-    /** When true, scale velocities at kinetic-energy peaks (Underwood /ADYREL analogue). */
-    kineticDamping: boolean;
-    /** Velocity scale at a KE peak. 0 = full reset (classic Underwood). */
-    kineticDampingScale: number;
-    /**
-     * Minimum time between Underwood peaks. 0 = every local KE max (dynamic).
-     */
-    kineticDampingMinInterval: number;
     /**
      * TYPE19-class Gapmin pairing. Fast-load (dynamic) path is node-node.
      */
     contactKind: InflateKissKind;
+    /**
+     * Peak-kill 0.18 is the shipped default. Continuous period relaxation is
+     * an option. Discriminated: do not combine these as optional flags.
+     */
+    damping: InflateDamping;
   };
 }
+
+export type InflateDamping =
+  | {
+      kind: "peak-kill";
+      scale: number;
+      minInterval: number;
+    }
+  | {
+      kind: "off";
+    }
+  | {
+      kind: "adaptive-period";
+      port: "per-second" | "per-step";
+    }
+  | {
+      /**
+       * Measurement only. Help-page mix at a copied listing rate.
+       * Not a proposed setting. Not the shipped default.
+       */
+      kind: "listing-rate-measurement";
+      ratePerSecond: number;
+    };
 
 export interface InflateWarnMetrics {
   /** First history sample with λ_max ≥ WARN_LAM (ANIM-stride freeze). */
@@ -117,8 +137,10 @@ export interface InflateSolveResult {
   lambdaHistory: number[];
   pressureHistory: number[];
   volumeHistory: number[];
-  psiHistory: number[];
-  metrics: InflateSolveMetrics;
+    psiHistory: number[];
+    relaxationHistory: RelaxationSample[];
+    adaptiveOnset: AdaptiveOnsetReport;
+    metrics: InflateSolveMetrics;
   law: InflateLawCard;
 }
 
