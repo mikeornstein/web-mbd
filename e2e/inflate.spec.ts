@@ -9,7 +9,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Model tree").getByText(
-      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch is validated at the 16 ms freeze and lags the decks earlier in the run · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
+      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · the film runs about half a millisecond behind the reference solvers throughout the run · roughly 12% low in median stretch mid-run \(8 ms\) and about 3% low at the 16 ms freeze · the 0\.5 ms fit was made across all frames, so the lag does not disappear at the freeze, it only looks smaller there because stretch changes more slowly near the end · node positions sit about three times farther from the decks than the decks sit from each other, so the shape does not match · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });

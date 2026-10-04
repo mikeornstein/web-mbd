@@ -406,7 +406,7 @@ function main(): void {
   ].join("; ");
 
   const pageBody = [
-    "Stretch is validated at the 16 ms freeze and lags the decks earlier in the run.",
+    "The film runs about half a millisecond behind the reference solvers throughout the run. That shows up as roughly 12% low in median stretch mid-run (8 ms) and about 3% low at the 16 ms freeze; the 0.5 ms fit was made across all frames, so the lag does not disappear at the freeze, it only looks smaller there because stretch changes more slowly near the end. Node positions sit about three times farther from the decks than the decks sit from each other, so the shape does not match.",
     SIXTEEN_MS_SPREAD_NOTE,
     ...energyLines,
     ...medianLines,
