@@ -1,0 +1,8 @@
+
+WARNING ID :   3019
+** WARNING IN SHELL PROPERTY
+DESCRIPTION :  
+   INVALID ISMSTR=10, CHANGE TO 2; CONCERNING 1 PROPERTY(S)
+   PROPERTY ID=1         ,  PROPERTY TITLE: film membrane N=1 Ismstr=10 QEPH Ithick=1, INCOMPATIBLE TO ISHEL= 2         
+ .. INTERFACES                                                                           
+ .. INTERFACE BUFFER INITIALIZATION                                                      

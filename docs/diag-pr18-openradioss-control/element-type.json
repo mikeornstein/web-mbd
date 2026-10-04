@@ -1,0 +1,1287 @@
+{
+  "kind": "element-type-diagnosis",
+  "window": {
+    "times_ms": [
+      0,
+      2,
+      4,
+      8,
+      16
+    ],
+    "note": "interpolate node coordinates then cstSample/splitQuadCsts"
+  },
+  "citations": {
+    "sh3n": "https://help.altair.com/hwsolvers/rad/topics/solvers/rad/sh3n_starter_r.htm",
+    "ish3n": "https://help.altair.com/hwsolvers/rad/topics/solvers/rad/prop_type1_shell_starter_r.htm (Ish3n=2 C0 large rotation, already on golden property)",
+    "qeph": "https://help.altair.com/hwsolvers/rad/topics/solvers/rad/prop_type1_shell_starter_r.htm (Ishell=24 QEPH)",
+    "pload": "https://help.altair.com/hwsolvers/rad/topics/solvers/rad/pload_starter_r.htm (positive pressure along current segment normal)",
+    "refine": "inflation-abc radioss/A-refine/REFINE.md fine = linear 1-to-4 of ship; winding was as-wound 354 mL signed, re-oriented to 420.5 mL"
+  },
+  "hot90_rest_m": [
+    0.01856035,
+    0.024643625,
+    -0.025
+  ],
+  "runs": {
+    "sh3n": {
+      "label": "triangle shells",
+      "nNodes": 1554,
+      "nShells": 3108,
+      "kind": "tri",
+      "animTimes_s": [
+        0,
+        0.00200314,
+        0.00400565,
+        0.00600122,
+        0.00800206,
+        0.0100002,
+        0.0114594
+      ],
+      "death": {
+        "tinyTimeStep": true,
+        "cycles": 3457,
+        "lastCycle": 3400,
+        "lastPrintedTime_s": 0.011369,
+        "lastPrintedDt_s": 0.0000018798,
+        "lastAnimationTime_s": 0.0114594
+      },
+      "starter": {
+        "ismstrWarning": false,
+        "ismstrSnippet": null,
+        "terminationWithWarning": false
+      },
+      "snapshots": [
+        {
+          "t_s": 0,
+          "t_ms": 0,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0,
+            "interpolated": false
+          },
+          "stats": {
+            "n": 3108,
+            "max": 1.0000000074505808,
+            "p99": 1.0000000074505808,
+            "p95": 1.000000005268356,
+            "p50": 1,
+            "mean": 1.0000000004704481,
+            "min": 1,
+            "areaWeightedMean": 1.0000000006538368
+          },
+          "hot": {
+            "quadIndex": 1848,
+            "elementId": 1849,
+            "nodes": [
+              1128,
+              1238,
+              1291,
+              1291
+            ],
+            "restCentroid_mm": [
+              39.810900000000004,
+              -56.225666666666676,
+              -2.7777766666666666
+            ],
+            "region": "lower right mid-thickness",
+            "lam": 1.0000000074505808
+          },
+          "volume_mL": 420.54772525674906,
+          "p_Pa": 0,
+          "vsGolden": {
+            "stretchRel": 0,
+            "volumeRel": 3.379130087203794e-15,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0,
+            "volumeRel": 3.2610843289645364e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0,
+            "volumeRel": 3.2610843289645364e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "nearElement90": {
+            "elementId": 180,
+            "nodes": [
+              787,
+              628,
+              777,
+              777
+            ],
+            "restCentroid_mm": [
+              18.517799999999998,
+              25.076266666666665,
+              -25.000000000000004
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0000000000000002,
+            "distance_m": 0.00043472901241590936
+          }
+        },
+        {
+          "t_s": 0.002,
+          "t_ms": 2,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0.00200314,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 3108,
+            "max": 1.1062769955278284,
+            "p99": 1.0612078716968572,
+            "p95": 1.0486808841084978,
+            "p50": 1.0255765977992692,
+            "mean": 1.0274579143221014,
+            "min": 1.0004348753715846,
+            "areaWeightedMean": 1.0281628993141962
+          },
+          "hot": {
+            "quadIndex": 351,
+            "elementId": 352,
+            "nodes": [
+              636,
+              615,
+              509,
+              509
+            ],
+            "restCentroid_mm": [
+              7.18359,
+              -23.33086666666667,
+              -25.000000000000004
+            ],
+            "region": "lower center back-face",
+            "lam": 1.1062769955278284
+          },
+          "volume_mL": 520.2682802047183,
+          "p_Pa": 3250,
+          "vsGolden": {
+            "stretchRel": 0.34789615536518986,
+            "volumeRel": 0.009396850609716106,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.01043881885371094,
+            "volumeRel": 0.0007648956332382832,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.01043881885371094,
+            "volumeRel": 0.0007648956332382832,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "nearElement90": {
+            "elementId": 180,
+            "nodes": [
+              787,
+              628,
+              777,
+              777
+            ],
+            "restCentroid_mm": [
+              18.517799999999998,
+              25.076266666666665,
+              -25.000000000000004
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0358231729490852,
+            "distance_m": 0.00043472901241590936
+          }
+        },
+        {
+          "t_s": 0.004,
+          "t_ms": 4,
+          "available": true,
+          "interpolation": {
+            "t0": 0.00200314,
+            "t1": 0.00400565,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 3108,
+            "max": 1.160367603511729,
+            "p99": 1.080647611853325,
+            "p95": 1.0625348616626602,
+            "p50": 1.0389092618803017,
+            "mean": 1.0401407916116572,
+            "min": 1.0032424999903735,
+            "areaWeightedMean": 1.0400466717862722
+          },
+          "hot": {
+            "quadIndex": 351,
+            "elementId": 352,
+            "nodes": [
+              636,
+              615,
+              509,
+              509
+            ],
+            "restCentroid_mm": [
+              7.18359,
+              -23.33086666666667,
+              -25.000000000000004
+            ],
+            "region": "lower center back-face",
+            "lam": 1.160367603511729
+          },
+          "volume_mL": 543.1730191216444,
+          "p_Pa": 6500,
+          "vsGolden": {
+            "stretchRel": 0.2996881241448631,
+            "volumeRel": 0.007935037608562396,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.00016179103103549307,
+            "volumeRel": 0.005609476712723686,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.046962052426495135,
+            "volumeRel": 0.03459891515317367,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 180,
+            "nodes": [
+              787,
+              628,
+              777,
+              777
+            ],
+            "restCentroid_mm": [
+              18.517799999999998,
+              25.076266666666665,
+              -25.000000000000004
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0584713504027596,
+            "distance_m": 0.00043472901241590936
+          }
+        },
+        {
+          "t_s": 0.008,
+          "t_ms": 8,
+          "available": true,
+          "interpolation": {
+            "t0": 0.00600122,
+            "t1": 0.00800206,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 3108,
+            "max": 1.3639623144159907,
+            "p99": 1.1831877421893366,
+            "p95": 1.13285137585317,
+            "p50": 1.077109454453016,
+            "mean": 1.0825157640487981,
+            "min": 1.0142687896605018,
+            "areaWeightedMean": 1.0825525925863804
+          },
+          "hot": {
+            "quadIndex": 351,
+            "elementId": 352,
+            "nodes": [
+              636,
+              615,
+              509,
+              509
+            ],
+            "restCentroid_mm": [
+              7.18359,
+              -23.33086666666667,
+              -25.000000000000004
+            ],
+            "region": "lower center back-face",
+            "lam": 1.3639623144159907
+          },
+          "volume_mL": 610.0114335859693,
+          "p_Pa": 13000,
+          "vsGolden": {
+            "stretchRel": 0.1244002314447226,
+            "volumeRel": 0.02098613241465133,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.06784605069918687,
+            "volumeRel": 0.036907159837315434,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.03090169982066685,
+            "volumeRel": 0.013467092156252206,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 180,
+            "nodes": [
+              787,
+              628,
+              777,
+              777
+            ],
+            "restCentroid_mm": [
+              18.517799999999998,
+              25.076266666666665,
+              -25.000000000000004
+            ],
+            "region": "upper right back-face",
+            "lam": 1.09957653696699,
+            "distance_m": 0.00043472901241590936
+          }
+        },
+        {
+          "t_ms": 16,
+          "available": false,
+          "lastAnimTime_s": 0.0114594
+        }
+      ]
+    },
+    "qeph": {
+      "label": "physically stabilized four-node shells (Ishell 24, small-strain flag 10)",
+      "nNodes": 1554,
+      "nShells": 1554,
+      "kind": "quad",
+      "animTimes_s": [
+        0
+      ],
+      "death": {
+        "tinyTimeStep": true,
+        "cycles": 6,
+        "lastCycle": 0,
+        "lastPrintedTime_s": 0,
+        "lastPrintedDt_s": 0.000018993,
+        "lastAnimationTime_s": 0
+      },
+      "starter": {
+        "ismstrWarning": false,
+        "ismstrSnippet": null,
+        "terminationWithWarning": false
+      },
+      "snapshots": [
+        {
+          "t_s": 0,
+          "t_ms": 0,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0,
+            "interpolated": false
+          },
+          "stats": {
+            "n": 1554,
+            "max": 1.0000000074505808,
+            "p99": 1.0000000074505808,
+            "p95": 1.000000005268356,
+            "p50": 1,
+            "mean": 1.0000000004704521,
+            "min": 1,
+            "areaWeightedMean": 1.0000000006538354
+          },
+          "hot": {
+            "quadIndex": 5,
+            "elementId": 1147,
+            "nodes": [
+              1147,
+              1257,
+              1310,
+              1200
+            ],
+            "restCentroid_mm": [
+              -21.87705,
+              48.73374999999999,
+              -4.166665
+            ],
+            "region": "upper left mid-thickness",
+            "lam": 1.0000000074505808
+          },
+          "volume_mL": 420.5477252567505,
+          "p_Pa": 0,
+          "vsGolden": {
+            "stretchRel": 0,
+            "volumeRel": 0,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0,
+            "volumeRel": 3.261083991051539e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0,
+            "volumeRel": 3.261083991051539e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "nearElement90": {
+            "elementId": 90,
+            "nodes": [
+              787,
+              716,
+              628,
+              777
+            ],
+            "restCentroid_mm": [
+              18.560349999999996,
+              24.643625,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0000000000000002,
+            "distance_m": 3.469446951953614e-18
+          }
+        },
+        {
+          "t_ms": 2,
+          "available": false,
+          "lastAnimTime_s": 0
+        },
+        {
+          "t_ms": 4,
+          "available": false,
+          "lastAnimTime_s": 0
+        },
+        {
+          "t_ms": 8,
+          "available": false,
+          "lastAnimTime_s": 0
+        },
+        {
+          "t_ms": 16,
+          "available": false,
+          "lastAnimTime_s": 0
+        }
+      ]
+    },
+    "qephIsmstr2": {
+      "label": "physically stabilized four-node shells (Ishell 24, small-strain flag 2)",
+      "nNodes": 1554,
+      "nShells": 1554,
+      "kind": "quad",
+      "animTimes_s": [
+        0,
+        0.00200963,
+        0.00400344,
+        0.00600709,
+        0.00800527,
+        0.0100023,
+        0.0120006,
+        0.0140024,
+        0.0160004,
+        0.0180002,
+        0.0200031,
+        0.0220001,
+        0.0221576
+      ],
+      "death": {
+        "tinyTimeStep": true,
+        "cycles": 5429,
+        "lastCycle": 5400,
+        "lastPrintedTime_s": 0.022149,
+        "lastPrintedDt_s": 3.2166e-7,
+        "lastAnimationTime_s": 0.0221576
+      },
+      "starter": {
+        "ismstrWarning": false,
+        "ismstrSnippet": null,
+        "terminationWithWarning": false
+      },
+      "snapshots": [
+        {
+          "t_s": 0,
+          "t_ms": 0,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0,
+            "interpolated": false
+          },
+          "stats": {
+            "n": 1554,
+            "max": 1.0000000074505808,
+            "p99": 1.0000000074505808,
+            "p95": 1.000000005268356,
+            "p50": 1,
+            "mean": 1.0000000004704521,
+            "min": 1,
+            "areaWeightedMean": 1.0000000006538354
+          },
+          "hot": {
+            "quadIndex": 5,
+            "elementId": 1147,
+            "nodes": [
+              1147,
+              1257,
+              1310,
+              1200
+            ],
+            "restCentroid_mm": [
+              -21.87705,
+              48.73374999999999,
+              -4.166665
+            ],
+            "region": "upper left mid-thickness",
+            "lam": 1.0000000074505808
+          },
+          "volume_mL": 420.5477252567505,
+          "p_Pa": 0,
+          "vsGolden": {
+            "stretchRel": 0,
+            "volumeRel": 0,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0,
+            "volumeRel": 3.261083991051539e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0,
+            "volumeRel": 3.261083991051539e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "nearElement90": {
+            "elementId": 90,
+            "nodes": [
+              787,
+              716,
+              628,
+              777
+            ],
+            "restCentroid_mm": [
+              18.560349999999996,
+              24.643625,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0000000000000002,
+            "distance_m": 3.469446951953614e-18
+          }
+        },
+        {
+          "t_s": 0.002,
+          "t_ms": 2,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0.00200963,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 1554,
+            "max": 1.196934532629466,
+            "p99": 1.0895067056894696,
+            "p95": 1.0613335849632626,
+            "p50": 1.0295587092178358,
+            "mean": 1.033014594593741,
+            "min": 1.0046539006749358,
+            "areaWeightedMean": 1.033850282649498
+          },
+          "hot": {
+            "quadIndex": 165,
+            "elementId": 658,
+            "nodes": [
+              606,
+              552,
+              714,
+              756
+            ],
+            "restCentroid_mm": [
+              -9.38212,
+              23.7558,
+              -25
+            ],
+            "region": "upper center back-face",
+            "lam": 1.196934532629466
+          },
+          "volume_mL": 519.8580936500232,
+          "p_Pa": 3250,
+          "vsGolden": {
+            "stretchRel": 0.29445734327012835,
+            "volumeRel": 0.010177855541938032,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.07065405377834348,
+            "volumeRel": 0.00002412095727548168,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.07065405377834348,
+            "volumeRel": 0.00002412095727548168,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 90,
+            "nodes": [
+              787,
+              716,
+              628,
+              777
+            ],
+            "restCentroid_mm": [
+              18.560349999999996,
+              24.643625,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0337883548667683,
+            "distance_m": 3.469446951953614e-18
+          }
+        },
+        {
+          "t_s": 0.004,
+          "t_ms": 4,
+          "available": true,
+          "interpolation": {
+            "t0": 0.00200963,
+            "t1": 0.00400344,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 1554,
+            "max": 1.3750424051694754,
+            "p99": 1.1478316244396611,
+            "p95": 1.095154536767049,
+            "p50": 1.0430903869167496,
+            "mean": 1.0505312357087917,
+            "min": 1.020220031049293,
+            "areaWeightedMean": 1.0504883835091219
+          },
+          "hot": {
+            "quadIndex": 165,
+            "elementId": 658,
+            "nodes": [
+              606,
+              552,
+              714,
+              756
+            ],
+            "restCentroid_mm": [
+              -9.38212,
+              23.7558,
+              -25
+            ],
+            "region": "upper center back-face",
+            "lam": 1.3750424051694754
+          },
+          "volume_mL": 542.1867601238448,
+          "p_Pa": 6500,
+          "vsGolden": {
+            "stretchRel": 0.1701263261484524,
+            "volumeRel": 0.009736366027161858,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.18519757922905863,
+            "volumeRel": 0.0037835550270621096,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.2406561630407899,
+            "volumeRel": 0.03272035629022872,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 90,
+            "nodes": [
+              787,
+              716,
+              628,
+              777
+            ],
+            "restCentroid_mm": [
+              18.560349999999996,
+              24.643625,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.0511409423817053,
+            "distance_m": 3.469446951953614e-18
+          }
+        },
+        {
+          "t_s": 0.008,
+          "t_ms": 8,
+          "available": true,
+          "interpolation": {
+            "t0": 0.00600709,
+            "t1": 0.00800527,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 1554,
+            "max": 1.4321302465379597,
+            "p99": 1.2641460552510568,
+            "p95": 1.159961159579378,
+            "p50": 1.088435739924536,
+            "mean": 1.097761459364803,
+            "min": 1.0449676954333753,
+            "areaWeightedMean": 1.09824952558946
+          },
+          "hot": {
+            "quadIndex": 1050,
+            "elementId": 1054,
+            "nodes": [
+              1451,
+              1505,
+              61,
+              7
+            ],
+            "restCentroid_mm": [
+              5.472775,
+              -27.373749999999998,
+              20.83335
+            ],
+            "region": "lower center front-face",
+            "lam": 1.4321302465379597
+          },
+          "volume_mL": 615.338815459435,
+          "p_Pa": 13000,
+          "vsGolden": {
+            "stretchRel": 0.08063961947030412,
+            "volumeRel": 0.012436160324151659,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.12121472249562332,
+            "volumeRel": 0.045962728476924564,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.017531769673265574,
+            "volumeRel": 0.022317952843187685,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "nearElement90": {
+            "elementId": 90,
+            "nodes": [
+              787,
+              716,
+              628,
+              777
+            ],
+            "restCentroid_mm": [
+              18.560349999999996,
+              24.643625,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.1075726971937752,
+            "distance_m": 3.469446951953614e-18
+          }
+        },
+        {
+          "t_s": 0.016,
+          "t_ms": 16,
+          "available": true,
+          "interpolation": {
+            "t0": 0.0140024,
+            "t1": 0.0160004,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 1554,
+            "max": 2.1761381003254314,
+            "p99": 1.7046160092502247,
+            "p95": 1.4441505964753085,
+            "p50": 1.23092029479005,
+            "mean": 1.2510286219180067,
+            "min": 1.0930055353715415,
+            "areaWeightedMean": 1.2501667263138663
+          },
+          "hot": {
+            "quadIndex": 830,
+            "elementId": 124,
+            "nodes": [
+              728,
+              508,
+              637,
+              721
+            ],
+            "restCentroid_mm": [
+              -2.0453475,
+              -19.5832,
+              -25
+            ],
+            "region": "middle center back-face",
+            "lam": 2.1761381003254314
+          },
+          "volume_mL": 877.9996008641444,
+          "p_Pa": 26000,
+          "vsGolden": {
+            "stretchRel": 0.022818035749176877,
+            "volumeRel": 0.015145485072056184,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.5309374009895215,
+            "volumeRel": 0.32020317603193427,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.03409727390440032,
+            "volumeRel": 0.014020236101485284,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 90,
+            "nodes": [
+              787,
+              716,
+              628,
+              777
+            ],
+            "restCentroid_mm": [
+              18.560349999999996,
+              24.643625,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.2496124639200659,
+            "distance_m": 3.469446951953614e-18
+          }
+        }
+      ]
+    },
+    "fine": {
+      "label": "fine quads (re-oriented 1-to-4)",
+      "nNodes": 6216,
+      "nShells": 6216,
+      "kind": "quad",
+      "animTimes_s": [
+        0,
+        0.00200083,
+        0.00400293,
+        0.00600238,
+        0.0080004,
+        0.0100008,
+        0.0120015,
+        0.0140015,
+        0.0160019,
+        0.0180014,
+        0.0200006,
+        0.0203243
+      ],
+      "death": {
+        "tinyTimeStep": true,
+        "cycles": 9083,
+        "lastCycle": 9000,
+        "lastPrintedTime_s": 0.020172,
+        "lastPrintedDt_s": 0.0000018679,
+        "lastAnimationTime_s": 0.0203243
+      },
+      "starter": {
+        "ismstrWarning": true,
+        "ismstrSnippet": "INVALID ISMSTR=10, CHANGE TO 2; CONCERNING 1 PROPERTY(S)",
+        "terminationWithWarning": true
+      },
+      "snapshots": [
+        {
+          "t_s": 0,
+          "t_ms": 0,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0,
+            "interpolated": false
+          },
+          "stats": {
+            "n": 6216,
+            "max": 1.0000000074505808,
+            "p99": 1.000000005268356,
+            "p95": 1.000000005268356,
+            "p50": 1,
+            "mean": 1.0000000003183416,
+            "min": 1,
+            "areaWeightedMean": 1.0000000004433904
+          },
+          "hot": {
+            "quadIndex": 57,
+            "elementId": 3617,
+            "nodes": [
+              535,
+              2244,
+              4401,
+              4400
+            ],
+            "restCentroid_mm": [
+              -24.0663,
+              46.2314,
+              -22.91665
+            ],
+            "region": "upper left back-face",
+            "lam": 1.0000000074505808
+          },
+          "volume_mL": 420.5477354248096,
+          "p_Pa": 0,
+          "vsGolden": {
+            "stretchRel": 0,
+            "volumeRel": 2.417813371365256e-8,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0,
+            "volumeRel": 8.432706985332075e-9,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0,
+            "volumeRel": 8.432706985332075e-9,
+            "pressureRel": 0,
+            "officialInside255": true
+          },
+          "nearElement90": {
+            "elementId": 358,
+            "nodes": [
+              716,
+              1968,
+              1971,
+              1901
+            ],
+            "restCentroid_mm": [
+              18.558625,
+              23.871375,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1,
+            "distance_m": 0.0007722519265919625
+          }
+        },
+        {
+          "t_s": 0.002,
+          "t_ms": 2,
+          "available": true,
+          "interpolation": {
+            "t0": 0,
+            "t1": 0.00200083,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 6216,
+            "max": 1.2357340008197975,
+            "p99": 1.1515991189768564,
+            "p95": 1.1057255702166746,
+            "p50": 1.03448152338128,
+            "mean": 1.0430027539948459,
+            "min": 1.01356750571824,
+            "areaWeightedMean": 1.043036349181224
+          },
+          "hot": {
+            "quadIndex": 3685,
+            "elementId": 4748,
+            "nodes": [
+              1009,
+              5319,
+              5320,
+              4314
+            ],
+            "restCentroid_mm": [
+              -6.010015,
+              -28.6554,
+              -18.75
+            ],
+            "region": "lower center back-face",
+            "lam": 1.2357340008197975
+          },
+          "volume_mL": 526.8877547611214,
+          "p_Pa": 3250,
+          "vsGolden": {
+            "stretchRel": 0.27158668566901883,
+            "volumeRel": 0.003206785999268785,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.105360052118256,
+            "volumeRel": 0.013497822116819014,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.105360052118256,
+            "volumeRel": 0.013497822116819014,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 358,
+            "nodes": [
+              716,
+              1968,
+              1971,
+              1901
+            ],
+            "restCentroid_mm": [
+              18.558625,
+              23.871375,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.180342694033727,
+            "distance_m": 0.0007722519265919625
+          }
+        },
+        {
+          "t_s": 0.004,
+          "t_ms": 4,
+          "available": true,
+          "interpolation": {
+            "t0": 0.00200083,
+            "t1": 0.00400293,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 6216,
+            "max": 1.2566631278886113,
+            "p99": 1.1464969085293952,
+            "p95": 1.099502197921511,
+            "p50": 1.0469213254878182,
+            "mean": 1.052610767432929,
+            "min": 1.0171200647687941,
+            "areaWeightedMean": 1.0523887438213222
+          },
+          "hot": {
+            "quadIndex": 3513,
+            "elementId": 198,
+            "nodes": [
+              507,
+              1792,
+              1795,
+              1791
+            ],
+            "restCentroid_mm": [
+              -5.124572499999999,
+              -25.490875,
+              -25
+            ],
+            "region": "lower center back-face",
+            "lam": 1.2566631278886113
+          },
+          "volume_mL": 550.4052557556143,
+          "p_Pa": 6500,
+          "vsGolden": {
+            "stretchRel": 0.24157128331895766,
+            "volumeRel": 0.005274102594844026,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.08316230210837006,
+            "volumeRel": 0.01899895932861249,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.13384638075140887,
+            "volumeRel": 0.04837438615822487,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 358,
+            "nodes": [
+              716,
+              1968,
+              1971,
+              1901
+            ],
+            "restCentroid_mm": [
+              18.558625,
+              23.871375,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.1237053799033285,
+            "distance_m": 0.0007722519265919625
+          }
+        },
+        {
+          "t_s": 0.008,
+          "t_ms": 8,
+          "available": true,
+          "interpolation": {
+            "t0": 0.00600238,
+            "t1": 0.0080004,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 6216,
+            "max": 1.46262163465577,
+            "p99": 1.257038288635637,
+            "p95": 1.1716131268603207,
+            "p50": 1.0919008128242778,
+            "mean": 1.0998171281742584,
+            "min": 1.0336289642419068,
+            "areaWeightedMean": 1.098536901320199
+          },
+          "hot": {
+            "quadIndex": 3513,
+            "elementId": 198,
+            "nodes": [
+              507,
+              1792,
+              1795,
+              1791
+            ],
+            "restCentroid_mm": [
+              -5.124572499999999,
+              -25.490875,
+              -25
+            ],
+            "region": "lower center back-face",
+            "lam": 1.46262163465577
+          },
+          "volume_mL": 620.1376700362442,
+          "p_Pa": 13000,
+          "vsGolden": {
+            "stretchRel": 0.061065579853003316,
+            "volumeRel": 0.004734427339240993,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.1450864292413344,
+            "volumeRel": 0.05411989799169948,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.039195969690206986,
+            "volumeRel": 0.030290723394469827,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 358,
+            "nodes": [
+              716,
+              1968,
+              1971,
+              1901
+            ],
+            "restCentroid_mm": [
+              18.558625,
+              23.871375,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.221856891497313,
+            "distance_m": 0.0007722519265919625
+          }
+        },
+        {
+          "t_s": 0.016,
+          "t_ms": 16,
+          "available": true,
+          "interpolation": {
+            "t0": 0.0140015,
+            "t1": 0.0160019,
+            "interpolated": true
+          },
+          "stats": {
+            "n": 6216,
+            "max": 2.23685858125846,
+            "p99": 1.690516771144943,
+            "p95": 1.4434019187005311,
+            "p50": 1.232055613957618,
+            "mean": 1.247767361704585,
+            "min": 1.0869449811260719,
+            "areaWeightedMean": 1.24583607457761
+          },
+          "hot": {
+            "quadIndex": 3503,
+            "elementId": 197,
+            "nodes": [
+              508,
+              1791,
+              1795,
+              1794
+            ],
+            "restCentroid_mm": [
+              -3.1573775,
+              -23.378524999999996,
+              -25
+            ],
+            "region": "lower center back-face",
+            "lam": 2.23685858125846
+          },
+          "volume_mL": 889.9401378970362,
+          "p_Pa": 26000,
+          "vsGolden": {
+            "stretchRel": 0.05135758617034628,
+            "volumeRel": 0.0017517525510691626,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOn": {
+            "stretchRel": 0.5736549358980563,
+            "volumeRel": 0.33815755197793174,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "vsToyKillOff": {
+            "stretchRel": 0.06295154735038186,
+            "volumeRel": 0.027810613875409673,
+            "pressureRel": 0,
+            "officialInside255": false
+          },
+          "nearElement90": {
+            "elementId": 358,
+            "nodes": [
+              716,
+              1968,
+              1971,
+              1901
+            ],
+            "restCentroid_mm": [
+              18.558625,
+              23.871375,
+              -25
+            ],
+            "region": "upper right back-face",
+            "lam": 1.360254919635219,
+            "distance_m": 0.0007722519265919625
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "fingerprintAsWound": "d9c56487",
+  "fingerprintOriented": "f9635c7f",
+  "nNodes": 1554,
+  "nQuads": 1554,
+  "nTris": 0,
+  "asWoundVolume_mL": 353.9847819681924,
+  "orientedVolume_mL": 420.5477389711655,
+  "quadsNeedingFlip": 188,
+  "trianglesNeedingFlip": 376
+}

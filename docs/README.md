@@ -17,6 +17,15 @@ Research and design notes for building a client-side flexible multibody / explic
 | [08 — Architecture recommendations](research/08-architecture-recommendations.md) | Concrete build plan for web-mbd |
 | [09 — Oracle bitwise floor](research/09-oracle-bitwise-floor.md) | Taylor H8C/LAW2 residual = truncation; shared-kernel path to Object.is |
 
+## MVP models
+
+| Doc | What it covers |
+| --- | --- |
+| [Taylor bar](mvp-taylor-bar.md) | J2 hex + rigid wall + OpenRadioss bitwise oracle |
+| [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + fast-load (dynamic) pressure ramp + banded open Radioss reference on a consistently outward-oriented mesh. Slow-load is not validated. The Inflation ABC ~54 kPa figure is not claimed. Source letters B/C still have inconsistent winding (404 of 2178 and 412 of 1972 triangles); the inflate refine ladder inherits that winding unless fixed. |
+| [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; fast-load only |
+| [Radioss slow-load desk](radioss-qs-desk.md) | Reference-only OpenRadioss slow-load tape (`gate: none`; not used by any gate) |
+
 ## Sources
 
 Primary OpenRadioss materials reviewed:

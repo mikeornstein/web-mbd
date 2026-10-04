@@ -2,7 +2,7 @@
 
 Flexible multibody dynamics in the browser.
 
-A client-side CAE app for nonlinear flexible multibody simulation — crash, impact, mechanisms, and large-deformation dynamics — with the analysis capability of tools like LS-DYNA, rebuilt for a modern architecture that runs locally in the browser.
+A client-side computer-aided engineering app for nonlinear flexible multibody simulation — crash, impact, mechanisms, and large-deformation dynamics — with the analysis capability of tools like LS-DYNA, rebuilt for a modern architecture that runs locally in the browser.
 
 No cluster. No license server. The model, the solver, and the results stay on the machine.
 
@@ -25,14 +25,14 @@ The goal is not a toy demo of a bouncing cube. The goal is production-shaped exp
 | --- | --- |
 | Rigid multibody (joints, constraints, contacts) | planned |
 | Flexible bodies (linear modal + nonlinear FE) | planned |
-| Explicit dynamics (central difference / symplectic) | **MVP in-tree** (Taylor bar, refined mesh) |
+| Explicit dynamics (central difference / symplectic) | **in-tree** (Taylor bar, refined mesh) |
 | Implicit dynamics (Newmark / HHT, Newton–Raphson) | planned |
-| Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening MVP** |
-| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty MVP** |
-| Shells, solids, beams, discrete elements | **hex solids MVP** |
+| Nonlinear materials (plasticity, rubber, foam) | **J2 linear hardening** + **neo-Hookean membrane inflate (letter A)** |
+| Contact & impact (penalty, constraint, mortar) | **rigid-wall penalty first working version** + **TYPE19-class Gapmin kiss (node-node; not bitwise TYPE19)** |
+| Shells, solids, beams, discrete elements | **hex solids first working version** + **four-sided membrane shells (letters A/B/C)** |
 | GPU time integration (WebGPU) | planned |
-| Interactive 3D pre/post | **MVP canvas pre/post** (Taylor workbench) |
-| LS-DYNA / OpenRadioss deck import | planned (oracle export + pin compare) |
+| Interactive 3D pre/post | **canvas pre/post** (Taylor + inflate A/B/C; mesh edges default ON; solid-only hides triangle seams) |
+| LS-DYNA / open Radioss deck import | planned (reference export + pin compare). **Inflate: offline open Radioss reference JSON only — solver not in Pages** |
 
 ### First model: Taylor bar
 
@@ -40,12 +40,34 @@ Copper-like cylinder into a rigid wall — the Layer-1 gate from the research no
 
 ```bash
 pnpm install
-pnpm test          # unit + Taylor golden / determinism / oracle pin
+pnpm test          # unit + Taylor golden / determinism / oracle pin + inflate Radioss gate
 pnpm taylor        # headless Taylor bar solve + metrics
+pnpm inflate       # headless letter-A NH inflate + warn metrics
+pnpm compare:inflate # machine-diff vs checked-in OpenRadioss golden (exit 0/1)
 pnpm oracle:taylor # live OpenRadioss bitwise Object.is (needs OPENRADIOSS_PATH)
 pnpm dev           # workbench: research → pre → solve → post
 pnpm test:e2e      # Playwright proof of the same path
 ```
+
+Second stock family: letters **A / B / C** neo-Hookean inflate. Locked shear
+modulus, density, and thickness. Load family **`dynamic-pload-40ms`** is the
+filled open Radioss reference (pressure load 0→65 kPa / 40 ms) on a
+**consistently outward-oriented** letter-A mesh, fast-load only. Mesh
+fingerprint **`f9635c7f`** (188 of 1554 four-sided shells reversed from the
+as-wound bake). Volume is a true enclosed volume (rest 420.5 mL).
+**Slow-load (quasi-static) is not validated:** last measured at head `8a05992`
+the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded;
+that code was removed, not fixed. The Inflation ABC ~54 kPa figure is **not
+claimed**. The page leads with **letter A** (the only validated letter, selected
+by default). Letter B is an **unvalidated demo, unstable past stretch 2** (no
+Radioss tape). Its source bake has **404 of 2178** triangles wound against
+their neighbors. Letter C is **hidden** (degenerate / unstable). Its source
+bake has **412 of 1972** triangles wound against their neighbors. The
+Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding
+unless fixed. Default view shows **mesh edges**. Open Radioss stays offline:
+the Pages app never bundles the GNU Affero General Public License solver. See
+[`docs/mvp-inflate-a.md`](docs/mvp-inflate-a.md) and
+[`docs/engineering-review-inflate-a.md`](docs/engineering-review-inflate-a.md).
 
 This repository is the product, not a paper. Algorithms land here when they run in the browser on real models.
 
@@ -87,9 +109,20 @@ Prior-art research (OpenRadioss Confluence + broader solver landscape) lives in 
 
 ## Status
 
-Research docs are in-tree. The first solver MVP (Taylor bar, explicit hex + J2 + rigid wall) runs via `pnpm test` / `pnpm taylor`, and the browser workbench loads that stock research model through pre → solve → post. WebGPU and richer field viz are next.
+Research docs are in-tree. The first solver (Taylor bar, explicit hex + J2 + rigid wall) runs via
+`pnpm test` / `pnpm taylor`. Letter-A neo-Hookean inflate is gated against a checked-in
+open Radioss **fast-load (dynamic)** reference on a consistently outward-oriented mesh
+(`pnpm inflate` / `pnpm compare:inflate`).
+The page leads with letter A. Letter B is an **unvalidated demo, unstable past stretch 2**
+(source bake 404 of 2178 triangles wound against neighbors); letter C is
+**hidden** (degenerate / unstable; source bake 412 of 1972). The Inflation ABC
+refine ladder inherits the old winding unless fixed. Slow-load
+(quasi-static) is **not validated** (code removed, not fixed). The Inflation ABC
+~54 kPa figure is **not claimed**. The GNU Affero General Public License solver is not in the browser. The
+workbench loads research models through pre → solve → post. Default mesh shading includes
+edges. WebGPU and richer field viz are next.
 
-If you care about this problem — FE crash codes, geometric nonlinear MBD, GPU time integration, or putting serious CAE in a browser — issues and design notes are welcome.
+If you care about this problem — finite-element crash codes, geometric nonlinear flexible multibody, GPU time integration, or putting serious computer-aided engineering in a browser — issues and design notes are welcome.
 
 ## Develop
 
