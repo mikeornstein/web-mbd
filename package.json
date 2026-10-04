@@ -24,6 +24,7 @@
     "diagnose:kill-off": "tsx src/cli/diagnose-kill-off.ts",
     "diagnose:adyrel-period": "tsx src/cli/diagnose-adyrel-period.ts",
     "diagnose:adyrel-measurement": "tsx src/cli/diagnose-adyrel-measurement.ts",
+    "diagnose:dt-convergence": "tsx src/cli/diagnose-dt-convergence.ts",
     "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts",
     "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts"
   },
