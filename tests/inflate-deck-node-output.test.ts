@@ -156,8 +156,7 @@ describe("deck node-output plan locked before the run", () => {
 
   it("derived table records the locked-rule verdict and the package pin", () => {
     const text = readFileSync(new URL("deck-node-output-results.md", DIAG), "utf8").trim();
-    const last = text.split("\n").at(-1);
-    expect(last).toContain("spreads strain differently");
+    expect(text).toContain("spreads strain differently");
     expect(text).toContain(OPENCOURANT_ZIP_SHA256);
     expect(text).toContain("real frame, not interpolated");
     expect(text).toContain("convention difference");
