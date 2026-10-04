@@ -39,6 +39,8 @@ negative. Stays hidden.
 
 ## Compare gate
 
-Themis surviving-deck stretch spread, every 2 ms from 0 to 16 ms.
-See [every-frame-results.md](every-frame-results.md). Job name:
-`compare:inflate — Themis deck-spread bar (currently misses)`.
+Themis surviving-deck stretch spread, every 2 ms from 0 to 16 ms,
+with triangle `/SH3N` in the spread up to about 11.5 ms.
+See [every-frame-results.md](every-frame-results.md). Stretch is
+validated at the 16 ms freeze and lags the decks earlier in the run.
+Job name: `compare:inflate — Themis deck-spread bar (currently misses)`.

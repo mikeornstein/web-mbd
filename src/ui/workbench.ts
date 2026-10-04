@@ -4,6 +4,7 @@ import { solveExplicitAsync } from "../fe/solveAsync.js";
 import type { InflateModelIR, InflateSolveResult } from "../inflate/types.js";
 import type { EnergySample, ModelIR, SolveResult } from "../ir/types.js";
 import { compareInflateToGolden, toySamplesFromSolve } from "../oracle/compareInflate.js";
+import { stretchDiagnosticsPageText } from "../oracle/stretchDiagnosticResults.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -120,7 +121,7 @@ export function mountWorkbench(root: HTMLElement): void {
   const researchHelp = document.createElement("p");
   researchHelp.className = "muted";
   researchHelp.textContent =
-    "Letter A inflate is the only validated inflate letter (open Radioss fast-load reference on a consistently outward-oriented mesh, at first stretch ≥ 2). Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Its source mesh has 404 of 2178 triangles wound against their neighbors. Letter C is hidden: degenerate / unstable. Its source mesh has 412 of 1972 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+    "Letter A inflate is the only validated inflate letter (open Radioss fast-load reference on a consistently outward-oriented mesh, at first stretch ≥ 2). Stretch is validated at the 16 ms freeze and lags the decks earlier in the run. Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Its source mesh has 404 of 2178 triangles wound against their neighbors. Letter C is hidden: degenerate / unstable. Its source mesh has 412 of 1972 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
 
   const catalog = document.createElement("ul");
   catalog.className = "catalog";
@@ -193,7 +194,7 @@ export function mountWorkbench(root: HTMLElement): void {
     li.append(title, badge, summary, meta, loadBtn);
     catalog.append(li);
   }
-  researchPanel.append(researchHeading, researchHelp, catalog);
+  researchPanel.append(researchHeading, researchHelp, catalog, createStretchDiagSection());
 
   const prePanel = document.createElement("section");
   prePanel.className = "panel";
@@ -260,7 +261,7 @@ export function mountWorkbench(root: HTMLElement): void {
     state.statusMessage = "Ready to run the explicit solver.";
     render();
   });
-  prePanel.append(preHeading, preTree, preShading.root, preVizHost, toSolve);
+  prePanel.append(preHeading, preTree, preShading.root, preVizHost, toSolve, createStretchDiagSection());
 
   const solvePanel = document.createElement("section");
   solvePanel.className = "panel";
@@ -295,6 +296,7 @@ export function mountWorkbench(root: HTMLElement): void {
     postVizHost,
     scrubber.root,
     chartHost,
+    createStretchDiagSection(),
   );
 
   panels.append(researchPanel, prePanel, solvePanel, postPanel);
@@ -584,10 +586,25 @@ function createTimeScrubber(onIndex: (index: number) => void): {
   };
 }
 
+function createStretchDiagSection(): HTMLElement {
+  const wrap = document.createElement("section");
+  wrap.className = "diag-block";
+  wrap.setAttribute("aria-label", "Letter A stretch diagnostics");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A stretch diagnostics (measurement, not a gate)";
+  const copy = stretchDiagnosticsPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  wrap.append(heading, rules, results);
+  return wrap;
+}
+
 function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
-      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · stretch inside surviving-deck spread (Themis) · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · stretch is validated at the 16 ms freeze and lags the decks earlier in the run · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo":
       return "unvalidated demo, unstable past stretch 2 · source mesh 404 of 2178 triangles wound against neighbors · open Radioss golden NOT-YET. The Inflation ABC refine ladder inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo-unstable":

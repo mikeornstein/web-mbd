@@ -41,7 +41,7 @@ function main(): void {
   console.log(formatInflateCompare(cmp));
   if (!cmp.ok) {
     console.log(
-      "This is the physics check. Themis’s surviving-deck stretch spread (golden four-node + Ishell 24 + fine re-oriented) gates every 2 ms from 0 to 16 ms. Volume and pressure stay on the 5 percent bands. That is the honest result until the toy stretch sits inside the deck spread. Do not widen the bands. Do not change shear modulus or the load law.",
+      "This is the physics check. Themis’s surviving-deck stretch spread (golden four-node + Ishell 24 + fine re-oriented + triangle `/SH3N` up to ~11.5 ms) gates every 2 ms from 0 to 16 ms. Volume and pressure stay on the 5 percent bands. Stretch is validated at the 16 ms freeze and lags the decks earlier in the run. That is the honest result until the toy stretch sits inside the deck spread at every tick. Do not widen the bands. Do not change shear modulus or the load law.",
     );
     process.exit(1);
   }

@@ -42,7 +42,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "The only validated inflate letter. Desmopan 85085A film letter A. Locked shear modulus, density, and thickness. Fast-load (dynamic) pressure ramp 0→65 kPa / 40 ms matches the open Radioss reference on a consistently outward-oriented mesh at first stretch ≥ 2. Slow-load (quasi-static) is not validated: last measured at head 8a05992 the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded; that code was removed, not fixed. The Inflation ABC ~54 kPa figure is not claimed. Default view is solid fill with mesh edges. Open Radioss is the offline golden only.",
+      "The only validated inflate letter. Desmopan 85085A film letter A. Locked shear modulus, density, and thickness. Fast-load (dynamic) pressure ramp 0→65 kPa / 40 ms matches the open Radioss reference on a consistently outward-oriented mesh at first stretch ≥ 2. Stretch is validated at the 16 ms freeze and lags the decks earlier in the run. Slow-load (quasi-static) is not validated: last measured at head 8a05992 the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded; that code was removed, not fixed. The Inflation ABC ~54 kPa figure is not claimed. Default view is solid fill with mesh edges. Open Radioss is the offline golden only.",
     validation: "radioss-dynamic-golden",
     listedOnPage: true,
     create: () => createInflateAModel(),

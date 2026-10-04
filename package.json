@@ -28,7 +28,8 @@
     "diagnose:slow-sphere": "tsx src/cli/diagnose-slow-sphere.ts",
     "diagnose:sphere-probe": "tsx src/cli/diagnose-sphere-probe.ts",
     "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts",
-    "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts"
+    "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts",
+    "diagnose:stretch-diagnostics": "tsx src/cli/diagnose-stretch-diagnostics.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -86,6 +86,7 @@ jobs:
             echo
             echo "The honest physics check is the separate job named **compare:inflate — Themis deck-spread bar (currently misses)**."
             echo "That job is red on purpose until toy stretch sits inside the surviving-deck spread every 2 ms from 0 to 16 ms."
+            echo "Triangle shells are in that spread up to about 11.5 ms. Stretch is validated at the 16 ms freeze and lags the decks earlier in the run."
             echo "Do not widen the 2 percent stretch, 5 percent volume, or 5 percent pressure bands."
             echo "Do not change shear modulus or the pressure load."
             echo
@@ -120,8 +121,9 @@ jobs:
           {
             echo "# This check is red on purpose"
             echo
-            echo "The letter A toy currently misses Themis’s surviving-deck stretch spread (golden four-node + Ishell 24 + fine re-oriented) every loaded frame from 2 to 16 ms."
+            echo "The letter A toy currently misses Themis’s surviving-deck stretch spread (golden four-node + Ishell 24 + fine re-oriented + triangle shells up to about 11.5 ms) on some loaded frames from 2 to 16 ms."
             echo "Volume and pressure stay on the 5 percent bands. The old 2 percent of golden-max stretch bar is printed, not the gate."
+            echo "Stretch is validated at the 16 ms freeze and lags the decks earlier in the run."
             echo
             echo "This is the physics check. A red mark here is the honest state until toy stretch sits inside the deck spread."
             echo "Do not widen the bands. Do not change shear modulus or the pressure load."
@@ -157,6 +159,39 @@ jobs:
             echo "This job prints the 0–16 ms relaxation measurement. It is not a physics pass."
             echo "It must not turn a red compare:inflate into a green mark."
             echo "This measurement was taken when the default was the 0.18 peak kill. Shipped default is now velocity kill off."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  measurement-stretch-diagnostics:
+    name: "measurement: stretch diagnostics (not a gate)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Print stretch diagnostic rules (and results if present)
+        run: |
+          echo "MEASUREMENT. Not a physics pass. Does not gate."
+          echo "The golden's engine commit 6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba is pinned only to the OpenCourant copy, not the original OpenRadioss tree."
+          echo
+          cat docs/diag-pr18-openradioss-control/stretch-diagnostics-prediction.md
+          echo
+          if [ -f docs/diag-pr18-openradioss-control/stretch-diagnostics-results.md ]; then
+            cat docs/diag-pr18-openradioss-control/stretch-diagnostics-results.md
+          else
+            echo "Results not yet written. Rules were committed first."
+          fi
+          echo
+          echo "This job always exits 0. It does not count toward a pass."
+
+      - name: Honest status
+        if: always()
+        run: |
+          {
+            echo "# MEASUREMENT, not a gate"
+            echo
+            echo "This job prints the stretch-diagnostic rules (committed first) and results if they exist."
+            echo "It is not a physics pass. It must not turn a red compare:inflate into a green mark."
+            echo "Do not apply any time shift to a result. Do not widen any bar."
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:

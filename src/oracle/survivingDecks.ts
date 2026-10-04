@@ -1,7 +1,8 @@
 /**
  * Surviving Radioss decks for Themis’s stretch spread. Digits are **computed**
  * from committed tapes (`oriented-ismstr2-metrics.json`, `element-type.json`).
- * Triangle `/SH3N` is shown, not in the gating spread.
+ * Triangle `/SH3N` is in the gating spread up to ~11.5 ms (last snapshot 8 ms;
+ * 6 ms interpolated from 4 and 8). After that it is not a late-window reference.
  *
  * The golden's engine commit 6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba
  * is pinned only to the OpenCourant copy, not the original OpenRadioss tree.
@@ -53,7 +54,7 @@ export const DECK_FINE_REORIENTED: readonly StretchSample[] = [
   { t_ms: 16, lambdaMax: 2.23685858125846 },
 ];
 
-/** Triangle `/SH3N`. Not a late-window reference. Died ~11.5 ms. read from file. */
+/** Triangle `/SH3N`. In the gating spread until it dies ~11.5 ms. read from file. */
 export const DECK_TRIANGLE_SH3N: readonly StretchSample[] = [
   { t_ms: 0, lambdaMax: 1.0000000074505808 },
   { t_ms: 2, lambdaMax: 1.1062769955278284 },
@@ -102,7 +103,10 @@ const GATING_DECKS: { name: string; samples: readonly StretchSample[] }[] = [
   { name: "golden Belytschko quad", samples: GOLDEN_TAPE },
   { name: "Ishell 24 ismstr 2", samples: DECK_ISHELL24_ISMSTR2 },
   { name: "fine re-oriented", samples: DECK_FINE_REORIENTED },
+  { name: "triangle /SH3N", samples: DECK_TRIANGLE_SH3N },
 ];
+
+export const TRIANGLE_DECK_NAME = "triangle /SH3N";
 
 export function deckSpreadAt(t_ms: number): DeckSpread {
   const golden = GOLDEN_TAPE.find((row) => row.t_ms === t_ms);
@@ -139,8 +143,8 @@ export function deckSpreadAt(t_ms: number): DeckSpread {
       triangleNote = "triangle sample missing; not a late-window reference";
     } else {
       triangleNote = triangle.interpolated
-        ? "triangle interpolated; shown, not in the gating spread"
-        : "triangle shown, not in the gating spread";
+        ? "triangle interpolated; in the gating spread"
+        : "triangle in the gating spread";
     }
   }
   return { t_ms, golden, min, max, interpolated, members, triangle, triangleNote };

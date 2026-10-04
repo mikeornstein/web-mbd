@@ -280,11 +280,18 @@ button:disabled {
   color: var(--warn);
 }
 
-.warn-mark {
-  margin: 0 0 1rem;
-  font-weight: 700;
-  color: var(--warn);
-  letter-spacing: 0.02em;
+.diag-block {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+.diag-block pre {
+  white-space: pre-wrap;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+  overflow-x: auto;
 }
 
 @media (max-width: 640px) {

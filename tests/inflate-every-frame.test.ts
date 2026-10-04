@@ -11,7 +11,9 @@ import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS } from "../src/inflate/constants.js";
 import { lockedLawCard } from "../src/inflate/lawCard.js";
 import {
   compareInflateToGolden,
+  formatEveryFrameTable,
   SHIPPED_KILL_OFF_FREEZE,
+  SIXTEEN_MS_SPREAD_NOTE,
   type InflateToySample,
 } from "../src/oracle/compareInflate.js";
 import { loadInflateGolden } from "../src/oracle/inflateGolden.js";
@@ -90,23 +92,29 @@ describe("every-frame Themis deck-spread (committed tapes)", () => {
     }
   });
 
-  it("6/10/12/14 ms deck min/max are interpolated; triangle is shown, not in the spread", () => {
+  it("6/10/12/14 ms deck min/max are interpolated; triangle is in the spread through 8 ms", () => {
     const at6 = deckSpreadAt(6);
     expect(at6.interpolated).toBe(true);
-    expect(at6.triangleNote).toContain("not in the gating spread");
+    expect(at6.triangleNote).toContain("in the gating spread");
     expect(at6.triangle).not.toBeNull();
+    expect(at6.min).toBe(at6.triangle?.lambdaMax);
+    const at2 = deckSpreadAt(2);
+    expect(at2.interpolated).toBe(false);
+    expect(at2.min).toBe(DECK_TRIANGLE_SH3N[1]?.lambdaMax);
+    expect(at2.triangleNote).toContain("in the gating spread");
     const at16 = deckSpreadAt(16);
     expect(at16.interpolated).toBe(false);
     expect(at16.min).toBe(GOLDEN_TAPE[8]?.lambdaMax);
     expect(at16.max).toBe(DECK_FINE_REORIENTED[4]?.lambdaMax);
     const at10 = deckSpreadAt(10);
+    expect(at10.interpolated).toBe(true);
     expect(at10.triangle).toBeNull();
     expect(at10.triangleNote).toContain("last 8 ms");
     const at16tri = deckSpreadAt(16);
     expect(at16tri.triangleNote).toContain("died ~11.5 ms");
   });
 
-  it("committed kill-off tape sits below the surviving-deck floor after t=0", () => {
+  it("committed kill-off tape tally with triangle in the spread; 16 ms uses the locked sentence", () => {
     const golden = loadInflateGolden();
     const cmp = compareInflateToGolden(
       {
@@ -131,22 +139,36 @@ describe("every-frame Themis deck-spread (committed tapes)", () => {
     expect(cmp.gatingBar).toBe(INFLATE_GATING_BAR);
     expect(cmp.ok).toBe(false);
     expect(cmp.themisOk).toBe(false);
-    const at0 = cmp.frames[0];
-    const at2 = cmp.frames[1];
-    const at16 = cmp.frames[8];
-    expect(at0?.themisInside).toBe(true);
-    expect(at0?.oldBarInside).toBe(true);
-    expect(at2?.themisInside).toBe(false);
-    expect(at2?.oldBarInside).toBe(false);
-    expect(at16?.themisInside).toBe(false);
-    expect(at16?.oldBarInside).toBe(true);
-    expect(at16?.volumeInside).toBe(true);
-    expect(at16?.pressureInside).toBe(true);
+    const want: Record<number, boolean> = {
+      0: true,
+      2: true,
+      4: false,
+      6: true,
+      8: true,
+      10: false,
+      12: false,
+      14: false,
+      16: false,
+    };
     for (const row of cmp.frames) {
-      if (row.t_ms === 0) continue;
-      expect(row.themisInside).toBe(false);
+      expect(row.themisInside).toBe(want[row.t_ms]);
       expect(row.volumeInside).toBe(true);
       expect(row.pressureInside).toBe(true);
+      if (row.t_ms === 10 || row.t_ms === 12 || row.t_ms === 14) {
+        expect(row.deckInterpolated).toBe(true);
+      }
     }
+    const at4 = cmp.frames.find((row) => row.t_ms === 4);
+    expect(at4?.belowFloorRel).not.toBeNull();
+    expect(at4?.floorName).toContain("triangle");
+    const at16 = cmp.frames.find((row) => row.t_ms === 16);
+    expect(at16?.oldBarInside).toBe(true);
+    expect(at16?.themisInside).toBe(false);
+    const table = formatEveryFrameTable(cmp);
+    expect(table).toContain(SIXTEEN_MS_SPREAD_NOTE);
+    expect(table).toContain("tally total:");
+    expect(table).toContain("Themis reading (not the score)");
+    expect(table).toContain("in the gating spread");
+    expect(table).toContain("deck min/max interpolated");
   });
 });

@@ -4,6 +4,7 @@ import {
   EVERY_FRAME_MS,
   INFLATE_GATING_BAR,
   INFLATE_OLD_STRETCH_BAR,
+  TRIANGLE_DECK_NAME,
 } from "./survivingDecks.js";
 
 export { INFLATE_GATING_BAR, INFLATE_OLD_STRETCH_BAR } from "./survivingDecks.js";
@@ -131,6 +132,8 @@ export interface InflateFrameCompare {
   volumeInside: boolean | null;
   pressureInside: boolean | null;
   deckInterpolated: boolean;
+  belowFloorRel: number | null;
+  floorName: string | null;
 }
 
 export interface InflateCompareResult {
@@ -184,6 +187,8 @@ function compareFrame(
       volumeInside: null,
       pressureInside: null,
       deckInterpolated: spread.interpolated,
+      belowFloorRel: null,
+      floorName: null,
     };
   }
   const lambdaRelGolden = relErr(toy.lambdaMax, spread.golden.lambdaMax);
@@ -193,6 +198,15 @@ function compareFrame(
   const oldBarInside = lambdaRelGolden <= INFLATE_BANDS.lambdaRel;
   const volumeInside = volumeRelGolden <= INFLATE_BANDS.volumeRel;
   const pressureInside = !loadFamilyEqual || pressureRelGolden <= INFLATE_BANDS.pressureRel;
+  const belowFloorRel =
+    toy.lambdaMax < spread.min ? (spread.min - toy.lambdaMax) / spread.min : null;
+  let floorName: string | null = null;
+  for (const member of spread.members) {
+    if (member.lambdaMax === spread.min) {
+      floorName = member.name;
+      break;
+    }
+  }
   return {
     t_ms,
     toyLambda: toy.lambdaMax,
@@ -209,15 +223,17 @@ function compareFrame(
     volumeInside,
     pressureInside,
     deckInterpolated: spread.interpolated,
+    belowFloorRel,
+    floorName,
   };
 }
 
 /**
  * Themis tooling gate: PASS iff toy stretch at every 2 ms from 0 to 16 ms sits
  * inside the surviving-deck min–max (golden four-node + Ishell 24 ismstr 2 +
- * fine re-oriented), and volume / pressure stay within 5% of the golden tape.
- * The old 2% of golden-max stretch bar is printed, not the gate.
- * Triangle `/SH3N` is shown, not in the spread.
+ * fine re-oriented + triangle `/SH3N` up to ~11.5 ms), and volume / pressure
+ * stay within 5% of the golden tape. The old 2% of golden-max stretch bar is
+ * printed, not the gate.
  */
 export function compareInflateToGolden(
   toy: InflateCompareToy,
@@ -380,11 +396,72 @@ function mark(inside: boolean | null): string {
   return inside ? "inside" : "outside";
 }
 
+/** Exact 16 ms table sentence. Do not paraphrase. */
+export const SIXTEEN_MS_SPREAD_NOTE =
+  "a miss of the edge of the spread, within the old 2% bar and well inside the roughly 5% disagreement between decks; not waved through";
+
+/** Themis’s reading of the re-score. Printed for comparison; the code’s tally is the score. */
+export const THEMIS_TALLY_READING =
+  "2, 6 and 8 ms inside, 4 ms about 4.5% below the triangle deck, 10 to 16 ms outside";
+
+function floorLabel(row: InflateFrameCompare): string {
+  if (row.floorName === TRIANGLE_DECK_NAME) return "the triangle deck";
+  if (row.floorName !== null) return row.floorName;
+  return "the spread floor";
+}
+
+export function formatThemisTally(result: InflateCompareResult): string {
+  const lines: string[] = ["tally per frame:"];
+  const insideMs: number[] = [];
+  const outsideMs: number[] = [];
+  for (const row of result.frames) {
+    if (row.themisInside === true) {
+      insideMs.push(row.t_ms);
+      const interp = row.deckInterpolated ? " (deck min/max interpolated)" : "";
+      lines.push(`  ${String(row.t_ms)} ms: inside${interp}`);
+      continue;
+    }
+    outsideMs.push(row.t_ms);
+    const bits: string[] = [];
+    if (row.belowFloorRel !== null) {
+      bits.push(`${(100 * row.belowFloorRel).toFixed(2)}% below ${floorLabel(row)}`);
+    }
+    if (row.deckInterpolated) bits.push("deck min/max interpolated");
+    if (row.t_ms === 16) bits.push(SIXTEEN_MS_SPREAD_NOTE);
+    const extra = bits.length > 0 ? ` (${bits.join("; ")})` : "";
+    lines.push(`  ${String(row.t_ms)} ms: outside${extra}`);
+  }
+  lines.push(
+    `tally total: ${String(insideMs.length)} inside, ${String(outsideMs.length)} outside of ${String(result.frames.length)} frames`,
+  );
+  lines.push(`Themis reading (not the score): ${THEMIS_TALLY_READING}`);
+  const wantInside = [2, 6, 8];
+  const wantOutside = [4, 10, 12, 14, 16];
+  const insideMatch = wantInside.every((t) => insideMs.includes(t));
+  const outsideMatch = wantOutside.every((t) => outsideMs.includes(t));
+  const at4 = result.frames.find((row) => row.t_ms === 4);
+  const at4Pct =
+    at4?.belowFloorRel === null || at4?.belowFloorRel === undefined
+      ? "n/a"
+      : `${(100 * at4.belowFloorRel).toFixed(2)}%`;
+  const at4Floor = at4 === undefined ? "n/a" : floorLabel(at4);
+  if (insideMatch && outsideMatch) {
+    lines.push(
+      `Difference from Themis reading: inside/outside match at 2–16 ms. 4 ms is ${at4Pct} below ${at4Floor} (she said about 4.5%). 0 ms is inside (she did not mention 0).`,
+    );
+  } else {
+    lines.push(
+      `Difference from Themis reading: code inside [${insideMs.join(", ")}] ms; code outside [${outsideMs.join(", ")}] ms; 4 ms is ${at4Pct} below ${at4Floor}.`,
+    );
+  }
+  return lines.join("\n");
+}
+
 export function formatEveryFrameTable(result: InflateCompareResult): string {
   const lines = [
     `gating bar: ${result.gatingBar}`,
     `old stretch bar: ${INFLATE_OLD_STRETCH_BAR} (printed, not the gate)`,
-    "triangle `/SH3N` shown up to ~11.5 ms, not in the gating spread",
+    "triangle `/SH3N` in the gating spread up to ~11.5 ms (last snapshot 8 ms; 6 ms interpolated)",
     "t_ms | toy λ | golden λ | deck min–max | Δλ golden | old 2% | Themis | ΔV | Δp | triangle λ",
   ];
   for (const row of result.frames) {
@@ -394,10 +471,14 @@ export function formatEveryFrameTable(result: InflateCompareResult): string {
     lines.push(
       `${String(row.t_ms)} | ${toy} | ${row.goldenLambda.toFixed(4)} | ${row.deckMin.toFixed(4)}–${row.deckMax.toFixed(4)}${interp} | ${pct(row.lambdaRelGolden)} | ${mark(row.oldBarInside)} | ${mark(row.themisInside)} | ${pct(row.volumeRelGolden)} | ${pct(row.pressureRelGolden)} | ${tri}`,
     );
+    if (row.t_ms === 16) {
+      lines.push(`    16 ms: ${SIXTEEN_MS_SPREAD_NOTE}`);
+    }
     if (row.triangleNote !== null) {
       lines.push(`    triangle: ${row.triangleNote}`);
     }
   }
+  lines.push(formatThemisTally(result));
   return lines.join("\n");
 }
 

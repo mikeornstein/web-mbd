@@ -44,6 +44,8 @@ describe("kill-off default prediction (before any new run)", () => {
     expect(frames).toContain("themis-deck-spread");
     expect(frames).toContain("2.1052");
     expect(frames).toContain("outside");
+    expect(frames).toContain("validated at the 16 ms freeze");
+    expect(frames).toContain("a miss of the edge of the spread");
     expect(frames).toContain("pinned only to the OpenCourant copy");
     const def = readFileSync(new URL("kill-off-default-results.md", DIAG), "utf8");
     expect(def).toContain("Punch-through: **false**");

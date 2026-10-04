@@ -9,9 +9,11 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Model tree").getByText(
-      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch inside surviving-deck spread \(Themis\) · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
+      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch is validated at the 16 ms freeze and lags the decks earlier in the run · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
+  await expect(page.getByText("Rules committed first. Results not yet written.")).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();

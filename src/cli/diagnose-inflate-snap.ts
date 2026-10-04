@@ -27,7 +27,7 @@ function main(): void {
   console.log("diagnosis: kill-off freeze is locked; Themis deck-spread bar is expected to miss");
   console.log("This is not a physics pass. It is not the compare check.");
   console.log(
-    "The letter A toy is expected to sit below the surviving-deck stretch floor every loaded frame from 2 to 16 ms.",
+    "The letter A toy is expected to miss Themis’s surviving-deck stretch spread overall. Triangle `/SH3N` is in the spread up to ~11.5 ms. Stretch is validated at the 16 ms freeze and lags the decks earlier in the run.",
   );
   console.log(
     `Locked freeze: frame ${String(SHIPPED_KILL_OFF_FREEZE.frame)}, stretch ${String(SHIPPED_KILL_OFF_FREEZE.lambdaMax)}.`,
