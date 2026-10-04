@@ -1,0 +1,6 @@
+{
+  "kind": "per-step-energy-gate",
+  "status": "rules-committed-results-not-yet-run",
+  "correctnessGateOnToy": true,
+  "notAGateForCompare": true
+}

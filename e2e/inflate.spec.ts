@@ -17,6 +17,8 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(
     pre.getByText("STOP: energy numbers are not trustworthy (bookkeeping failed). No verdicts."),
   ).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A per-step energy bookkeeping (correctness gate on the toy)" })).toBeVisible();
+  await expect(pre.getByText("Results not yet written. Rules were committed first.")).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();
   await expect(pre.getByRole("radio", { name: "Both" })).toBeChecked();

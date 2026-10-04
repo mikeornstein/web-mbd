@@ -194,6 +194,39 @@ jobs:
             echo "Do not apply any time shift to a result. Do not widen any bar."
           } >> "$GITHUB_STEP_SUMMARY"
 
+  measurement-per-step-energy:
+    name: "energy: per-step bookkeeping rules (correctness gate on the toy)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Print per-step energy rules (and results if present)
+        run: |
+          echo "CORRECTNESS GATE ON THE TOY. Not compare:inflate. Does not widen any bar."
+          echo "The golden's engine commit 6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba is pinned only to the OpenCourant copy, not the original OpenRadioss tree."
+          echo
+          cat docs/diag-pr18-openradioss-control/stretch-per-step-energy-prediction.md
+          echo
+          if [ -f docs/diag-pr18-openradioss-control/stretch-per-step-energy-results.md ]; then
+            cat docs/diag-pr18-openradioss-control/stretch-per-step-energy-results.md
+          else
+            echo "Results not yet written. Rules were committed first."
+          fi
+          echo
+          echo "This job prints the locked rules. It does not run the solver. It does not count as a compare:inflate pass."
+
+      - name: Honest status
+        if: always()
+        run: |
+          {
+            echo "# Per-step energy bookkeeping"
+            echo
+            echo "This job prints the per-step energy rules (committed first) and results if they exist."
+            echo "It is a correctness gate on the toy after the run is recorded. It must not turn a red compare:inflate into a green mark."
+            echo "Do not apply any time shift. Do not widen any bar."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     name: Deploy Pages
     needs: CI

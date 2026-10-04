@@ -26,6 +26,7 @@ Research and design notes for building a client-side flexible multibody / explic
 | [Sphere check (closed form)](diag-pr18-openradioss-control/sphere-result.md) | Recorded slow-sphere result: rising branch 0.9% pass, limit-point stretch 4.7% miss (flat top of the pressure curve), snap-through 1.1% pass, 28 kPa hold 0.2% pass, both step sizes. |
 | [Kill-off default / every-frame Themis gate](diag-pr18-openradioss-control/kill-off-default-results.md) | Shipped velocity kill off. Letter A freeze 16 ms stretch 2.105, no punch. Stretch is validated at the 16 ms freeze and lags the decks earlier in the run. Themis surviving-deck spread (triangle in through ~11.5 ms) still misses overall. |
 | [Stretch diagnostics (measurement)](diag-pr18-openradioss-control/stretch-diagnostics-results.md) | Read-only energy / median / time-shift measurement. Rules were committed first. Bookkeeping failed; no energy verdict. Not a gate. |
+| [Per-step energy bookkeeping (correctness gate on the toy)](diag-pr18-openradioss-control/stretch-per-step-energy-prediction.md) | Rules committed first. Sum pressure work at every solver step at the toy CFL step and at 2 microseconds. Results not yet written. |
 | [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; fast-load only |
 | [Radioss slow-load desk](radioss-qs-desk.md) | Reference-only OpenRadioss slow-load tape (`gate: none`; not used by any gate) |
 

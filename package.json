@@ -29,7 +29,8 @@
     "diagnose:sphere-probe": "tsx src/cli/diagnose-sphere-probe.ts",
     "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts",
     "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts",
-    "diagnose:stretch-diagnostics": "tsx src/cli/diagnose-stretch-diagnostics.ts"
+    "diagnose:stretch-diagnostics": "tsx src/cli/diagnose-stretch-diagnostics.ts",
+    "diagnose:per-step-energy": "tsx src/cli/diagnose-per-step-energy.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
