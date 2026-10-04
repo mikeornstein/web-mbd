@@ -1,5 +1,8 @@
 {
   "kind": "deck-energy-split-measurement",
-  "status": "plan-committed-results-not-yet-run",
-  "notAGate": true
+  "status": "run",
+  "notAGate": true,
+  "outcomeLine": "(b) the lag points to how mass is spread",
+  "pageBody": "Toy dissipated share 4 ms 13.87% 8 ms 8.93%; kinetic share 4 ms 25.93% 8 ms 9.60%.\n(b) the lag points to how mass is spread\nNo verdict row was added.",
+  "pageWording": "Retire the maximum-stretch lag as a claim about the toy, because on the wobble-blind measure its shift went from 3.46 ms to minus 0.08 ms and the earlier value was a yardstick artifact. Keep the number in the table; label it as a yardstick artifact, not a claim about the toy.\nThe film runs about half a millisecond behind the reference solvers throughout the run. That shows up as roughly 12% low in median stretch mid-run (8 ms) and about 3% low at the 16 ms freeze; the 0.5 ms fit was made across all frames, so the lag does not disappear at the freeze, it only looks smaller there because stretch changes more slowly near the end. Neither the page nor any caption may imply the film is physically exact or that the shape matches: node positions sit about three times farther from the decks than the decks sit from each other.\nThe toy sits about three times farther from the decks than the decks (golden and Ishell 24, same nodes, same winding) sit from each other, not that the toy is wrong.\nToy 0.771 J versus lowest deck 0.774 J, 0.003 J under the spread. That is the strict energy bar fact; it is not a pass.\nThere is no on-canvas lag caption. None was added. Mesh drawing is unchanged."
 }

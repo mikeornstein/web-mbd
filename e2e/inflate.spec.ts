@@ -18,6 +18,9 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(pre.getByRole("heading", { name: "Letter A deck node-output re-run (measurement, not a gate)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A quad-averaged stretch and node-distance (measurement, not a gate)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A energy and damping split (measurement, not a gate)" })).toBeVisible();
+  const energySplitResults = pre.locator("pre").filter({ hasText: "Results (measurement; energy and damping split, not compare:inflate):" });
+  await expect(energySplitResults.getByText("the lag points to how mass is spread")).toBeVisible();
+  await expect(energySplitResults.getByText("No verdict row was added")).toBeVisible();
   const deckNodeResults = pre.locator("pre").filter({ hasText: "Results (measurement; node output re-run, not compare:inflate):" });
   await expect(deckNodeResults.getByText("spreads strain differently from the decks")).toBeVisible();
   const quadAvgResults = pre.locator("pre").filter({ hasText: "Results (measurement; engine column primary, not compare:inflate):" });

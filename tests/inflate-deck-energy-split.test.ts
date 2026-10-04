@@ -142,4 +142,19 @@ describe("deck energy-split plan locked before any number", () => {
     expect(score.kind).toBe("other");
     expect(score.outcomeLine).toContain("Report any other combination exactly as it is");
   });
+
+  it("derived table names T01 channels, skips triangle 16 ms, and does not add a verdict row", () => {
+    const pred = readFileSync(new URL("deck-energy-split-prediction.md", DIAG), "utf8");
+    expect(pred).toContain("Written **before** any new number is computed");
+    const text = readFileSync(new URL("deck-energy-split-results.md", DIAG), "utf8");
+    expect(text).toContain("AinflateT01.csv");
+    expect(text).toContain("EXTERNAL WORK");
+    expect(text).toContain("INTERNAL ENERGY");
+    expect(text).toContain("KINETIC ENERGY");
+    expect(text).toContain("/TFILE 0.001");
+    expect(text).toContain("triangle deck died ~11.5 ms");
+    expect(text).toContain("No verdict row was added");
+    expect(text).toContain("(b) the lag points to how mass is spread");
+    expect(text).not.toContain("Energy agrees and median agrees");
+  });
 });
