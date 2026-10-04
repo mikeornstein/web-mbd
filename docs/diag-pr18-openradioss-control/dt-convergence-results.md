@@ -6,6 +6,13 @@ The golden's engine commit `6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba` is pinned 
 
 Time-step cap **1.9710e-6 s** is **copied** from the golden listing Δt at cycle 200, via the period description. Not computed from the toy, not fitted.
 
+## Sphere check (printed first, so a mismatch is a step-size error before the film)
+
+**read from docs:** closed-form peak is about 32 kPa at stretch 1.383. Letter A is not a sphere. Toy pressure is the prescribed ramp, so the crossing time need not carry 32 kPa.
+- kill off, current step: stretch 1.383 at **7.60 ms**, pressure **12.35 kPa**, volume 595.6 mL. **computed.**
+- kill off, 2 μs cap: stretch 1.383 at **7.65 ms**, pressure **12.43 kPa**, volume 596.4 mL. **computed.**
+Sphere vs current kill-off: **match** inside 5% time, 5% pressure, 5% volume. Not a jump toward 32 kPa. **computed.**
+
 Each cell is max stretch / volume (mL) / pressure (kPa).
 
 | t (ms) | kill off, current step (**computed** earlier) | kill off, 2 μs cap (**computed** this run) | golden (**computed** earlier) |
@@ -20,6 +27,6 @@ Each cell is max stretch / volume (mL) / pressure (kPa).
 | 14 | 1.736 / 757.6 / 22.75 | 1.713 / 757.6 / 22.75 | 1.829 / 788.2 / 22.75 |
 | 16 | 2.105 / 866.1 / 26.01 | 2.071 / 866.0 / 26.00 | 2.128 / 891.7 / 26.01 |
 
-Verdict: **step-independent** at this listing Δt. Capped-Δt frames stayed inside 2% stretch and 5% volume of the current kill-off at 2, 8, and 16 ms. Step size is cleared. **computed.**
+Verdict: **step-independent** at this listing Δt. Sphere and 2/8/16 ms frames stayed next to the current kill-off. Step size is cleared. **computed.**
 
 Stop. No further variants.

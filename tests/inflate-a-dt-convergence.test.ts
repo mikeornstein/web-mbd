@@ -21,7 +21,8 @@ describe("time-step convergence check (kill off, listing 2 μs cap)", () => {
   it("sphere prediction was written before the capped-Δt sphere print", () => {
     const text = readFileSync(new URL("dt-convergence-sphere-prediction.md", DIAG), "utf8");
     expect(text).toContain("Written **before** any new sphere print");
-    expect(text).toContain("step-size error");
+    expect(text).toContain("step-size");
+    expect(text).toContain("before anyone reads the film frames");
     expect(text).toContain("7.6");
     expect(text).toContain("32");
   });
@@ -48,7 +49,18 @@ describe("time-step convergence check (kill off, listing 2 μs cap)", () => {
     }
     if (!isRecord(raw)) throw new Error("dt json");
     expect(raw["stepDependent"]).toBe(false);
+    expect(raw["sphereMoved"]).toBe(false);
+    expect(raw["framesMoved"]).toBe(false);
     expect(raw["defaultUnchanged"]).toBe("peak-kill-0.18");
+    expect(md).toContain("Sphere check (printed first");
+    expect(md).toContain("7.65 ms");
+    const sphere = raw["sphere"];
+    if (!isRecord(sphere) || !isRecord(sphere["current"]) || !isRecord(sphere["capped"])) {
+      throw new Error("sphere");
+    }
+    expect(num(sphere["current"]["t"], "sphere.current.t") * 1e3).toBeCloseTo(7.6, 1);
+    expect(num(sphere["capped"]["t"], "sphere.capped.t") * 1e3).toBeCloseTo(7.65, 1);
+    expect(num(sphere["capped"]["p_Pa"], "sphere.capped.p") / 1000).toBeCloseTo(12.43, 1);
     const rows = raw["rows"];
     if (!Array.isArray(rows)) throw new Error("rows");
     const at2 = rows[1];

@@ -3,6 +3,25 @@
   "dtMax_s": 0.000001971,
   "nSteps": 8876,
   "stepDependent": false,
+  "framesMoved": false,
+  "sphereMoved": false,
+  "sphereLambdaStar": 1.3830875542684886,
+  "sphere": {
+    "current": {
+      "t": 0.007600521221882052,
+      "lambdaMax": 1.3830875542684886,
+      "p_Pa": 12350.846985558333,
+      "V_mL": 595.6115381263236,
+      "interpolated": true
+    },
+    "capped": {
+      "t": 0.007649308679241062,
+      "lambdaMax": 1.3830875542684886,
+      "p_Pa": 12430.126603766725,
+      "V_mL": 596.3936314646753,
+      "interpolated": true
+    }
+  },
   "rows": [
     {
       "t_ms": 0,
@@ -194,5 +213,6 @@
       }
     }
   ],
-  "defaultUnchanged": "peak-kill-0.18"
+  "defaultUnchanged": "peak-kill-0.18",
+  "openCourantCommitOnly": "6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba"
 }
