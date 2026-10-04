@@ -140,4 +140,39 @@ describe("kill-off diagnosis (default toy unchanged)", () => {
     expect(text).toContain("What result would refute it");
     expect(text).toContain("This **does not** weaken the 0.18 explanation on time-window grounds");
   });
+
+  it("committed kill-off results refute the prediction and keep the unoriented baseline", () => {
+    const raw: unknown = JSON.parse(readFileSync(new URL("kill-off-results.json", DIAG), "utf8"));
+    if (!isRecord(raw)) throw new Error("kill-off-results.json not object");
+    const verdictRaw = raw["verdict"];
+    if (!isRecord(verdictRaw)) throw new Error("verdict missing");
+    expect(verdictRaw["predictionRefuted"]).toBe(true);
+    expect(verdictRaw["twoMsMovedTowardRadioss"]).toBe(false);
+    expect(verdictRaw["twoMsStretchKillOffEqualsKillOn"]).toBe(true);
+    expect(verdictRaw["runA_wholeRunInsideBands"]).toBe(false);
+    expect(verdictRaw["runC_firstStretchGe2InsideBands"]).toBe(true);
+    expect(verdictRaw["noScaleFitted"]).toBe(true);
+    expect(num(verdictRaw["orientedKillOffTwoMsStretch"], "off2")).toBe(
+      num(verdictRaw["orientedKillOnTwoMsStretch"], "on2"),
+    );
+    expect(num(verdictRaw["runC_firstStretchGe2_lambdaRel"], "cLam")).toBeCloseTo(0.00307, 5);
+
+    const runs = raw["runs"];
+    if (!Array.isArray(runs) || runs.length !== 3) throw new Error("expected three runs");
+    const runA = runs[0];
+    const runC = runs[2];
+    if (!isRecord(runA) || !isRecord(runC)) throw new Error("run A/C");
+    expect(runA["kill"]).toBe("off");
+    expect(runA["mesh"]).toBe("oriented");
+    expect(runC["kill"]).toBe("on");
+    expect(runC["mesh"]).toBe("unoriented");
+    const aFrames = runA["frames"];
+    if (!Array.isArray(aFrames) || !isRecord(aFrames[1])) throw new Error("run A frames");
+    expect(num(aFrames[1]["lambdaMax"], "A 2ms")).toBe(1.1183172586557617);
+
+    const md = readFileSync(new URL("kill-off-results.md", DIAG), "utf8");
+    expect(md).toContain("The prediction is refuted");
+    expect(md).toContain("No scale number was picked afterward");
+    expect(md).toContain("still matches the old tape");
+  });
 });
