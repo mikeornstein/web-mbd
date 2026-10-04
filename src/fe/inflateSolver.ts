@@ -92,6 +92,11 @@ export function assertInflateModel(model: InflateModelIR): void {
       }
       break;
     }
+    case "listing-rate-measurement":
+      if (!(damping.ratePerSecond >= 0) || !Number.isFinite(damping.ratePerSecond)) {
+        throw new Error("listing-rate-measurement rate must be a finite number ≥ 0");
+      }
+      break;
     default: {
       const _exhaustive: never = damping;
       throw new Error(`unhandled damping ${String(_exhaustive)}`);
@@ -345,6 +350,11 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       for (let i = 0; i < v.length; i++) {
         v[i] = mixRelaxedVelocity(v[i]!, acc[i]!, dt12, lastOmega);
       }
+    } else if (damping.kind === "listing-rate-measurement" && t >= ENGINE_LISTING_FIRST_ON_TIME_S) {
+      lastOmega = omegaFromRate(damping.ratePerSecond, dt12);
+      for (let i = 0; i < v.length; i++) {
+        v[i] = mixRelaxedVelocity(v[i]!, acc[i]!, dt12, lastOmega);
+      }
     } else {
       for (let i = 0; i < v.length; i++) v[i]! += dt12 * acc[i]!;
     }
@@ -425,6 +435,9 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
           omegaPerStep: omegaFromRate(periodState.ratePerSecond, dt),
         };
       }
+    } else if (damping.kind === "listing-rate-measurement") {
+      kePrev2 = kePrev;
+      kePrev = ke;
     } else {
       const _exhaustive: never = damping;
       throw new Error(`unhandled damping ${String(_exhaustive)}`);

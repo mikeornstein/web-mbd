@@ -89,6 +89,14 @@ export type InflateDamping =
   | {
       kind: "adaptive-period";
       port: "per-second" | "per-step";
+    }
+  | {
+      /**
+       * Measurement only. Help-page mix at a copied listing rate.
+       * Not a proposed setting. Not the shipped default.
+       */
+      kind: "listing-rate-measurement";
+      ratePerSecond: number;
     };
 
 export interface InflateWarnMetrics {
