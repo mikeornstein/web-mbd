@@ -1,6 +1,9 @@
 {
   "kind": "deck-quad-averaged-measurement",
-  "status": "plan-committed-results-not-yet-run",
+  "status": "run",
   "notAGate": true,
-  "engineColumnPrimary": true
+  "engineColumnPrimary": true,
+  "verdictLine": "NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number. energy-agrees=false energy-low=false one-shift-fits=false median-agrees=false energy-comparable=true",
+  "ruleCLine": "Median still low means the toy genuinely stores strain more evenly than the decks, and the next step is the energy and damping partition (report only, do not change it).",
+  "pageBody": "Engine internal energy is the primary energy column.\nenergy-agrees=false energy-low=false median-agrees=false one-shift-fits=false distance-bar-holds=false\nLocked table: NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number. energy-agrees=false energy-low=false one-shift-fits=false median-agrees=false energy-comparable=true\nRule C outcome: Median still low means the toy genuinely stores strain more evenly than the decks, and the next step is the energy and damping partition (report only, do not change it)."
 }

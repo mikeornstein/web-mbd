@@ -108,12 +108,13 @@ describe("deck quad-averaged plan locked before any number", () => {
     }
   });
 
-  it("page copy says engine column is primary and results are not yet written", () => {
+  it("page copy says engine column is primary and records the locked NO-ROW", () => {
     const page = deckQuadAveragedPageText();
     expect(page.rules).toContain("primary energy column");
     expect(page.rules).toContain("convention difference, not evidence about the toy");
-    expect(page.results).toContain("Results not yet written. Plan was committed first.");
-    expect(page.results).toContain("Engine internal energy is the primary energy column.");
+    expect(page.results).toContain("Results (measurement; engine column primary, not compare:inflate):");
+    expect(page.results).toContain("NO-ROW");
+    expect(page.results).toContain("stores strain more evenly");
   });
 
   it("quad-centre stretch is 1 on the rest ship and follows a uniform scale", () => {
@@ -202,5 +203,18 @@ describe("deck quad-averaged plan locked before any number", () => {
     expect(score.energyAgrees).toBe(true);
     expect(score.oneShiftFits).toBe(false);
     expect(score.lockedLine).toContain("MIXED, no verdict");
+  });
+
+  it("derived tables keep engine energy primary and do not change the prediction file", () => {
+    const pred = readFileSync(new URL("deck-quad-averaged-prediction.md", DIAG), "utf8");
+    expect(pred).toContain("Written **before** any new number is computed");
+    expect(pred.replace(/\s+/g, " ")).toContain("Do not change this file after seeing numbers");
+    const text = readFileSync(new URL("deck-quad-averaged-results.md", DIAG), "utf8");
+    expect(text).toContain("engine internal (J, **primary**)");
+    expect(text).toContain("convention difference, not evidence about the toy");
+    expect(text).toContain("NO-ROW");
+    expect(text).toContain("stores strain more evenly");
+    expect(text).toContain("report only, decides nothing");
+    expect(text).toContain("bar frame (factor 1.0)");
   });
 });
