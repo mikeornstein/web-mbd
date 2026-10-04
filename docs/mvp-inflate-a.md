@@ -28,7 +28,7 @@ claimed**.
 
 - Plane-stress neo-Hookean constant-strain-triangle membrane (`materialNeoHookean.ts`, `membraneCst.ts`)
 - Letter-A shell mesh from inflation-abc `meshes/A.json` (Design-PASS four-sided shells; 28 orphan face triangles paired → 14 four-sided shells; 1554 four-sided shells, zero three-sided shells). **188 of those 1554 shells are reversed at load** so every face points outward. Mesh fingerprint **`f9635c7f`** (was `d9c56487` as-wound).
-- Follower pressure `f = p ∂V/∂x` (tetrahedron-consistent) + Rayleigh α=80 + Underwood residual-velocity scale 0.18
+- Follower pressure `f = p ∂V/∂x` (tetrahedron-consistent) + Rayleigh α=80. Velocity kill off (no 0.18 peak kill). Justified by measurement: engine-rate relaxation did not close the golden gap, listing 2 μs step was independent, sphere follows the closed form (rising 0.9%, snap 1.1%, 28 kPa hold 0.2%).
 - TYPE19-class kiss at CONTACT_KISS (Gapmin=0.762 mm): **node-node** soft-press. Honest post-press viol. **Not** bitwise open Radioss `/INTER/TYPE19`
 - Inflate metrics at first animation-stride sample with stretch λ_max ≥ 2
 - Volume is a **true enclosed volume**: signed tetrahedron sum on the consistently outward closed shell, with a check that the shell is closed and the sign is positive. Rest volume is **420.5 mL** (the old 354 mL figure was a mixed-winding signed sum, not a true enclosed volume).

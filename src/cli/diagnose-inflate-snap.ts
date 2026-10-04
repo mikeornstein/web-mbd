@@ -2,30 +2,35 @@ import { createInflateAModel } from "../fixtures/inflateA.js";
 import { solveInflate } from "../fe/inflateSolver.js";
 import {
   compareInflateToGolden,
-  DIAGNOSIS_TOY_SNAP,
+  SHIPPED_KILL_OFF_FREEZE,
   diagnosisMissMatchesLock,
+  toySamplesFromSolve,
 } from "../oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../oracle/inflateGolden.js";
 
 /**
- * Records the known miss. This is not a physics pass and is not the
- * compare:inflate check. Exit 0 only while the toy still snaps at the locked
- * frame/stretch. Bands stay 2% / 5% / 5%. Do not change shear modulus.
+ * Records the known Themis miss on the shipped kill-off path. This is not a
+ * physics pass and is not the compare:inflate check. Exit 0 only while the
+ * freeze and the Themis miss stay locked. Bands stay 2% / 5% / 5%. Do not
+ * change shear modulus.
  */
 function main(): void {
   assertGoldenLawMatchesLock();
   const golden = loadInflateGolden();
   const result = solveInflate(createInflateAModel(), { maxWallMs: 600_000 });
-  const cmp = compareInflateToGolden({ ...result.metrics, law: result.law }, golden);
+  const cmp = compareInflateToGolden(
+    { ...result.metrics, law: result.law, samples: toySamplesFromSolve(result) },
+    golden,
+  );
   const lock = diagnosisMissMatchesLock(cmp, golden, result.metrics.warn);
 
-  console.log("diagnosis: toy snap is expected to miss, locked at frame 12 / stretch 4.33");
+  console.log("diagnosis: kill-off freeze is locked; Themis deck-spread bar is expected to miss");
   console.log("This is not a physics pass. It is not the compare check.");
   console.log(
-    "The letter A toy is expected to miss the 2 percent stretch, 5 percent volume, and 5 percent pressure bands against the oriented Radioss reference.",
+    "The letter A toy is expected to sit below the surviving-deck stretch floor every loaded frame from 2 to 16 ms.",
   );
   console.log(
-    `Locked known miss: frame ${String(DIAGNOSIS_TOY_SNAP.frame)}, stretch ${String(DIAGNOSIS_TOY_SNAP.lambdaMax)}.`,
+    `Locked freeze: frame ${String(SHIPPED_KILL_OFF_FREEZE.frame)}, stretch ${String(SHIPPED_KILL_OFF_FREEZE.lambdaMax)}.`,
   );
   if (result.metrics.warn !== null) {
     console.log(

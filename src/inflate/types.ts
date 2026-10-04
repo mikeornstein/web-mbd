@@ -70,8 +70,9 @@ export interface InflateModelIR {
      */
     contactKind: InflateKissKind;
     /**
-     * Peak-kill 0.18 is the shipped default. Continuous period relaxation is
-     * an option. Discriminated: do not combine these as optional flags.
+     * Velocity kill off is the shipped default (Rayleigh mass 80 /s stays).
+     * Peak-kill 0.18 and continuous period relaxation remain options.
+     * Discriminated: do not combine these as optional flags.
      */
     damping: InflateDamping;
     /**

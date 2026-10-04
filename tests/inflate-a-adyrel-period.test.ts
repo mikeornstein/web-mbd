@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createInflateAModel } from "../src/fixtures/inflateA.js";
-import { ADYREL_VELOCITY_SCALE } from "../src/inflate/constants.js";
 import {
   ENGINE_LISTING_FIRST_ON_TIME_S,
   firstOnRatePerSecond,
@@ -18,7 +17,7 @@ function num(v: unknown, label: string): number {
   return v;
 }
 
-describe("adaptive-period option (default still peak-kill)", () => {
+describe("adaptive-period option (shipped default is kill-off)", () => {
   it("prediction file states the per-second port and copied 2.79 ms before any code", () => {
     const text = readFileSync(new URL("adyrel-period-port-prediction.md", DIAG), "utf8");
     expect(text).toContain("Written **before** any new toy code");
@@ -30,13 +29,9 @@ describe("adaptive-period option (default still peak-kill)", () => {
     expect(text.indexOf("per-second port")).toBeLessThan(text.indexOf("Sphere check"));
   });
 
-  it("shipped letter A is still the 0.18 peak kill, not continuous relaxation", () => {
+  it("shipped letter A is velocity kill off, not continuous relaxation", () => {
     const model = createInflateAModel();
-    expect(model.controls.damping).toEqual({
-      kind: "peak-kill",
-      scale: ADYREL_VELOCITY_SCALE,
-      minInterval: 0,
-    });
+    expect(model.controls.damping).toEqual({ kind: "off" });
     expect(model.controls.damping.kind).not.toBe("adaptive-period");
   });
 

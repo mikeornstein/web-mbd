@@ -7,6 +7,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { createInflateAModel } from "../src/fixtures/inflateA.js";
 
 const DIAG = new URL("../docs/diag-pr18-openradioss-control/", import.meta.url);
 
@@ -36,5 +37,11 @@ describe("kill-off default prediction (before any new run)", () => {
     expect(part1).toContain("Ramp-end stretch vs 1.383: **4.7%**");
     const probe = readFileSync(new URL("sphere-probe-results.md", DIAG), "utf8");
     expect(probe).toContain("1.1%");
+  });
+});
+
+describe("kill-off shipped default and Themis every-frame gate", () => {
+  it("shipped factory is velocity kill off", () => {
+    expect(createInflateAModel().controls.damping).toEqual({ kind: "off" });
   });
 });

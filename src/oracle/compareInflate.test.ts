@@ -2,9 +2,59 @@ import { describe, expect, it } from "vitest";
 import { LOAD_FAMILY_DYNAMIC_PLOAD_40MS, LOAD_FAMILY_QS_ISH_PLOAD_400MS, MU, RHO, SHIP_SHELL_QUADS } from "../inflate/constants.js";
 import { lockedLawCard } from "../inflate/lawCard.js";
 import { enclosedVolume, loadShipMesh, loadShipMeshA } from "../inflate/meshA.js";
-import { compareInflateToGolden, DIAGNOSIS_TOY_SNAP, diagnosisMissMatchesLock } from "./compareInflate.js";
+import {
+  compareInflateToGolden,
+  SHIPPED_KILL_OFF_FREEZE,
+  diagnosisMissMatchesLock,
+  type InflateToySample,
+} from "./compareInflate.js";
+import { GOLDEN_TAPE } from "./survivingDecks.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "./inflateGolden.js";
 import type { InflateLawCard, InflateWarnMetrics } from "../inflate/types.js";
+
+function goldenSamples(): InflateToySample[] {
+  return GOLDEN_TAPE.map((row) => ({
+    t: row.t_ms / 1000,
+    lambdaMax: row.lambdaMax,
+    volume_mL: row.volume_mL,
+    p: row.p_Pa,
+  }));
+}
+
+/** Committed oriented kill-off Letter A tape, 0–16 ms. */
+function killOffSamples(): InflateToySample[] {
+  return [
+    { t: 0, lambdaMax: 1.0000000074505808, volume_mL: 420.5477389711655, p: 0 },
+    { t: 0.002002992059327919, lambdaMax: 1.1183172586557617, volume_mL: 520.0139970474382, p: 3254.8620964078686 },
+    { t: 0.0040013169923814994, lambdaMax: 1.108327114264293, volume_mL: 525.0123369833336, p: 6502.140112619937 },
+    { t: 0.006001741783163348, lambdaMax: 1.2855257454832372, volume_mL: 570.3991833132725, p: 9752.83039764044 },
+    { t: 0.008004723846906503, lambdaMax: 1.4077530823945796, volume_mL: 601.9857131699121, p: 13007.676251223067 },
+    { t: 0.010002621665691975, lambdaMax: 1.4716475093227872, volume_mL: 643.8240746767805, p: 16254.260206749459 },
+    { t: 0.012004801886361497, lambdaMax: 1.5644431198580904, volume_mL: 694.6543799496277, p: 19507.80306533743 },
+    { t: 0.014000748502444316, lambdaMax: 1.7363983261849765, volume_mL: 757.601942213197, p: 22751.21631647201 },
+    { t: 0.016003703120549294, lambdaMax: 2.105201010510652, volume_mL: 866.0832041483628, p: 26006.0175708926 },
+  ];
+}
+
+const matchingWarn: InflateWarnMetrics = {
+  frame: 8,
+  t: 0.0160038,
+  lambdaMax: 2.128161758970982,
+  p: 26006.175,
+  volume_mL: 891.7110015235089,
+  psi_J: 7.313,
+  warn: true,
+};
+
+const killOffWarn: InflateWarnMetrics = {
+  frame: SHIPPED_KILL_OFF_FREEZE.frame,
+  t: 0.016003703120549294,
+  lambdaMax: SHIPPED_KILL_OFF_FREEZE.lambdaMax,
+  p: 26006.0175708926,
+  volume_mL: SHIPPED_KILL_OFF_FREEZE.volume_mL,
+  psi_J: 7.313,
+  warn: true,
+};
 
 describe("inflate Radioss golden + law card", () => {
   it("locks μ/ρ/H0 to the RUN.md formula (no retune)", () => {
@@ -55,6 +105,7 @@ describe("inflate Radioss golden + law card", () => {
         punchedThrough: false,
         psi_J: 9.5,
         law: retuned,
+        samples: goldenSamples(),
       },
       golden,
     );
@@ -69,6 +120,7 @@ describe("inflate Radioss golden + law card", () => {
         punchedThrough: false,
         psi_J: 0,
         law: lockedLawCard(),
+        samples: goldenSamples(),
       },
       golden,
     );
@@ -83,10 +135,13 @@ describe("inflate Radioss golden + law card", () => {
         punchedThrough: false,
         psi_J: 9.5,
         law: lockedLawCard(),
+        samples: goldenSamples(),
       },
       golden,
     );
     expect(pass.ok).toBe(true);
+    expect(pass.gatingBar).toBe("themis-deck-spread");
+    expect(pass.themisOk).toBe(true);
 
     const qsSwap = compareInflateToGolden(
       {
@@ -96,6 +151,7 @@ describe("inflate Radioss golden + law card", () => {
         punchedThrough: false,
         psi_J: 9.5,
         law: { ...lockedLawCard(), loadFamily: LOAD_FAMILY_QS_ISH_PLOAD_400MS, tRamp: 0.4 },
+        samples: goldenSamples(),
       },
       golden,
     );
@@ -132,41 +188,26 @@ describe("inflate Radioss golden + law card", () => {
     expect(golden.provenance.note.toLowerCase()).toContain("outward");
   });
 
-  it("diagnosis lock (not a physics pass) rejects a band-widen PASS and accepts the recorded snap miss", () => {
+  it("diagnosis lock (not a physics pass) accepts the Themis miss and rejects a PASS", () => {
     const golden = loadInflateGolden();
-    const snapWarn: InflateWarnMetrics = {
-      frame: DIAGNOSIS_TOY_SNAP.frame,
-      t: 0.02400758092700195,
-      lambdaMax: DIAGNOSIS_TOY_SNAP.lambdaMax,
-      p: 39012.31900637817,
-      volume_mL: DIAGNOSIS_TOY_SNAP.volume_mL,
-      psi_J: 80.91495778156124,
-      warn: true,
-    };
     const miss = compareInflateToGolden(
       {
-        warn: snapWarn,
+        warn: killOffWarn,
         loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
         meshFingerprint: golden.mesh.fingerprint,
         punchedThrough: false,
-        psi_J: snapWarn.psi_J,
+        psi_J: killOffWarn.psi_J,
         law: lockedLawCard(),
+        samples: killOffSamples(),
       },
       golden,
     );
     expect(miss.ok).toBe(false);
-    const lock = diagnosisMissMatchesLock(miss, golden, snapWarn);
+    expect(miss.themisOk).toBe(false);
+    expect(miss.gatingBar).toBe("themis-deck-spread");
+    const lock = diagnosisMissMatchesLock(miss, golden, killOffWarn);
     expect(lock.ok).toBe(true);
 
-    const matchingWarn: InflateWarnMetrics = {
-      frame: golden.warn.frame,
-      t: golden.warn.t,
-      lambdaMax: golden.warn.lambdaMax,
-      p: golden.warn.p,
-      volume_mL: golden.warn.volume_mL,
-      psi_J: golden.warn.psi_J,
-      warn: true,
-    };
     const pass = compareInflateToGolden(
       {
         warn: matchingWarn,
@@ -175,6 +216,7 @@ describe("inflate Radioss golden + law card", () => {
         punchedThrough: false,
         psi_J: 9.5,
         law: lockedLawCard(),
+        samples: goldenSamples(),
       },
       golden,
     );
@@ -187,19 +229,20 @@ describe("inflate Radioss golden + law card", () => {
       ...golden,
       bands: { lambdaRel: 2, volumeRel: 5, pressureRel: 5 },
     };
-    const fakePass = compareInflateToGolden(
+    const stillMiss = compareInflateToGolden(
       {
-        warn: snapWarn,
+        warn: killOffWarn,
         loadFamily: LOAD_FAMILY_DYNAMIC_PLOAD_40MS,
         meshFingerprint: golden.mesh.fingerprint,
         punchedThrough: false,
-        psi_J: snapWarn.psi_J,
+        psi_J: killOffWarn.psi_J,
         law: lockedLawCard(),
+        samples: killOffSamples(),
       },
       widened,
     );
-    expect(fakePass.ok).toBe(true);
-    const widenLock = diagnosisMissMatchesLock(fakePass, widened, snapWarn);
+    expect(stillMiss.ok).toBe(false);
+    const widenLock = diagnosisMissMatchesLock(stillMiss, widened, killOffWarn);
     expect(widenLock.ok).toBe(false);
     expect(widenLock.reasons.some((r) => r.includes("widen"))).toBe(true);
   });

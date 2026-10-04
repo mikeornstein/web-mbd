@@ -43,10 +43,11 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
-      - name: "diagnosis: toy snap is expected to miss, locked at frame 12 / stretch 4.33"
+      - name: "diagnosis: kill-off freeze locked; Themis deck-spread expected to miss"
         run: |
           echo "This step is not a physics pass. It is not the compare check."
-          echo "It passes only while the known miss is unchanged: first stretch at or above 2 at frame 12, stretch 4.33."
+          echo "It passes only while the shipped kill-off freeze is unchanged: first stretch at or above 2 at frame 8, stretch 2.105."
+          echo "Themis’s surviving-deck spread is the gating bar and is expected to miss."
           pnpm diagnose:inflate-snap
         env:
           FORCE_COLOR: "0"
@@ -83,8 +84,8 @@ jobs:
             echo "These steps can be green while the letter A toy still misses the open Radioss bands."
             echo "That green mark is not a physics pass."
             echo
-            echo "The honest physics check is the separate job named **compare:inflate — currently misses (not a physics pass)**."
-            echo "That job is red on purpose until the toy dynamics are fixed."
+            echo "The honest physics check is the separate job named **compare:inflate — Themis deck-spread bar (currently misses)**."
+            echo "That job is red on purpose until toy stretch sits inside the surviving-deck spread every 2 ms from 0 to 16 ms."
             echo "Do not widen the 2 percent stretch, 5 percent volume, or 5 percent pressure bands."
             echo "Do not change shear modulus or the pressure load."
             echo
@@ -92,7 +93,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   compare-inflate:
-    name: "compare:inflate — currently misses (not a physics pass)"
+    name: "compare:inflate — Themis deck-spread bar (currently misses)"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -119,16 +120,13 @@ jobs:
           {
             echo "# This check is red on purpose"
             echo
-            echo "The letter A toy currently misses the open Radioss fast-load reference at first stretch of 2 or more:"
+            echo "The letter A toy currently misses Themis’s surviving-deck stretch spread (golden four-node + Ishell 24 + fine re-oriented) every loaded frame from 2 to 16 ms."
+            echo "Volume and pressure stay on the 5 percent bands. The old 2 percent of golden-max stretch bar is printed, not the gate."
             echo
-            echo "- stretch relative error about 103.6 percent (limit 2 percent)"
-            echo "- volume relative error about 267 percent (limit 5 percent)"
-            echo "- pressure relative error about 50 percent (limit 5 percent)"
-            echo
-            echo "This is the physics check. A red mark here is the honest state until the toy dynamics are fixed."
+            echo "This is the physics check. A red mark here is the honest state until toy stretch sits inside the deck spread."
             echo "Do not widen the bands. Do not change shear modulus or the pressure load."
             echo
-            echo "A separate diagnosis step records that the known miss is a snap-through at frame 12, stretch 4.33."
+            echo "A separate diagnosis step records the shipped kill-off freeze (frame 8, stretch 2.105) and that Themis’s bar still misses."
             echo "That diagnosis step is not this compare, and a green diagnosis lock is not a physics pass."
             echo
             echo "This pull request stays a draft. Do not merge. Do not publish GitHub Pages."
@@ -158,7 +156,7 @@ jobs:
             echo
             echo "This job prints the 0–16 ms relaxation measurement. It is not a physics pass."
             echo "It must not turn a red compare:inflate into a green mark."
-            echo "Default toy is still the 0.18 peak kill."
+            echo "This measurement was taken when the default was the 0.18 peak kill. Shipped default is now velocity kill off."
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:

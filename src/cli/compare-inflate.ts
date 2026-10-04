@@ -1,6 +1,10 @@
 import { createInflateAModel } from "../fixtures/inflateA.js";
 import { solveInflate } from "../fe/inflateSolver.js";
-import { compareInflateToGolden, formatInflateCompare } from "../oracle/compareInflate.js";
+import {
+  compareInflateToGolden,
+  formatInflateCompare,
+  toySamplesFromSolve,
+} from "../oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../oracle/inflateGolden.js";
 import { LAW_CARD_DUMP_LINES } from "../inflate/lawCard.js";
 
@@ -30,11 +34,14 @@ function main(): void {
     incompressResidualMax: metrics.incompressResidualMax,
   };
   console.log(JSON.stringify(payload, null, 2));
-  const cmp = compareInflateToGolden({ ...metrics, law: result.law }, golden);
+  const cmp = compareInflateToGolden(
+    { ...metrics, law: result.law, samples: toySamplesFromSolve(result) },
+    golden,
+  );
   console.log(formatInflateCompare(cmp));
   if (!cmp.ok) {
     console.log(
-      "This is the physics check. It fails because the toy misses the 2 percent stretch, 5 percent volume, and 5 percent pressure bands against the oriented Radioss reference. That is the honest result until the toy dynamics are fixed. Do not widen the bands. Do not change shear modulus or the load law.",
+      "This is the physics check. Themis’s surviving-deck stretch spread (golden four-node + Ishell 24 + fine re-oriented) gates every 2 ms from 0 to 16 ms. Volume and pressure stay on the 5 percent bands. That is the honest result until the toy stretch sits inside the deck spread. Do not widen the bands. Do not change shear modulus or the load law.",
     );
     process.exit(1);
   }

@@ -7,7 +7,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createInflateAModel } from "../src/fixtures/inflateA.js";
-import { ADYREL_VELOCITY_SCALE } from "../src/inflate/constants.js";
 
 const DIAG = new URL("../docs/diag-pr18-openradioss-control/", import.meta.url);
 
@@ -26,12 +25,8 @@ describe("slow-load sphere vs closed-form curve (stop at first failure)", () => 
     expect(text).toContain("pressure than the static curve");
   });
 
-  it("shipped default is still the 0.18 peak kill", () => {
-    expect(createInflateAModel().controls.damping).toEqual({
-      kind: "peak-kill",
-      scale: ADYREL_VELOCITY_SCALE,
-      minInterval: 0,
-    });
+  it("shipped default is velocity kill off", () => {
+    expect(createInflateAModel().controls.damping).toEqual({ kind: "off" });
     expect(createInflateAModel().controls.dtMax).toBeUndefined();
   });
 

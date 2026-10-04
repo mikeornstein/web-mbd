@@ -3,7 +3,7 @@ import { solveInflate } from "../fe/inflateSolver.js";
 import { solveExplicitAsync } from "../fe/solveAsync.js";
 import type { InflateModelIR, InflateSolveResult } from "../inflate/types.js";
 import type { EnergySample, ModelIR, SolveResult } from "../ir/types.js";
-import { compareInflateToGolden } from "../oracle/compareInflate.js";
+import { compareInflateToGolden, toySamplesFromSolve } from "../oracle/compareInflate.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -587,7 +587,7 @@ function createTimeScrubber(onIndex: (index: number) => void): {
 function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
-      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · stretch inside surviving-deck spread (Themis) · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo":
       return "unvalidated demo, unstable past stretch 2 · source mesh 404 of 2178 triangles wound against neighbors · open Radioss golden NOT-YET. The Inflation ABC refine ladder inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo-unstable":
@@ -766,7 +766,14 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
       switch (loaded.stock.validation) {
         case "radioss-dynamic-golden": {
           const golden = loadInflateGolden();
-          const cmp = compareInflateToGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
+          const cmp = compareInflateToGolden(
+            {
+              ...loaded.result.metrics,
+              law: loaded.result.law,
+              samples: toySamplesFromSolve(loaded.result),
+            },
+            golden,
+          );
           gateEl.textContent = cmp.ok
             ? "Acceptance gate: PASS (open Radioss fast-load / dynamic reference on a consistently outward-oriented mesh · stretch / volume / pressure bands). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed."
             : `Acceptance gate: FAIL vs open Radioss fast-load golden (${cmp.reasons[0] ?? "see compare:inflate"}). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.`;

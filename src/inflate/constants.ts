@@ -76,8 +76,8 @@ export const RAYLEIGH_ALPHA = 80;
 /**
  * Underwood residual-velocity scale at kinetic-energy peaks.
  * Explicit analogue of engine `/ADYREL` (not a μ/ρ lever; not on the LAW42 card).
- * Full reset (0) overdamps vs the PR#8 desk; 0.18 lands the ANIM-stride freeze
- * on the same load family without touching MU. Fast-load (dynamic) path only.
+ * Optional remainder: shipped default is velocity kill off. Fast-load (dynamic)
+ * path only.
  */
 export const ADYREL_VELOCITY_SCALE = 0.18;
 

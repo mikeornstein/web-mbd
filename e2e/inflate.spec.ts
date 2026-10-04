@@ -9,7 +9,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Model tree").getByText(
-      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch ≤2% · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
+      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch inside surviving-deck spread \(Themis\) · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
@@ -45,7 +45,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   expect(max).toBeGreaterThan(0);
   await expect(page.getByText(new RegExp(`index ${String(max)} / ${String(max)}`))).toBeVisible();
   await expect(metrics.getByText(new RegExp(`frame ${String(max)}`))).toBeVisible();
-  await expect(metrics.getByText(/λ=4\.\d/)).toBeVisible();
+  await expect(metrics.getByText(/λ=2\.\d/)).toBeVisible();
   const post = page.getByRole("region", { name: "Post-processor" });
   await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
   const postMesh = page.getByRole("img", { name: /Deformed mesh/ });
