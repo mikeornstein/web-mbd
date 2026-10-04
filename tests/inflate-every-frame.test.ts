@@ -169,6 +169,6 @@ describe("every-frame Themis deck-spread (committed tapes)", () => {
     expect(table).toContain("tally total:");
     expect(table).toContain("Themis reading (not the score)");
     expect(table).toContain("in the gating spread");
-    expect(table).toContain("deck min/max interpolated");
+    expect(table).toContain("4.48% below the triangle deck");
   });
 });

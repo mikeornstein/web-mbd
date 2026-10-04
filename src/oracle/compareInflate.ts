@@ -111,7 +111,7 @@ export function toySamplesFromSolve(result: {
     if (lam === undefined || vol === undefined || p === undefined || h === undefined) {
       throw new Error(`inflate history hole at ${String(i)}`);
     }
-    out.push({ t: h.t, lambdaMax: lam, volume_mL: vol, p });
+    out.push({ t: h.t, lambdaMax: lam, volume_mL: vol * 1e6, p });
   }
   return out;
 }

@@ -24,6 +24,7 @@ import {
   VERDICT_DYNAMIC_LAG,
   VERDICT_MIXED,
   VERDICT_SPREADS_STRAIN,
+  VERDICT_STOP_BOOKKEEPING,
   scoreStretchDiagnostics,
   type EnergyFrameInput,
   type SeriesPoint,
@@ -88,7 +89,7 @@ function baseInput(over: Partial<StretchDiagnosticsInput> = {}): StretchDiagnost
 }
 
 describe("stretch diagnostic rules locked before the run", () => {
-  it("prediction file and page carry the locked rules and no results yet", () => {
+  it("prediction file still carries the locked rules written before the run", () => {
     const text = readFileSync(new URL("stretch-diagnostics-prediction.md", DIAG), "utf8");
     const flat = text.replace(/\s+/g, " ");
     expect(flat).toContain("Written **before** any new diagnostic run");
@@ -115,8 +116,16 @@ describe("stretch diagnostic rules locked before the run", () => {
     expect(page.rules).toContain(RULE_2_SHIFT.slice(0, 20));
     expect(page.rules).toContain(RULE_3_MEDIAN.slice(0, 20));
     expect(page.rules).toContain(RULE_4_EARLY_SPREAD.slice(0, 20));
-    expect(page.results).toContain("Rules committed first");
-    expect(page.results).toContain("Results not yet written");
+  });
+
+  it("prints the committed verdict as the last line", () => {
+    const text = readFileSync(new URL("stretch-diagnostics-results.md", DIAG), "utf8").trim();
+    const lines = text.split("\n");
+    const last = lines[lines.length - 1];
+    expect(last).toBe(VERDICT_STOP_BOOKKEEPING);
+    const page = stretchDiagnosticsPageText();
+    expect(page.results).toContain(VERDICT_STOP_BOOKKEEPING);
+    console.log(last);
   });
 
   it("STOP when bookkeeping fails; no verdicts", () => {

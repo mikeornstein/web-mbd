@@ -13,7 +13,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
     ),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
-  await expect(page.getByText("Rules committed first. Results not yet written.")).toBeVisible();
+  await expect(page.getByText("energy numbers are not trustworthy")).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();

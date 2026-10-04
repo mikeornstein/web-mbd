@@ -38,8 +38,8 @@ outside (interpolated); 12 outside (interpolated); 14 outside
 Themis reading (not the score): 2, 6 and 8 ms inside, 4 ms about 4.5%
 below the triangle deck, 10 to 16 ms outside. The code’s inside/outside
 marks match that reading at 2–16 ms. 0 ms is inside (she did not
-mention 0). The exact 4 ms miss versus the triangle deck is printed by
-the test.
+mention 0). 4 ms is **4.48%** below the triangle deck (she said about
+4.5%).
 
 Volume and pressure stay inside 5% at every tick. The old 2% of
 golden-max bar is a miss at 2–14 ms and a pass at 16 ms. Themis’s bar
