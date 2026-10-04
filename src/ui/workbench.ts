@@ -9,6 +9,7 @@ import { perStepEnergyPageText } from "../oracle/perStepEnergyResults.js";
 import { deckNodeOutputPageText } from "../oracle/deckNodeOutputResults.js";
 import { deckQuadAveragedPageText } from "../oracle/deckQuadAveragedResults.js";
 import { deckEnergySplitPageText } from "../oracle/deckEnergySplitResults.js";
+import { deckMassWorkLookupPageText } from "../oracle/deckMassWorkLookupResults.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -607,6 +608,7 @@ function createStretchDiagSection(): HTMLElement {
   wrap.append(createDeckNodeOutputSection());
   wrap.append(createDeckQuadAveragedSection());
   wrap.append(createDeckEnergySplitSection());
+  wrap.append(createDeckMassWorkLookupSection());
   return wrap;
 }
 
@@ -654,6 +656,19 @@ function createDeckEnergySplitSection(): HTMLElement {
   const heading = document.createElement("h3");
   heading.textContent = "Letter A energy and damping split (measurement, not a gate)";
   const copy = deckEnergySplitPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckMassWorkLookupSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A film mass, work, and ringing lookups (measurement, not a gate)";
+  const copy = deckMassWorkLookupPageText();
   const rules = document.createElement("pre");
   rules.textContent = copy.rules;
   const results = document.createElement("pre");

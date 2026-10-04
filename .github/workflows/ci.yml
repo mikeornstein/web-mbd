@@ -344,6 +344,44 @@ jobs:
             echo "Raw VTK/ANIM/T01 files stay out of the repository."
           } >> "$GITHUB_STEP_SUMMARY"
 
+  measurement-deck-mass-work-lookups:
+    name: "measurement: mass, work, and ringing lookups (not a gate)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Print mass/work/ringing plan (and results if present)
+        run: |
+          echo "MEASUREMENT. Not a physics pass. Does not gate. Does not add a verdict row. Does not propose a fix."
+          echo "The golden's engine commit 6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba is pinned only to the OpenCourant copy, not the original OpenRadioss tree."
+          echo
+          cat docs/diag-pr18-openradioss-control/deck-mass-and-work-lookups-plan.md
+          echo
+          echo "Package pin:"
+          cat docs/diag-pr18-openradioss-control/opencourant-linux64-pin.json
+          echo
+          if [ -f docs/diag-pr18-openradioss-control/deck-mass-and-work-lookups-results.md ]; then
+            cat docs/diag-pr18-openradioss-control/deck-mass-and-work-lookups-results.md
+          else
+            echo "Results not yet written. Plan was committed first."
+          fi
+          echo
+          echo "This job always exits 0. It does not run the engine. It does not count toward a pass."
+          echo "Raw node, animation, VTK, T01, and listing files are gitignored and are not uploaded."
+
+      - name: Honest status
+        if: always()
+        run: |
+          {
+            echo "# MEASUREMENT, not a gate"
+            echo
+            echo "This job prints the mass, work, and ringing lookup plan (committed first) and the derived table if it exists."
+            echo "It is not a physics pass. It must not turn a red compare:inflate into a green mark."
+            echo "Do not apply any time shift to a result. Do not widen any bar. Do not add a verdict row. Do not propose a fix."
+            echo "Raw VTK/ANIM/T01 files stay out of the repository."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     name: Deploy Pages
     needs: CI

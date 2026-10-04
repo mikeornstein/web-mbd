@@ -139,6 +139,52 @@ export function parseRadiossShellBlock(starter: string, card: "/SHELL/1" | "/SH3
   return out;
 }
 
+/** Starter `/NODE` block: id x y z in free format, packed in 0-based id order. */
+export function parseRadiossStarterNodes(starter: string): { nNodes: number; coords: Float64Array } {
+  const mark = "\n/NODE\n";
+  const start = starter.indexOf(mark);
+  if (start < 0) throw new Error("starter missing /NODE");
+  const rest = starter.slice(start + 1);
+  const endRel = rest.search(/\n\/[A-Z]/);
+  const block = endRel < 0 ? rest : rest.slice(0, endRel);
+  const ids: number[] = [];
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const zs: number[] = [];
+  for (const line of block.split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const tok = t.split(/\s+/);
+    if (tok.length < 4) continue;
+    const id = Number(tok[0]);
+    const x = Number(tok[1]);
+    const y = Number(tok[2]);
+    const z = Number(tok[3]);
+    if (!Number.isInteger(id) || id < 1) continue;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+    ids.push(id);
+    xs.push(x);
+    ys.push(y);
+    zs.push(z);
+  }
+  if (ids.length === 0) throw new Error("starter /NODE has no nodes");
+  let nNodes = 0;
+  for (const id of ids) if (id > nNodes) nNodes = id;
+  const coords = new Float64Array(nNodes * 3);
+  const seen = new Uint8Array(nNodes);
+  for (let k = 0; k < ids.length; k++) {
+    const i = ids[k]! - 1;
+    coords[i * 3] = xs[k]!;
+    coords[i * 3 + 1] = ys[k]!;
+    coords[i * 3 + 2] = zs[k]!;
+    seen[i] = 1;
+  }
+  for (let i = 0; i < nNodes; i++) {
+    if (seen[i] !== 1) throw new Error(`starter /NODE missing id ${String(i + 1)}`);
+  }
+  return { nNodes, coords };
+}
+
 /** Radioss ids are 1-based; toy / VTK scatter uses 0-based. */
 export function toZeroBased(nodes: readonly number[]): number[] {
   return nodes.map((n) => n - 1);

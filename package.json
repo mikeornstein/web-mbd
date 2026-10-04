@@ -33,7 +33,8 @@
     "diagnose:per-step-energy": "tsx src/cli/diagnose-per-step-energy.ts",
     "diagnose:deck-node-output": "tsx src/cli/diagnose-deck-node-output.ts",
     "diagnose:deck-quad-averaged": "tsx src/cli/diagnose-deck-quad-averaged.ts",
-    "diagnose:deck-energy-split": "tsx src/cli/diagnose-deck-energy-split.ts"
+    "diagnose:deck-energy-split": "tsx src/cli/diagnose-deck-energy-split.ts",
+    "diagnose:deck-mass-work-lookups": "tsx src/cli/diagnose-deck-mass-work-lookups.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
