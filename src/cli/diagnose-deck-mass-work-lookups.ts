@@ -343,6 +343,13 @@ const DECKS: readonly DeckSpec[] = [
   { key: "triangle", tableName: "triangle /SH3N", folder: TRIANGLE_DECK_FOLDER, nNodes: 1554, split: "tri" },
 ];
 
+function inKeWindow(t_s: number): boolean {
+  const from = LOOKUP_KE_WINDOW_MS.from / 1000;
+  const to = LOOKUP_KE_WINDOW_MS.to / 1000;
+  const slack = 2e-5;
+  return t_s + slack >= from && t_s - slack <= to;
+}
+
 function findT01(runDir: string): string | null {
   for (const name of [LOOKUP_T01_FILE, "Ainflate_T01.csv"]) {
     const p = resolve(runDir, name);
@@ -362,7 +369,7 @@ function keChartSvg(
   const padT = 28;
   const padB = 48;
   const t0 = LOOKUP_KE_WINDOW_MS.from / 1000;
-  const t1 = LOOKUP_KE_WINDOW_MS.to / 1000;
+  const t1 = LOOKUP_KE_WINDOW_MS.to / 1000 + 2e-5;
   let y1 = 0;
   for (const s of toy) if (s.kinetic_J > y1) y1 = s.kinetic_J;
   for (const d of decks) for (const s of d.samples) if (s.kinetic_J > y1) y1 = s.kinetic_J;
@@ -641,8 +648,7 @@ export function diagnoseDeckMassWorkLookups(): {
     const keSamples: KineticSample[] = [];
     for (const row of parsed.rows) {
       if (row.kinetic_J === null) continue;
-      if (row.t_s + 1e-18 < LOOKUP_KE_WINDOW_MS.from / 1000) continue;
-      if (row.t_s - 1e-18 > LOOKUP_KE_WINDOW_MS.to / 1000) continue;
+      if (!inKeWindow(row.t_s)) continue;
       keSamples.push({ t_s: row.t_s, kinetic_J: row.kinetic_J });
     }
     deckKe.push({ name: spec.tableName, color: deckColors[di]!, samples: keSamples });
@@ -674,8 +680,7 @@ export function diagnoseDeckMassWorkLookups(): {
   const toyKe: KineticSample[] = [];
   for (let i = 0; i < toyTimes.length; i++) {
     const t = toyTimes[i]!;
-    if (t + 1e-18 < LOOKUP_KE_WINDOW_MS.from / 1000) continue;
-    if (t - 1e-18 > LOOKUP_KE_WINDOW_MS.to / 1000) continue;
+    if (!inKeWindow(t)) continue;
     toyKe.push({ t_s: t, kinetic_J: toyKeHist[i]! });
   }
 
@@ -684,7 +689,7 @@ export function diagnoseDeckMassWorkLookups(): {
     decks: scoreDecks,
     toyKinetic: toyKe,
     windowFrom_s: LOOKUP_KE_WINDOW_MS.from / 1000,
-    windowTo_s: LOOKUP_KE_WINDOW_MS.to / 1000,
+    windowTo_s: LOOKUP_KE_WINDOW_MS.to / 1000 + 2e-5,
   });
 
   const csvLines = ["t_s,kinetic_J,source"];
@@ -763,9 +768,11 @@ export function diagnoseDeckMassWorkLookups(): {
     }
   }
   md.push("");
-  md.push("Toy 4 ms and 8 ms kinetic (window ends, from the every-step series):");
-  const toy4 = toyKe.length === 0 ? null : toyKe[0]!;
-  const toy8 = toyKe.length === 0 ? null : toyKe[toyKe.length - 1]!;
+  md.push("Toy kinetic at the 4 ms and 8 ms ends of the every-step series (nearest solver step):");
+  const toy4 =
+    toyKe.length === 0 ? null : toyKe[nearestIndex(toyKe.map((s) => s.t_s), LOOKUP_KE_WINDOW_MS.from / 1000)]!;
+  const toy8 =
+    toyKe.length === 0 ? null : toyKe[nearestIndex(toyKe.map((s) => s.t_s), LOOKUP_KE_WINDOW_MS.to / 1000)]!;
   md.push(
     `toy | ${toy4 === null ? "n/a" : fmt(toy4.t_s * 1000, 4)} | ${toy4 === null ? "n/a" : fmt(toy4.kinetic_J, 6)} | every solver step ½ m |v|²`,
   );

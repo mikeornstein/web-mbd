@@ -19,6 +19,9 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(pre.getByRole("heading", { name: "Letter A quad-averaged stretch and node-distance (measurement, not a gate)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A energy and damping split (measurement, not a gate)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A film mass, work, and ringing lookups (measurement, not a gate)" })).toBeVisible();
+  const massLookupResults = pre.locator("pre").filter({ hasText: "Results (measurement; mass, work, and ringing lookups, not compare:inflate):" });
+  await expect(massLookupResults.getByText("ringing")).toBeVisible();
+  await expect(massLookupResults.getByText("Do not add a verdict row")).toBeVisible();
   const energySplitResults = pre.locator("pre").filter({ hasText: "Results (measurement; energy and damping split, not compare:inflate):" });
   await expect(energySplitResults.getByText("the lag points to how mass is spread")).toBeVisible();
   await expect(energySplitResults.getByText("No verdict row was added")).toBeVisible();

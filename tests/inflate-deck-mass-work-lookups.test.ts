@@ -174,4 +174,21 @@ describe("deck mass/work/ringing plan locked before any number", () => {
     expect(shells).toHaveLength(1);
     expect(shells[0]?.nodes).toEqual([1, 2, 3, 3]);
   });
+
+  it("derived table names T01 channels, records ringing, and does not add a verdict row", () => {
+    const pred = readFileSync(new URL("deck-mass-and-work-lookups-plan.md", DIAG), "utf8");
+    expect(pred).toContain("Written **before** any new number is computed");
+    const text = readFileSync(new URL("deck-mass-and-work-lookups-results.md", DIAG), "utf8");
+    expect(text).toContain("AinflateT01.csv");
+    expect(text).toContain("EXTERNAL WORK");
+    expect(text).toContain("KINETIC ENERGY");
+    expect(text).toContain("/TFILE 0.001");
+    expect(text).toContain("T01 has no volume column");
+    expect(text).toContain("T01 has no pressure column");
+    expect(text).toContain("rises and falls (ringing)");
+    expect(text).toContain("Outcome: (b) ringing");
+    expect(text).toContain("Do not add a verdict row");
+    expect(text).toContain("Do not propose or apply a fix");
+    expect(text).toContain("Max |deck − toy| / toy = 0.0000%");
+  });
 });
