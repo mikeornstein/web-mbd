@@ -1,9 +1,9 @@
 {
   "provenance": {
     "source": "openradioss",
-    "desk": "PR#8 quad+/ADYREL radioss-desk-pr8-quadir",
-    "branch": "cursor/openradioss-a-inflate-0e92",
-    "note": "Offline OpenRadioss linux64_gf latest-20260728. AGPL solver is not shipped in the Pages bundle. Dynamic PLOAD 0→65 kPa / 40 ms — not ABC QS (~54 kPa). Do not retune μ or ρ."
+    "desk": "OpenCourant linux64_gf latest-20261003 (commit 6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba). Official OpenRadioss GitHub zip latest-20260728 404s from this environment.",
+    "branch": "cursor/inflate-a-nh-oracle-a8a8",
+    "note": "Offline OpenCourant linux64_gf latest-20261003. Consistently outward-oriented closed shell (fingerprint f9635c7f; 188 of 1554 four-sided shells reversed from as-wound d9c56487). True enclosed volume. Starter warned Ismstr=10 changed to 2 on this package. AGPL solver is not shipped in the Pages bundle. Dynamic PLOAD 0→65 kPa / 40 ms — not ABC QS (~54 kPa). Do not retune μ or ρ."
   },
   "loadFamily": "dynamic-pload-40ms",
   "law": {
@@ -20,33 +20,33 @@
     "ishell": 1,
     "ismstr": 10,
     "ithick": 1,
+    "rayleighAlpha": 80,
     "loadFamily": "dynamic-pload-40ms",
     "pMax": 65000,
-    "tRamp": 0.04,
-    "rayleighAlpha": 80
+    "tRamp": 0.04
   },
   "mesh": {
     "nNodes": 1554,
     "nShellQuads": 1554,
     "NUMELC": 1554,
     "NUMELTG": 0,
-    "fingerprint": "d9c56487",
-    "source": "mikeornstein/inflation-abc meshes/A.json Design-PASS quad (orphan 28 paired → 14 quads at convert time)"
+    "fingerprint": "f9635c7f",
+    "source": "mikeornstein/inflation-abc meshes/A.json Design-PASS quad, then whole-quad outward rewind (188 of 1554 shells reversed; mixed-winding quads = 0). Same node order as radioss/A-inflate/Ainflate_0000.rad."
   },
   "warn": {
-    "frame": 11,
-    "t": 0.022012,
-    "lambdaMax": 2.1404,
-    "p": 35769,
-    "volume_mL": 901.8,
-    "psi_J": 9.502
+    "frame": 8,
+    "t": 0.016004,
+    "lambdaMax": 2.1282,
+    "p": 26006,
+    "volume_mL": 891.7,
+    "psi_J": 7.313
   },
   "rest": {
     "frame": 0,
     "t": 0,
     "lambdaMax": 1,
     "p": 0,
-    "volume_mL": 354,
+    "volume_mL": 420.5,
     "psi_J": 0
   },
   "bands": {

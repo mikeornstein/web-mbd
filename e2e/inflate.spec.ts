@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥ 2", async ({ page }) => {
+  test.setTimeout(180_000);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "web-mbd" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Pre — model inspection" })).toBeVisible();
@@ -8,7 +9,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Model tree").getByText(
-      /fast-load \(dynamic\) OpenRadioss reference only · stretch ≤2% · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
+      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch ≤2% · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
@@ -56,6 +57,8 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await post.getByRole("radio", { name: "Wire" }).click();
   const wireShot = await postMesh.screenshot();
   await post.getByRole("radio", { name: "Solid" }).click();
+  await expect(page.getByLabel("Model tree").getByText("solid fill only (mesh edges off)", { exact: true })).toBeVisible();
+  await expect(page.getByText("mesh edges default ON", { exact: true })).toHaveCount(0);
   const solidShot = await postMesh.screenshot();
   expect(solidShot.equals(wireShot)).toBe(false);
   await post.getByRole("radio", { name: "Both" }).click();

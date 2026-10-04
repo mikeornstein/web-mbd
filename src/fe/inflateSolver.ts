@@ -9,7 +9,7 @@ import {
   type CstRest,
 } from "./membraneCst.js";
 import { ploadAt } from "../inflate/lawCard.js";
-import { enclosedVolume } from "../inflate/meshA.js";
+import { enclosedVolume, trueEnclosedVolume } from "../inflate/meshA.js";
 import type {
   InflateModelIR,
   InflateSolveMetrics,
@@ -102,7 +102,10 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   let dt = controls.cfl * dtCrit0;
   if (!(dt > 0) || dt > dtCrit0) dt = controls.cfl * dtCrit0;
 
-  const volume0 = enclosedVolume(x, mesh.quads, mesh.tris);
+  const volume0 =
+    mesh.letter === "A"
+      ? trueEnclosedVolume(x, mesh.quads, mesh.tris)
+      : enclosedVolume(x, mesh.quads, mesh.tris);
   const history: EnergySample[] = [];
   const meshHistory: Float64Array[] = [];
   const lambdaHistory: number[] = [];

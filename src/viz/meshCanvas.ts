@@ -1,4 +1,8 @@
-import { outwardShadingTriangles, triangleNormal, type ShellTriangle } from "../inflate/orientShell.js";
+import {
+  outwardShadingTriangles,
+  triangleNormal,
+  type ShellTriangle,
+} from "../inflate/orientShell.js";
 import type { HexMesh } from "../ir/types.js";
 import { boundaryHexFaces, faceNormal, type HexQuad } from "./hexFaces.js";
 import { defaultCamera, projectPoint, toViewSpace, type Camera3 } from "./project3d.js";
@@ -36,6 +40,28 @@ export interface MeshCanvasOptions {
 }
 
 const LIGHT = normalize3(-0.4, 0.75, -0.55);
+
+export type ShadeOrienter = (
+  restCoords: ArrayLike<number>,
+  quads: ArrayLike<number>,
+  leftoverTris?: ArrayLike<number>,
+) => ShellTriangle[];
+
+/**
+ * Faces the canvas actually fills, plus the right-hand normals used for lighting.
+ * Defaults to the outward orienter so a stub that returns the raw triangles
+ * changes what is drawn.
+ */
+export function shadedFacesDrawn(
+  restCoords: ArrayLike<number>,
+  quads: ArrayLike<number>,
+  leftoverTris: ArrayLike<number> = [],
+  orient: ShadeOrienter = outwardShadingTriangles,
+): { triangles: ShellTriangle[]; normals: [number, number, number][] } {
+  const triangles = orient(restCoords, quads, leftoverTris);
+  const normals = triangles.map((tri) => triangleNormal(restCoords, tri));
+  return { triangles, normals };
+}
 
 export class MeshCanvas {
   readonly canvas: HTMLCanvasElement;
@@ -123,7 +149,7 @@ export class MeshCanvas {
     this.topology = "quad";
     this.hexes = [];
     this.quads = Array.from(quads);
-    this.shadeTris = outwardShadingTriangles(restCoords, quads, leftoverTris);
+    this.shadeTris = shadedFacesDrawn(restCoords, quads, leftoverTris).triangles;
     this.coords = coords;
     this.faces = [];
     this.wallZ = undefined;
@@ -279,6 +305,11 @@ export class MeshCanvas {
       }
       ctx.closePath();
       ctx.fill();
+      if (this.drawMode === "solid") {
+        ctx.strokeStyle = rgbCss(rgb, face.shade);
+        ctx.lineWidth = 1.25;
+        ctx.stroke();
+      }
     }
   }
 
@@ -308,9 +339,11 @@ export class MeshCanvas {
     ctx.fillStyle = "rgba(255, 120, 80, 0.92)";
     ctx.font = "600 16px IBM Plex Sans, sans-serif";
     ctx.fillText(this.warnLabel, 16, 28);
-    ctx.font = "12px IBM Plex Sans, sans-serif";
-    ctx.fillStyle = "#ffb39a";
-    ctx.fillText("mesh edges default ON", 16, 46);
+    if (this.drawMode !== "solid") {
+      ctx.font = "12px IBM Plex Sans, sans-serif";
+      ctx.fillStyle = "#ffb39a";
+      ctx.fillText("mesh edges default ON", 16, 46);
+    }
   }
 }
 

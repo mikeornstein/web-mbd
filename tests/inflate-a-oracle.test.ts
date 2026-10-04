@@ -2,12 +2,11 @@ import { describe, expect, it } from "vitest";
 import { createInflateAModel } from "../src/fixtures/inflateA.js";
 import { solveInflate } from "../src/fe/inflateSolver.js";
 import { cstSample, splitQuadCsts } from "../src/fe/membraneCst.js";
-import { enclosedVolume } from "../src/inflate/meshA.js";
+import { enclosedVolume, trueEnclosedVolume } from "../src/inflate/meshA.js";
 import {
   cstTrianglesFromQuads,
   edgeConsistency,
   orientTrianglesOutward,
-  reverseTriangle,
   shellWindingReport,
   signedVolumeOfTriangles,
 } from "../src/inflate/orientShell.js";
@@ -15,7 +14,7 @@ import { compareInflateToGolden } from "../src/oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../src/oracle/inflateGolden.js";
 
 describe("letter-A inflate vs Radioss golden", () => {
-  it("rest mesh has Ψ ≈ 0 and V ≈ 354 mL", () => {
+  it("rest mesh has Ψ ≈ 0 and true enclosed V ≈ 420.5 mL", () => {
     const model = createInflateAModel();
     let psi = 0;
     let resid = 0;
@@ -36,7 +35,8 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(psi).toBeGreaterThanOrEqual(-1e-9);
     expect(Math.abs(psi)).toBeLessThan(1e-8);
     expect(resid).toBeLessThan(1e-12);
-    expect(enclosedVolume(model.mesh.coords, model.mesh.quads) * 1e6).toBeCloseTo(354, 0);
+    expect(trueEnclosedVolume(model.mesh.coords, model.mesh.quads) * 1e6).toBeCloseTo(420.5, 0);
+    expect(enclosedVolume(model.mesh.coords, model.mesh.quads) * 1e6).toBeCloseTo(420.5, 0);
   });
 
   it("reaches first λ≥2 inside Themis bands vs checked-in Radioss golden", () => {
@@ -69,13 +69,28 @@ describe("letter-A inflate vs Radioss golden", () => {
     expect(warnCoords).toBeDefined();
     if (warnCoords === undefined) return;
     const warnWind = shellWindingReport(warnCoords, model.mesh.quads, model.mesh.tris);
-    expect(warnWind.trianglesNeedingFlip).toBe(restWind.trianglesNeedingFlip);
-    expect(warnWind.trianglesNeedingFlip).toBe(376);
-    expect(warnWind.inconsistentEdgeCount).toBe(456);
+    expect(restWind.trianglesNeedingFlip).toBe(0);
+    expect(warnWind.trianglesNeedingFlip).toBe(0);
+    expect(warnWind.inconsistentEdgeCount).toBe(0);
     const source = cstTrianglesFromQuads(model.mesh.quads);
     const restOrient = orientTrianglesOutward(model.mesh.coords, source);
-    const warnOriented = source.map((tri, i) => (restOrient.flipped[i] ? reverseTriangle(tri) : tri));
-    expect(edgeConsistency(warnOriented).inconsistentEdgeCount).toBe(0);
-    expect(signedVolumeOfTriangles(warnCoords, warnOriented)).toBeGreaterThan(0);
+    expect(restOrient.flipped.filter(Boolean)).toHaveLength(0);
+    expect(edgeConsistency(source).inconsistentEdgeCount).toBe(0);
+    expect(signedVolumeOfTriangles(warnCoords, source)).toBeGreaterThan(0);
+    expect(a.metrics.warn.frame).toBe(a.lambdaHistory.length - 1);
+    expect(a.metrics.t).toBe(a.metrics.warn.t);
+  }, 120_000);
+
+  it("does not keep history past the warn freeze", () => {
+    const model = createInflateAModel();
+    const a = solveInflate(model, { maxWallMs: 600_000 });
+    expect(a.metrics.warn).not.toBeNull();
+    if (a.metrics.warn === null) return;
+    expect(a.lambdaHistory.length - 1).toBe(a.metrics.warn.frame);
+    expect(a.meshHistory.length - 1).toBe(a.metrics.warn.frame);
+    expect(a.lambdaHistory[a.metrics.warn.frame]).toBeGreaterThanOrEqual(2);
+    const past = a.lambdaHistory.slice(a.metrics.warn.frame + 1);
+    expect(past).toHaveLength(0);
+    expect(a.metrics.t).toBe(a.metrics.warn.t);
   }, 120_000);
 });

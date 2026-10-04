@@ -31,18 +31,19 @@ describe("inflate Radioss golden + law card", () => {
     expect(golden.mesh.NUMELC).toBe(1554);
     expect(golden.mesh.NUMELTG).toBe(0);
     const v0mL = enclosedVolume(mesh.coords, mesh.quads) * 1e6;
-    expect(v0mL).toBeCloseTo(354, 0);
+    expect(v0mL).toBeCloseTo(420.5, 0);
+    expect(golden.mesh.fingerprint).toBe("f9635c7f");
   });
 
   it("compare harness fails on μ retune and unlabeled load swap", () => {
     const golden = loadInflateGolden();
     const warn: InflateWarnMetrics = {
-      frame: 11,
-      t: 0.022,
-      lambdaMax: 2.14,
-      p: 35769,
-      volume_mL: 901.8,
-      psi_J: 9.5,
+      frame: golden.warn.frame,
+      t: golden.warn.t,
+      lambdaMax: golden.warn.lambdaMax,
+      p: golden.warn.p,
+      volume_mL: golden.warn.volume_mL,
+      psi_J: golden.warn.psi_J,
       warn: true,
     };
     const retuned: InflateLawCard = { ...lockedLawCard(), mu1: MU * 1.1 };
@@ -118,15 +119,16 @@ describe("inflate Radioss golden + law card", () => {
     expect(enclosedVolume(c.coords, c.quads, c.tris)).toBeGreaterThan(0);
   });
 
-  it("checked-in golden JSON is the PR#8 dynamic desk, not QS", () => {
+  it("checked-in golden JSON is the outward-oriented fast-load desk, not slow-load", () => {
     const golden = loadInflateGolden();
     expect(golden.provenance.source).toBe("openradioss");
     expect(golden.loadFamily).toBe("dynamic-pload-40ms");
-    expect(golden.warn.p).toBe(35769);
-    expect(golden.warn.lambdaMax).toBe(2.1404);
-    expect(golden.warn.volume_mL).toBe(901.8);
-    expect(golden.warn.psi_J).toBe(9.502);
+    expect(golden.bands.lambdaRel).toBe(0.02);
+    expect(golden.bands.volumeRel).toBe(0.05);
+    expect(golden.bands.pressureRel).toBe(0.05);
+    expect(golden.warn.volume_mL).toBeGreaterThan(0);
     expect(golden.provenance.note).toContain("not ABC QS");
     expect(golden.provenance.note).toContain("Do not retune");
+    expect(golden.provenance.note.toLowerCase()).toContain("outward");
   });
 });

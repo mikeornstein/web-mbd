@@ -42,7 +42,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "The only validated inflate letter. Desmopan 85085A film letter A. Locked shear modulus, density, and thickness. Fast-load (dynamic) pressure ramp 0→65 kPa / 40 ms matches the OpenRadioss reference at first stretch ≥ 2. Slow-load (quasi-static) is not validated: last measured at head 8a05992 the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded; that code was removed, not fixed. The Inflation ABC ~54 kPa figure is not claimed. Mesh edges default ON. OpenRadioss is the offline golden only.",
+      "The only validated inflate letter. Desmopan 85085A film letter A. Locked shear modulus, density, and thickness. Fast-load (dynamic) pressure ramp 0→65 kPa / 40 ms matches the open Radioss reference on a consistently outward-oriented mesh at first stretch ≥ 2. Slow-load (quasi-static) is not validated: last measured at head 8a05992 the toy was off 7.7% stretch, 8.8% pressure, 65% volume and the balloon folded; that code was removed, not fixed. The Inflation ABC ~54 kPa figure is not claimed. Default view is solid fill with mesh edges. Open Radioss is the offline golden only.",
     validation: "radioss-dynamic-golden",
     listedOnPage: true,
     create: () => createInflateAModel(),
@@ -65,7 +65,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "Unvalidated demo, unstable past stretch 2. First stretch ≥ 2 at 4.4, past the warn line. Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. OpenRadioss golden NOT-YET (no tape). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
+      "Unvalidated demo, unstable past stretch 2. First stretch ≥ 2 at 4.4, past the warn line. Desmopan 85085A film letter B from inflation-abc meshes/B.json. Same constitutive locks. Source mesh has 404 of 2178 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Open Radioss golden NOT-YET (no tape). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
     validation: "unvalidated-demo",
     listedOnPage: true,
     create: () => createInflateBModel(),
@@ -77,7 +77,7 @@ export const RESEARCH_STOCK_MODELS: readonly ResearchStockModel[] = [
     researchPath: "docs/mvp-inflate-a.md",
     layer: 1,
     summary:
-      "Unvalidated demo, unstable. Hidden from the page. First stretch ≥ 2 sample is ~43,000 at 2 ms. Same constitutive locks as letter A. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
+      "Unvalidated demo, unstable. Hidden from the page. First stretch ≥ 2 sample is ~43,000 at 2 ms. Source mesh has 412 of 1972 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Same constitutive locks as letter A. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.",
     validation: "unvalidated-demo-unstable",
     listedOnPage: false,
     create: () => createInflateCModel(),

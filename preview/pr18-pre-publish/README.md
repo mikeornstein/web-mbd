@@ -45,4 +45,10 @@ CAPTURE_PREVIEW=1 pnpm test:e2e -- e2e/preview.spec.ts
 | `after-letter-a-first-stretch-2-solid-desktop.png` | 1280×800 | AFTER: solid only |
 | `after-letter-a-first-stretch-2-solid-iphone.png` | 390×844 | AFTER solid, iPhone width |
 
-Solver connectivity is unchanged. Shading uses a consistent outward winding computed at rest (376 of 3108 triangles reverse for display only). Slow-load (quasi-static) is **not validated**. The Inflation ABC ~54 kPa figure is **not claimed**.
+Letter A load now **rewinds the solver mesh** so every face points outward
+(fingerprint `f9635c7f`; 188 of 1554 four-sided shells reversed). Volume is a
+true enclosed volume. Solid-only view is solid fill with mesh edges off (no
+triangle seams). Slow-load (quasi-static) is **not validated**. The Inflation
+ABC ~54 kPa figure is **not claimed**. Letters B/C source bakes still have
+inconsistent winding (404 of 2178 and 412 of 1972 triangles). The Inflation
+ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed.

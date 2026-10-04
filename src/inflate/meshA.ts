@@ -13,6 +13,7 @@ import {
   SHIP_SHELL_QUADS,
   SHIP_SOURCE_QUADS,
 } from "./constants.js";
+import { orientQuadShellOutward, shellWindingReport } from "./orientShell.js";
 import type { InflateLetter, QuadShellMesh } from "./types.js";
 
 interface AbcBake {
@@ -212,6 +213,31 @@ export function enclosedVolume(
   return v;
 }
 
+/**
+ * True enclosed volume: signed tetrahedron sum on a consistently outward
+ * closed shell, with a check that the shell is closed and the sign is positive.
+ */
+export function trueEnclosedVolume(
+  coords: ArrayLike<number>,
+  quads: ArrayLike<number>,
+  tris: ArrayLike<number> = [],
+): number {
+  const report = shellWindingReport(coords, quads, tris);
+  if (report.boundaryEdgeCount !== 0) {
+    throw new Error(`shell is not closed: ${report.boundaryEdgeCount} boundary edges`);
+  }
+  if (!report.orientable || report.inconsistentEdgeCount !== 0) {
+    throw new Error(
+      `shell winding is not consistent: inconsistent edges ${report.inconsistentEdgeCount}, orientable=${String(report.orientable)}`,
+    );
+  }
+  const v = enclosedVolume(coords, quads, tris);
+  if (!(v > 0)) {
+    throw new Error(`enclosed volume is not positive: ${v}`);
+  }
+  return v;
+}
+
 function tetVol(coords: ArrayLike<number>, ia: number, ib: number, ic: number): number {
   const ax = coords[ia * 3]!,
     ay = coords[ia * 3 + 1]!,
@@ -269,7 +295,14 @@ function rawFor(letter: InflateLetter): unknown {
   }
 }
 
-export function loadShipMesh(letter: InflateLetter): QuadShellMesh {
+function packAfterQuadify(letter: InflateLetter): {
+  coords: number[];
+  packed: number[];
+  packedTris: number[];
+  nNodes: number;
+  nQuads: number;
+  nTris: number;
+} {
   const spec = SHIP[letter];
   const bake = parseAbcBake(rawFor(letter), letter);
   const nNodes = bake.pos0.length / 3;
@@ -301,12 +334,48 @@ export function loadShipMesh(letter: InflateLetter): QuadShellMesh {
   }
   return {
     coords: bake.pos0.slice(),
-    quads: packed,
-    tris: packedTris,
+    packed,
+    packedTris,
     nNodes,
     nQuads: quads.length,
     nTris: leftover.length,
-    fingerprint: meshFingerprint(bake.pos0, packed, packedTris),
+  };
+}
+
+/** Source bake after orphan pairing, before the outward rewind. */
+export function loadShipMeshAsWound(letter: InflateLetter): QuadShellMesh {
+  const packed = packAfterQuadify(letter);
+  return {
+    coords: packed.coords,
+    quads: packed.packed,
+    tris: packed.packedTris,
+    nNodes: packed.nNodes,
+    nQuads: packed.nQuads,
+    nTris: packed.nTris,
+    fingerprint: meshFingerprint(packed.coords, packed.packed, packed.packedTris),
+    letter,
+  };
+}
+
+export function loadShipMesh(letter: InflateLetter): QuadShellMesh {
+  const asWound = loadShipMeshAsWound(letter);
+  const oriented = orientQuadShellOutward(asWound.coords, asWound.quads, asWound.tris);
+  if (!oriented.orientable) throw new Error(`${letter}: shell is not orientable`);
+  if (oriented.mixedQuadCount !== 0) {
+    throw new Error(`${letter}: mixed-winding quads ${oriented.mixedQuadCount} — refuse half-flip`);
+  }
+  if (letter === "A") {
+    trueEnclosedVolume(asWound.coords, oriented.quads, oriented.tris);
+  }
+  const nTris = oriented.tris.length / 3;
+  return {
+    coords: asWound.coords,
+    quads: oriented.quads,
+    tris: oriented.tris,
+    nNodes: asWound.nNodes,
+    nQuads: oriented.quads.length / 4,
+    nTris,
+    fingerprint: meshFingerprint(asWound.coords, oriented.quads, oriented.tris),
     letter,
   };
 }

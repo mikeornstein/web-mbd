@@ -34,6 +34,7 @@ test("research catalog leads with Letter A, labels B, hides C from the page", ()
   expect(inflate.validation).toBe("radioss-dynamic-golden");
   expect(inflate.listedOnPage).toBe(true);
   expect(inflate.summary).toContain("only validated inflate letter");
+  expect(inflate.summary).toContain("outward-oriented");
   expect(inflate.summary).toContain("not validated");
   expect(inflate.summary).toContain("54 kPa figure is not claimed");
   expect(model.controls.contactKind).toBe("node-node");
@@ -46,6 +47,8 @@ test("research catalog leads with Letter A, labels B, hides C from the page", ()
   expect(b.listedOnPage).toBe(true);
   expect(b.title).toContain("unvalidated demo, unstable past stretch 2");
   expect(b.summary).toContain("unstable past stretch 2");
+  expect(b.summary).toContain("404 of 2178");
+  expect(b.summary).toContain("refine ladder");
   expect(b.summary.toLowerCase()).not.toContain("playable");
   const bModel = b.create();
   expect(bModel.mesh.letter).toBe("B");
@@ -58,6 +61,8 @@ test("research catalog leads with Letter A, labels B, hides C from the page", ()
   expect(c.validation).toBe("unvalidated-demo-unstable");
   expect(c.listedOnPage).toBe(false);
   expect(c.title).toContain("unstable");
+  expect(c.summary).toContain("412 of 1972");
+  expect(c.summary).toContain("refine ladder");
   expect(c.summary.toLowerCase()).not.toContain("playable");
   const cModel = c.create();
   expect(cModel.mesh.letter).toBe("C");

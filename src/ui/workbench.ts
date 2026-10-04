@@ -120,7 +120,7 @@ export function mountWorkbench(root: HTMLElement): void {
   const researchHelp = document.createElement("p");
   researchHelp.className = "muted";
   researchHelp.textContent =
-    "Letter A inflate is the only validated inflate letter (OpenRadioss fast-load reference at first stretch ≥ 2). Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Letter C is hidden: degenerate / unstable. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+    "Letter A inflate is the only validated inflate letter (open Radioss fast-load reference on a consistently outward-oriented mesh, at first stretch ≥ 2). Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Its source mesh has 404 of 2178 triangles wound against their neighbors. Letter C is hidden: degenerate / unstable. Its source mesh has 412 of 1972 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
 
   const catalog = document.createElement("ul");
   catalog.className = "catalog";
@@ -270,7 +270,7 @@ export function mountWorkbench(root: HTMLElement): void {
   const solveHelp = document.createElement("p");
   solveHelp.className = "muted";
   solveHelp.textContent =
-    "Central-difference explicit integration. Taylor: J2 hex + rigid wall. Inflate: neo-Hookean membrane + labeled PLOAD (OpenRadioss offline golden on letter A dynamic only).";
+    "Central-difference explicit integration. Taylor: J2 hex + rigid wall. Inflate: neo-Hookean membrane + labeled pressure load (open Radioss offline golden on letter A, fast-load only, consistently outward-oriented mesh).";
   const progress = document.createElement("p");
   progress.className = "solve-progress";
   progress.setAttribute("aria-live", "polite");
@@ -418,7 +418,7 @@ export function mountWorkbench(root: HTMLElement): void {
     runBtn.textContent = state.solving ? "Solving…" : "Run solve";
 
     if (state.loaded.kind !== "none") {
-      fillModelTree(preTree, state.loaded);
+      fillModelTree(preTree, state.loaded, state.drawMode);
       if (boundPreKey !== state.loaded.model) {
         switch (state.loaded.kind) {
           case "taylor":
@@ -587,11 +587,11 @@ function createTimeScrubber(onIndex: (index: number) => void): {
 function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
-      return "fast-load (dynamic) OpenRadioss reference only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo":
-      return "unvalidated demo, unstable past stretch 2 · OpenRadioss golden NOT-YET. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "unvalidated demo, unstable past stretch 2 · source mesh 404 of 2178 triangles wound against neighbors · open Radioss golden NOT-YET. The Inflation ABC refine ladder inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo-unstable":
-      return "unvalidated demo, unstable · not listed on the page. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "unvalidated demo, unstable · not listed on the page · source mesh 412 of 1972 triangles wound against neighbors. The Inflation ABC refine ladder inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     default: {
       const _exhaustive: never = status;
       throw new Error(`unhandled validation ${String(_exhaustive)}`);
@@ -599,7 +599,26 @@ function validationLabel(status: InflateStockModel["validation"]): string {
   }
 }
 
-function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { kind: "none" }>): void {
+function viewCaption(mode: MeshDrawMode): string {
+  switch (mode) {
+    case "solid":
+      return "solid fill only (mesh edges off)";
+    case "wire":
+      return "mesh edges only";
+    case "both":
+      return "mesh edges default ON";
+    default: {
+      const _exhaustive: never = mode;
+      return _exhaustive;
+    }
+  }
+}
+
+function fillModelTree(
+  dl: HTMLDListElement,
+  loaded: Exclude<LoadedSession, { kind: "none" }>,
+  drawMode: MeshDrawMode,
+): void {
   const rows: [string, string][] = [];
   switch (loaded.kind) {
     case "taylor": {
@@ -629,13 +648,10 @@ function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { ki
         ["Nodes", String(model.mesh.nNodes)],
         ["Shell quads", String(model.mesh.nQuads)],
         ["Mesh fingerprint", model.mesh.fingerprint],
-        [
-          "LAW42 NH",
-          `μ₁=${model.law.mu1.toExponential(6)} Pa · α₁=${model.law.alpha1} · H0=${(model.law.h0 * 1e3).toFixed(3)} mm · ρ=${model.law.rho} kg/m³`,
-        ],
+        ["Ogden one-term neo-Hookean", `μ₁=${model.law.mu1.toExponential(6)} Pa · α₁=${model.law.alpha1} · H0=${(model.law.h0 * 1e3).toFixed(3)} mm · ρ=${model.law.rho} kg/m³`],
         ["Load family", model.law.loadFamily],
         [
-          "PLOAD",
+          "Pressure load",
           `0 → ${model.law.pMax} Pa in ${model.law.tRamp} s (fast-load / dynamic; not the Inflation ABC ~54 kPa figure). Slow-load (quasi-static) is not validated.`,
         ],
         [
@@ -643,10 +659,10 @@ function fillModelTree(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { ki
           `TYPE19-class Gapmin=${(model.law.gapMin * 1e3).toFixed(3)} mm node-node (not bitwise TYPE19)`,
         ],
         ["Warn", `first λ_max ≥ ${model.law.warnLam}`],
-        ["View", "mesh edges default ON"],
+        ["View", viewCaption(drawMode)],
         ["Validation", validationLabel(loaded.stock.validation)],
         ["Letter", model.mesh.letter],
-        ["Leftover CST tris", String(model.mesh.nTris)],
+        ["Leftover constant-strain triangles", String(model.mesh.nTris)],
       );
       break;
     }
@@ -702,7 +718,7 @@ function fillMetrics(dl: HTMLDListElement, loaded: Exclude<LoadedSession, { kind
         ["Contact class", m.contactClass],
         ["Steps", String(m.nSteps)],
         ["Wall clock", `${m.elapsedMs.toFixed(1)} ms`],
-        ["Radioss golden", validationLabel(loaded.stock.validation)],
+        ["open Radioss reference", validationLabel(loaded.stock.validation)],
       );
       break;
     }
@@ -752,21 +768,21 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
           const golden = loadInflateGolden();
           const cmp = compareInflateToGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
           gateEl.textContent = cmp.ok
-            ? "Acceptance gate: PASS (OpenRadioss fast-load / dynamic reference · stretch / volume / pressure bands). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed."
-            : `Acceptance gate: FAIL vs OpenRadioss fast-load golden (${cmp.reasons[0] ?? "see compare:inflate"}). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.`;
+            ? "Acceptance gate: PASS (open Radioss fast-load / dynamic reference on a consistently outward-oriented mesh · stretch / volume / pressure bands). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed."
+            : `Acceptance gate: FAIL vs open Radioss fast-load golden (${cmp.reasons[0] ?? "see compare:inflate"}). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.`;
           gateEl.classList.toggle("pass", cmp.ok);
           gateEl.classList.toggle("fail", !cmp.ok);
           break;
         }
         case "unvalidated-demo":
           gateEl.textContent =
-            "Acceptance gate: NOT-YET (unvalidated demo, unstable past stretch 2; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+            "Acceptance gate: NOT-YET (unvalidated demo, unstable past stretch 2; no open Radioss tape for this letter; source mesh 404 of 2178 triangles wound against neighbors). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
           gateEl.classList.remove("pass");
           gateEl.classList.add("fail");
           break;
         case "unvalidated-demo-unstable":
           gateEl.textContent =
-            "Acceptance gate: NOT-YET (unvalidated demo, unstable; no OpenRadioss tape for this letter). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+            "Acceptance gate: NOT-YET (unvalidated demo, unstable; no open Radioss tape for this letter; source mesh 412 of 1972 triangles wound against neighbors). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
           gateEl.classList.remove("pass");
           gateEl.classList.add("fail");
           break;

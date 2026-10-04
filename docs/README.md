@@ -22,7 +22,7 @@ Research and design notes for building a client-side flexible multibody / explic
 | Doc | What it covers |
 | --- | --- |
 | [Taylor bar](mvp-taylor-bar.md) | J2 hex + rigid wall + OpenRadioss bitwise oracle |
-| [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + fast-load (dynamic) pressure ramp + banded OpenRadioss golden. Slow-load is not validated. The Inflation ABC ~54 kPa figure is not claimed. |
+| [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + fast-load (dynamic) pressure ramp + banded open Radioss reference on a consistently outward-oriented mesh. Slow-load is not validated. The Inflation ABC ~54 kPa figure is not claimed. Source letters B/C still have inconsistent winding (404 of 2178 and 412 of 1972 triangles); the inflate refine ladder inherits that winding unless fixed. |
 | [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; fast-load only |
 | [Radioss slow-load desk](radioss-qs-desk.md) | Reference-only OpenRadioss slow-load tape (`gate: none`; not used by any gate) |
 

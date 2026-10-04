@@ -17,8 +17,9 @@ branch `cursor/openradioss-a-qs-ish-b1bc`. OpenRadioss AGPL stays offline —
 JSON only.
 
 Load family **`qs-ish-pload-400ms`**: `/PLOAD` 0 → 65 kPa in 0.40 s +
-`/ADYREL`. Same LAW42 μ, ρ, H0, mesh fingerprint `d9c56487` as
-`dynamic-pload-40ms`. **No μ/ρ retune.**
+`/ADYREL`. Same LAW42 μ, ρ, H0 as the fast-load desk. Mesh fingerprint is still
+the **as-wound** `d9c56487`. The fast-load reference was later rewound outward
+(`f9635c7f`); this slow-load tape was **not** re-run. **No μ/ρ retune.**
 
 ## Warn freeze (first stretch ≥ 2) — OpenRadioss only
 

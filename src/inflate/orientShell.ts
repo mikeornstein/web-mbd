@@ -235,7 +235,11 @@ export function shellWindingReport(
   };
 }
 
-/** Shading triangles: consistent outward winding from rest coordinates. Solver connectivity is not modified. */
+/**
+ * Shading triangles the canvas fills. Always run the outward orienter on the
+ * supplied connectivity so a stub that returns the raw triangles is visible
+ * even when the solver mesh was already rewound at load.
+ */
 export function outwardShadingTriangles(
   restCoords: ArrayLike<number>,
   quads: ArrayLike<number>,
@@ -243,4 +247,173 @@ export function outwardShadingTriangles(
 ): ShellTriangle[] {
   const source = [...cstTrianglesFromQuads(quads), ...leftoverTriangles(leftoverTris)];
   return orientTrianglesOutward(restCoords, source).triangles;
+}
+
+export function reverseQuad(
+  q: readonly [number, number, number, number],
+): [number, number, number, number] {
+  return [q[0], q[3], q[2], q[1]];
+}
+
+export interface OrientedQuadShell {
+  quads: number[];
+  tris: number[];
+  flippedQuadCount: number;
+  flippedTriCount: number;
+  mixedQuadCount: number;
+  orientable: boolean;
+}
+
+/**
+ * Whole-quad reverse (inflation-abc `orient_outward_closed`): both constant-strain
+ * halves of a mixed pair never disagree on letter A, so each shell is either
+ * kept or reversed as a unit.
+ */
+export function orientQuadShellOutward(
+  coords: ArrayLike<number>,
+  quads: ArrayLike<number>,
+  leftoverTris: ArrayLike<number> = [],
+): OrientedQuadShell {
+  const fromQuads = cstTrianglesFromQuads(quads);
+  const leftover = leftoverTriangles(leftoverTris);
+  const source = [...fromQuads, ...leftover];
+  const oriented = orientTrianglesOutward(coords, source);
+  const nq = quads.length / 4;
+  const outQuads: number[] = [];
+  let flippedQuadCount = 0;
+  let mixedQuadCount = 0;
+  for (let e = 0; e < nq; e++) {
+    const a = oriented.flipped[2 * e]!;
+    const b = oriented.flipped[2 * e + 1]!;
+    const q: [number, number, number, number] = [
+      quads[e * 4]!,
+      quads[e * 4 + 1]!,
+      quads[e * 4 + 2]!,
+      quads[e * 4 + 3]!,
+    ];
+    if (a !== b) mixedQuadCount += 1;
+    if (a && b) {
+      const r = reverseQuad(q);
+      outQuads.push(r[0], r[1], r[2], r[3]);
+      flippedQuadCount += 1;
+    } else {
+      outQuads.push(q[0], q[1], q[2], q[3]);
+    }
+  }
+  const outTris: number[] = [];
+  let flippedTriCount = 0;
+  for (let e = 0; e < leftover.length; e++) {
+    const flag = oriented.flipped[2 * nq + e]!;
+    const t = leftover[e]!;
+    if (flag) {
+      const r = reverseTriangle(t);
+      outTris.push(r[0], r[1], r[2]);
+      flippedTriCount += 1;
+    } else {
+      outTris.push(t[0], t[1], t[2]);
+    }
+  }
+  return {
+    quads: outQuads,
+    tris: outTris,
+    flippedQuadCount,
+    flippedTriCount,
+    mixedQuadCount,
+    orientable: oriented.orientable,
+  };
+}
+
+export function otherDiagonalVolume(coords: ArrayLike<number>, quads: ArrayLike<number>): number {
+  let v = 0;
+  const nq = quads.length / 4;
+  for (let e = 0; e < nq; e++) {
+    const i0 = quads[e * 4]!;
+    const i1 = quads[e * 4 + 1]!;
+    const i2 = quads[e * 4 + 2]!;
+    const i3 = quads[e * 4 + 3]!;
+    v += tetVolume(coords, [i0, i1, i3]);
+    v += tetVolume(coords, [i1, i2, i3]);
+  }
+  return v;
+}
+
+function rayHitsTriangle(
+  origin: readonly [number, number, number],
+  dir: readonly [number, number, number],
+  coords: ArrayLike<number>,
+  tri: ShellTriangle,
+): boolean {
+  const ax = coords[tri[0] * 3]!,
+    ay = coords[tri[0] * 3 + 1]!,
+    az = coords[tri[0] * 3 + 2]!;
+  const bx = coords[tri[1] * 3]!,
+    by = coords[tri[1] * 3 + 1]!,
+    bz = coords[tri[1] * 3 + 2]!;
+  const cx = coords[tri[2] * 3]!,
+    cy = coords[tri[2] * 3 + 1]!,
+    cz = coords[tri[2] * 3 + 2]!;
+  const e1x = bx - ax,
+    e1y = by - ay,
+    e1z = bz - az;
+  const e2x = cx - ax,
+    e2y = cy - ay,
+    e2z = cz - az;
+  const px = dir[1] * e2z - dir[2] * e2y;
+  const py = dir[2] * e2x - dir[0] * e2z;
+  const pz = dir[0] * e2y - dir[1] * e2x;
+  const det = e1x * px + e1y * py + e1z * pz;
+  if (Math.abs(det) < 1e-18) return false;
+  const inv = 1 / det;
+  const tx = origin[0] - ax,
+    ty = origin[1] - ay,
+    tz = origin[2] - az;
+  const u = (tx * px + ty * py + tz * pz) * inv;
+  if (u < 0 || u > 1) return false;
+  const qx = ty * e1z - tz * e1y;
+  const qy = tz * e1x - tx * e1z;
+  const qz = tx * e1y - ty * e1x;
+  const v = (dir[0] * qx + dir[1] * qy + dir[2] * qz) * inv;
+  if (v < 0 || u + v > 1) return false;
+  const t = (e2x * qx + e2y * qy + e2z * qz) * inv;
+  return t > 1e-12;
+}
+
+/** Odd/even ray parity against an oriented closed triangle shell. */
+export function pointInsideClosedShell(
+  coords: ArrayLike<number>,
+  triangles: readonly ShellTriangle[],
+  point: readonly [number, number, number],
+): boolean {
+  const dir: [number, number, number] = [1, 0.002139, 0.001187];
+  let hits = 0;
+  for (const tri of triangles) {
+    if (rayHitsTriangle(point, dir, coords, tri)) hits += 1;
+  }
+  return hits % 2 === 1;
+}
+
+export function triangleCentroid(coords: ArrayLike<number>, tri: ShellTriangle): [number, number, number] {
+  return [
+    (coords[tri[0] * 3]! + coords[tri[1] * 3]! + coords[tri[2] * 3]!) / 3,
+    (coords[tri[0] * 3 + 1]! + coords[tri[1] * 3 + 1]! + coords[tri[2] * 3 + 1]!) / 3,
+    (coords[tri[0] * 3 + 2]! + coords[tri[1] * 3 + 2]! + coords[tri[2] * 3 + 2]!) / 3,
+  ];
+}
+
+/**
+ * Every face of a consistently outward shell: a tiny step along the right-hand
+ * normal leaves the enclosed volume; a tiny step against it stays inside.
+ */
+export function facePointsOutward(
+  coords: ArrayLike<number>,
+  triangles: readonly ShellTriangle[],
+  tri: ShellTriangle,
+  offset = 2e-4,
+): boolean {
+  const n = triangleNormal(coords, tri);
+  if (n[0] === 0 && n[1] === 0 && n[2] === 0) return false;
+  const c = triangleCentroid(coords, tri);
+  const outside: [number, number, number] = [c[0] + offset * n[0], c[1] + offset * n[1], c[2] + offset * n[2]];
+  const inside: [number, number, number] = [c[0] - offset * n[0], c[1] - offset * n[1], c[2] - offset * n[2]];
+  return !pointInsideClosedShell(coords, triangles, outside) && pointInsideClosedShell(coords, triangles, inside);
 }

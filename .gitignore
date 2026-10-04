@@ -31,7 +31,13 @@ native/force-kernel/or-extract/*.o
 
 native/force-kernel/.build.lock
 
-# Regenerable OpenRadioss host dumps / local probe outputs
+# Local OpenRadioss / OpenCourant install and engine run trees
+radioss/opt/
+radioss/**/run/
+radioss/**/*.zip
+radioss/env.sh
+radioss/A-inflate/oriented-a.json
+
 docs/research/**/*.f64bin
 docs/research/*-probe.json
 docs/research/mass-vs-live.json

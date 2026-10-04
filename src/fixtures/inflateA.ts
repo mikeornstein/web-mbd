@@ -24,7 +24,7 @@ function createInflateLetterModel(letter: InflateLetter): InflateModelIR {
       name: `inflate-${letter.toLowerCase()}-desmopan`,
       version: 1,
       units: "SI",
-      description: `Letter-${letter} neo-Hookean membrane inflate. LAW42 μ₁=MU, α₁=2, H0=0.381 mm, ρ=1130 kg/m³ (Desmopan 85085A). Load family dynamic-pload-40ms (OpenRadioss /PLOAD 0→65 kPa / 40 ms) — fast-load (dynamic) only. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed. Do not retune μ.`,
+      description: `Letter-${letter} neo-Hookean membrane inflate. Hyperelastic Ogden one-term neo-Hookean: shear modulus μ₁=MU, α₁=2, H0=0.381 mm, ρ=1130 kg/m³ (Desmopan 85085A). Load family dynamic-pload-40ms (open Radioss pressure load 0→65 kPa / 40 ms) — fast-load (dynamic) only, consistently outward-oriented on letter A. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed. Do not retune the shear modulus.`,
     },
     law,
     mesh,

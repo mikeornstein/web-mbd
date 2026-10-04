@@ -14,7 +14,7 @@ test("letter B is an unvalidated demo, unstable past stretch 2; letter C is not 
   await expect(page.getByLabel("Model tree").getByText("B", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Model tree").getByText(
-      /unvalidated demo, unstable past stretch 2 · OpenRadioss golden NOT-YET\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
+      /unvalidated demo, unstable past stretch 2 · source mesh 404 of 2178 triangles wound against neighbors · open Radioss golden NOT-YET\. The Inflation ABC refine ladder inherits the old winding unless fixed\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
