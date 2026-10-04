@@ -458,8 +458,7 @@ function main(): void {
     predictionCommit: predictionSha,
     bands: INFLATE_BANDS,
     defaultToyUnchanged: {
-      kineticDamping: true,
-      kineticDampingScale: 0.18,
+      damping: { kind: "peak-kill", scale: 0.18, minInterval: 0 },
       note: "createInflateAModel and compare:inflate were not pointed at these runs",
     },
     runs: runs.map((run) => ({
