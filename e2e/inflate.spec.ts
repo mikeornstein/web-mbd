@@ -12,10 +12,12 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
       /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch is validated at the 16 ms freeze and lags the decks earlier in the run · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
-  await expect(page.getByText("energy numbers are not trustworthy")).toBeVisible();
-  await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
+  await expect(pre.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
+  await expect(
+    pre.getByText("STOP: energy numbers are not trustworthy (bookkeeping failed). No verdicts."),
+  ).toBeVisible();
+  await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();
   await expect(pre.getByRole("radio", { name: "Both" })).toBeChecked();
   await expect(page.getByRole("img", { name: /Undeformed mesh/ })).toBeVisible();
