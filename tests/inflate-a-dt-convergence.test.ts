@@ -18,6 +18,14 @@ describe("time-step convergence check (kill off, listing 2 μs cap)", () => {
     expect(text).toContain("If the toy is **step-independent**");
   });
 
+  it("sphere prediction was written before the capped-Δt sphere print", () => {
+    const text = readFileSync(new URL("dt-convergence-sphere-prediction.md", DIAG), "utf8");
+    expect(text).toContain("Written **before** any new sphere print");
+    expect(text).toContain("step-size error");
+    expect(text).toContain("7.6");
+    expect(text).toContain("32");
+  });
+
   it("shipped default does not cap the time step and stays peak-kill", () => {
     const model = createInflateAModel();
     expect(model.controls.damping.kind).toBe("peak-kill");
