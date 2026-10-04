@@ -31,7 +31,8 @@
     "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts",
     "diagnose:stretch-diagnostics": "tsx src/cli/diagnose-stretch-diagnostics.ts",
     "diagnose:per-step-energy": "tsx src/cli/diagnose-per-step-energy.ts",
-    "diagnose:deck-node-output": "tsx src/cli/diagnose-deck-node-output.ts"
+    "diagnose:deck-node-output": "tsx src/cli/diagnose-deck-node-output.ts",
+    "diagnose:deck-quad-averaged": "tsx src/cli/diagnose-deck-quad-averaged.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

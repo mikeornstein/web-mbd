@@ -1,0 +1,6 @@
+{
+  "kind": "deck-quad-averaged-measurement",
+  "status": "plan-committed-results-not-yet-run",
+  "notAGate": true,
+  "engineColumnPrimary": true
+}

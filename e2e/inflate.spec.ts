@@ -16,8 +16,11 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(pre.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A per-step energy bookkeeping (correctness gate on the toy)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A deck node-output re-run (measurement, not a gate)" })).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A quad-averaged stretch and node-distance (measurement, not a gate)" })).toBeVisible();
   const deckNodeResults = pre.locator("pre").filter({ hasText: "Results (measurement; node output re-run, not compare:inflate):" });
   await expect(deckNodeResults.getByText("spreads strain differently from the decks")).toBeVisible();
+  const quadAvgResults = pre.locator("pre").filter({ hasText: "Results not yet written. Plan was committed first. Engine internal energy is the primary energy column." });
+  await expect(quadAvgResults).toBeVisible();
   const perStepResults = pre.locator("pre").filter({ hasText: "Results (correctness gate on the toy; not compare:inflate):" });
   await expect(perStepResults.getByText("The earlier 2 ms-sample gap was sampling. Only the summation in the test and page changes.")).toBeVisible();
   await expect(

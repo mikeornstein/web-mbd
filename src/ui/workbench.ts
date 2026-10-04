@@ -7,6 +7,7 @@ import { compareInflateToGolden, toySamplesFromSolve } from "../oracle/compareIn
 import { stretchDiagnosticsPageText } from "../oracle/stretchDiagnosticResults.js";
 import { perStepEnergyPageText } from "../oracle/perStepEnergyResults.js";
 import { deckNodeOutputPageText } from "../oracle/deckNodeOutputResults.js";
+import { deckQuadAveragedPageText } from "../oracle/deckQuadAveragedResults.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -603,6 +604,7 @@ function createStretchDiagSection(): HTMLElement {
   const perStep = createPerStepEnergySection();
   wrap.append(perStep);
   wrap.append(createDeckNodeOutputSection());
+  wrap.append(createDeckQuadAveragedSection());
   return wrap;
 }
 
@@ -624,6 +626,19 @@ function createDeckNodeOutputSection(): HTMLElement {
   const heading = document.createElement("h3");
   heading.textContent = "Letter A deck node-output re-run (measurement, not a gate)";
   const copy = deckNodeOutputPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckQuadAveragedSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A quad-averaged stretch and node-distance (measurement, not a gate)";
+  const copy = deckQuadAveragedPageText();
   const rules = document.createElement("pre");
   rules.textContent = copy.rules;
   const results = document.createElement("pre");

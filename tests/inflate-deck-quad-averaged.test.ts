@@ -7,6 +7,10 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { loadShipMesh } from "../src/inflate/meshA.js";
+import { deckQuadAveragedPageText } from "../src/oracle/deckQuadAveragedResults.js";
+import { scoreQuadAveraged } from "../src/oracle/deckQuadAveragedScore.js";
+import { quadAvgStatsFromPacked } from "../src/oracle/quadAveragedStretch.js";
 
 const DIAG = new URL("../docs/diag-pr18-openradioss-control/", import.meta.url);
 const ROOT = new URL("../", import.meta.url);
@@ -86,5 +90,117 @@ describe("deck quad-averaged plan locked before any number", () => {
     expect(gS[0]).toBe("1 367 445 470 439");
     expect(golden).toMatch(/\/PROP\/SHELL\/1[\s\S]*?\n\s+1\s+2\s/);
     expect(ishell).toMatch(/\/PROP\/SHELL\/1[\s\S]*?\n\s+24\s+2\s/);
+  });
+
+  it("fine starter ids 1–1554 are the parent nodes of the golden rest", () => {
+    const golden = readFileSync(new URL("radioss/diag-oriented-ismstr2/Ainflate_0000.rad", ROOT), "utf8");
+    const fine = readFileSync(new URL("radioss/diag-element-type/fine/Ainflate_0000.rad", ROOT), "utf8");
+    const gN = parseNodes(golden);
+    const fN = parseNodes(fine);
+    expect(fN.ids).toHaveLength(6216);
+    expect(gN.ids).toHaveLength(1554);
+    for (let i = 0; i < 1554; i++) {
+      expect(fN.ids[i]).toBe(gN.ids[i]);
+      const ga = gN.xyz[i]!.split(" ").map(Number);
+      const fa = fN.xyz[i]!.split(" ").map(Number);
+      const d = Math.hypot(ga[0]! - fa[0]!, ga[1]! - fa[1]!, ga[2]! - fa[2]!);
+      expect(d).toBeLessThan(1e-12);
+    }
+  });
+
+  it("page copy says engine column is primary and results are not yet written", () => {
+    const page = deckQuadAveragedPageText();
+    expect(page.rules).toContain("primary energy column");
+    expect(page.rules).toContain("convention difference, not evidence about the toy");
+    expect(page.results).toContain("Results not yet written. Plan was committed first.");
+    expect(page.results).toContain("Engine internal energy is the primary energy column.");
+  });
+
+  it("quad-centre stretch is 1 on the rest ship and follows a uniform scale", () => {
+    const mesh = loadShipMesh("A");
+    const rest = quadAvgStatsFromPacked(mesh.coords, mesh.coords, mesh.quads);
+    expect(rest).not.toBeNull();
+    if (rest === null) return;
+    expect(rest.n).toBe(1554);
+    expect(rest.median).toBeCloseTo(1, 6);
+    expect(rest.max).toBeCloseTo(1, 6);
+    const scaled = new Float64Array(mesh.coords.length);
+    for (let i = 0; i < mesh.coords.length; i++) scaled[i] = mesh.coords[i]! * 1.1;
+    const up = quadAvgStatsFromPacked(scaled, mesh.coords, mesh.quads);
+    expect(up).not.toBeNull();
+    if (up === null) return;
+    expect(up.median).toBeCloseTo(1.1, 5);
+  });
+
+  it("Rule A engine-primary energy agrees when toy sits in the engine spread", () => {
+    const ramp = (y0: number, slope: number): { t_ms: number; y: number }[] =>
+      [0, 2, 4, 6, 8, 10, 12, 14, 16].map((t_ms) => ({ t_ms, y: y0 + slope * t_ms }));
+    const score = scoreQuadAveraged({
+      toyStrain4: 1.0,
+      toyStrain8: 2.0,
+      toyStrain16: 4.0,
+      goldenEngine4: 1.0,
+      goldenEngine8: 2.0,
+      goldenEngine16: 4.0,
+      deckEngineAt8: [1.9, 2.0, 2.1],
+      deckEngineAt16: [3.8, 4.0, 4.2],
+      volumeToy: ramp(420, 20),
+      volumeGold: ramp(420, 20),
+      medianToy: ramp(1.0, 0.015),
+      medianGold: ramp(1.0, 0.015),
+      maxToy: ramp(1.0, 0.07),
+      maxGold: ramp(1.0, 0.07),
+      ishellMedian8: 1.12,
+      ishellMedian16: 1.24,
+      toyGoldRms4: 0.001,
+      toyGoldRms8: 0.001,
+      toyGoldRms16: 0.001,
+      goldIshellRms4: 0.002,
+      goldIshellRms8: 0.002,
+      goldIshellRms16: 0.002,
+    });
+    expect(score.energyAgrees).toBe(true);
+    expect(score.energyLow).toBe(false);
+    expect(score.medianAgrees).toBe(true);
+    expect(score.oneShiftFits).toBe(true);
+    expect(score.distanceBarHolds).toBe(true);
+    expect(score.lockedKind).toBe("convention-or-hotspot");
+    expect(score.ruleCKind).toBe("node-wobble-convention");
+  });
+
+  it("energy agrees and shifts disagree → MIXED, no verdict", () => {
+    const volToy = [0, 2, 4, 6, 8, 10, 12, 14, 16].map((t_ms) => ({ t_ms, y: 420 + 20 * t_ms }));
+    const volGold = volToy;
+    const medToy = [0, 2, 4, 6, 8, 10, 12, 14, 16].map((t_ms) => ({ t_ms, y: 1 + 0.015 * t_ms }));
+    const medGold = medToy;
+    const maxToy = [0, 2, 4, 6, 8, 10, 12, 14, 16].map((t_ms) => ({ t_ms, y: 1 + 0.07 * t_ms }));
+    const maxGold = [0, 2, 4, 6, 8, 10, 12, 14, 16].map((t_ms) => ({ t_ms, y: 1 + 0.07 * (t_ms + 3) }));
+    const score = scoreQuadAveraged({
+      toyStrain4: 1.0,
+      toyStrain8: 2.0,
+      toyStrain16: 4.0,
+      goldenEngine4: 1.0,
+      goldenEngine8: 2.0,
+      goldenEngine16: 4.0,
+      deckEngineAt8: [1.9, 2.0, 2.1],
+      deckEngineAt16: [3.8, 4.0, 4.2],
+      volumeToy: volToy,
+      volumeGold: volGold,
+      medianToy: medToy,
+      medianGold: medGold,
+      maxToy: maxToy,
+      maxGold: maxGold,
+      ishellMedian8: 1.12,
+      ishellMedian16: 1.24,
+      toyGoldRms4: 0.001,
+      toyGoldRms8: 0.001,
+      toyGoldRms16: 0.001,
+      goldIshellRms4: 0.002,
+      goldIshellRms8: 0.002,
+      goldIshellRms16: 0.002,
+    });
+    expect(score.energyAgrees).toBe(true);
+    expect(score.oneShiftFits).toBe(false);
+    expect(score.lockedLine).toContain("MIXED, no verdict");
   });
 });
