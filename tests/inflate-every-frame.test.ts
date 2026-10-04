@@ -101,7 +101,9 @@ describe("every-frame Themis deck-spread (committed tapes)", () => {
     expect(at16.max).toBe(DECK_FINE_REORIENTED[4]?.lambdaMax);
     const at10 = deckSpreadAt(10);
     expect(at10.triangle).toBeNull();
-    expect(at10.triangleNote).toContain("died ~11.5 ms");
+    expect(at10.triangleNote).toContain("last 8 ms");
+    const at16tri = deckSpreadAt(16);
+    expect(at16tri.triangleNote).toContain("died ~11.5 ms");
   });
 
   it("committed kill-off tape sits below the surviving-deck floor after t=0", () => {

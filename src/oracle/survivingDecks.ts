@@ -130,6 +130,9 @@ export function deckSpreadAt(t_ms: number): DeckSpread {
   let triangleNote: string | null = null;
   if (t_ms > TRIANGLE_DEAD_MS) {
     triangleNote = "triangle deck died ~11.5 ms; not a late-window reference";
+  } else if (t_ms > 8) {
+    triangleNote =
+      "no triangle snapshot at this tick (last 8 ms; died ~11.5 ms); not a late-window reference";
   } else {
     triangle = interpolateStretch(DECK_TRIANGLE_SH3N, t_ms);
     if (triangle === null) {

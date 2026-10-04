@@ -24,6 +24,7 @@ Research and design notes for building a client-side flexible multibody / explic
 | [Taylor bar](mvp-taylor-bar.md) | J2 hex + rigid wall + OpenRadioss bitwise oracle |
 | [Letter A inflate](mvp-inflate-a.md) | Neo-Hookean membrane + fast-load (dynamic) pressure ramp + banded open Radioss reference on a consistently outward-oriented mesh. Slow-load is not validated. The Inflation ABC ~54 kPa figure is not claimed. Source letters B/C still have inconsistent winding (404 of 2178 and 412 of 1972 triangles); the inflate refine ladder inherits that winding unless fixed. |
 | [Sphere check (closed form)](diag-pr18-openradioss-control/sphere-result.md) | Recorded slow-sphere result: rising branch 0.9% pass, limit-point stretch 4.7% miss (flat top of the pressure curve), snap-through 1.1% pass, 28 kPa hold 0.2% pass, both step sizes. |
+| [Kill-off default / every-frame Themis gate](diag-pr18-openradioss-control/kill-off-default-results.md) | Shipped velocity kill off. Letter A freeze 16 ms stretch 2.105, no punch. Themis surviving-deck stretch spread misses after t=0. |
 | [Inflate engineering review](engineering-review-inflate-a.md) | Nine Trust elements; fast-load only |
 | [Radioss slow-load desk](radioss-qs-desk.md) | Reference-only OpenRadioss slow-load tape (`gate: none`; not used by any gate) |
 

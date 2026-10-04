@@ -38,6 +38,18 @@ describe("kill-off default prediction (before any new run)", () => {
     const probe = readFileSync(new URL("sphere-probe-results.md", DIAG), "utf8");
     expect(probe).toContain("1.1%");
   });
+
+  it("every-frame and kill-off default result files record the Themis miss and the stable freeze", () => {
+    const frames = readFileSync(new URL("every-frame-results.md", DIAG), "utf8");
+    expect(frames).toContain("themis-deck-spread");
+    expect(frames).toContain("2.1052");
+    expect(frames).toContain("outside");
+    expect(frames).toContain("pinned only to the OpenCourant copy");
+    const def = readFileSync(new URL("kill-off-default-results.md", DIAG), "utf8");
+    expect(def).toContain("Punch-through: **false**");
+    expect(def).toContain("Letter C");
+    expect(def).toContain("0.94 ms");
+  });
 });
 
 describe("kill-off shipped default and Themis every-frame gate", () => {
