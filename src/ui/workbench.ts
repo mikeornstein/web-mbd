@@ -8,6 +8,7 @@ import { stretchDiagnosticsPageText } from "../oracle/stretchDiagnosticResults.j
 import { perStepEnergyPageText } from "../oracle/perStepEnergyResults.js";
 import { deckNodeOutputPageText } from "../oracle/deckNodeOutputResults.js";
 import { deckQuadAveragedPageText } from "../oracle/deckQuadAveragedResults.js";
+import { deckEnergySplitPageText } from "../oracle/deckEnergySplitResults.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -605,6 +606,7 @@ function createStretchDiagSection(): HTMLElement {
   wrap.append(perStep);
   wrap.append(createDeckNodeOutputSection());
   wrap.append(createDeckQuadAveragedSection());
+  wrap.append(createDeckEnergySplitSection());
   return wrap;
 }
 
@@ -639,6 +641,19 @@ function createDeckQuadAveragedSection(): HTMLElement {
   const heading = document.createElement("h3");
   heading.textContent = "Letter A quad-averaged stretch and node-distance (measurement, not a gate)";
   const copy = deckQuadAveragedPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckEnergySplitSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A energy and damping split (measurement, not a gate)";
+  const copy = deckEnergySplitPageText();
   const rules = document.createElement("pre");
   rules.textContent = copy.rules;
   const results = document.createElement("pre");
