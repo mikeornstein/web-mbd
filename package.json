@@ -22,7 +22,8 @@
     "compare:inflate": "tsx src/cli/compare-inflate.ts",
     "diagnose:inflate-snap": "tsx src/cli/diagnose-inflate-snap.ts",
     "diagnose:kill-off": "tsx src/cli/diagnose-kill-off.ts",
-    "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts"
+    "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts",
+    "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

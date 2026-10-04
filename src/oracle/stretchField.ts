@@ -1,4 +1,4 @@
-import { cstSample, splitQuadCsts } from "../fe/membraneCst.js";
+import { buildCstRest, cstSample, splitQuadCsts } from "../fe/membraneCst.js";
 import { H0, MU } from "../inflate/constants.js";
 
 export interface QuadStretch {
@@ -135,6 +135,98 @@ export function stretchFieldFromCoords(
     });
   }
   return out;
+}
+
+/**
+ * Per-shell stretch on mixed three- and four-node connectivity.
+ * Four-node shells use splitQuadCsts (diagonal 0–2). Three-node shells use
+ * one cstSample. Same principal-stretch formula as the toy.
+ */
+export function stretchFieldFromShells(
+  coords: ArrayLike<number>,
+  restCoords: ArrayLike<number>,
+  shells: readonly number[][],
+  elementIds?: ArrayLike<number>,
+): QuadStretch[] {
+  const out: QuadStretch[] = [];
+  for (let e = 0; e < shells.length; e++) {
+    const nodes = shells[e]!;
+    const elementId = elementIds !== undefined ? elementIds[e]! : e;
+    if (nodes.length === 4 && nodes[2] !== nodes[3]) {
+      const i0 = nodes[0]!;
+      const i1 = nodes[1]!;
+      const i2 = nodes[2]!;
+      const i3 = nodes[3]!;
+      const pair = splitQuadCsts(restCoords, i0, i1, i2, i3);
+      if (!pair) continue;
+      const a = cstSample(coords, pair.a, MU, H0);
+      const b = cstSample(coords, pair.b, MU, H0);
+      const lamA = Math.max(a.lam1, a.lam2);
+      const lamB = Math.max(b.lam1, b.lam2);
+      const cx = (restCoords[i0 * 3]! + restCoords[i1 * 3]! + restCoords[i2 * 3]! + restCoords[i3 * 3]!) / 4;
+      const cy =
+        (restCoords[i0 * 3 + 1]! + restCoords[i1 * 3 + 1]! + restCoords[i2 * 3 + 1]! + restCoords[i3 * 3 + 1]!) / 4;
+      const cz =
+        (restCoords[i0 * 3 + 2]! + restCoords[i1 * 3 + 2]! + restCoords[i2 * 3 + 2]! + restCoords[i3 * 3 + 2]!) / 4;
+      out.push({
+        quadIndex: e,
+        elementId,
+        nodes: [i0, i1, i2, i3],
+        restCentroid: [cx, cy, cz],
+        region: letterRegion(cx, cy, cz),
+        lamTriA: lamA,
+        lamTriB: lamB,
+        lam: Math.max(lamA, lamB),
+        area0: pair.a.A0 + pair.b.A0,
+      });
+      continue;
+    }
+    if (nodes.length === 3 || (nodes.length === 4 && nodes[2] === nodes[3])) {
+      const i0 = nodes[0]!;
+      const i1 = nodes[1]!;
+      const i2 = nodes[2]!;
+      const rest = buildCstRest(restCoords, i0, i1, i2);
+      if (!rest) continue;
+      const s = cstSample(coords, rest, MU, H0);
+      const lam = Math.max(s.lam1, s.lam2);
+      const cx = (restCoords[i0 * 3]! + restCoords[i1 * 3]! + restCoords[i2 * 3]!) / 3;
+      const cy = (restCoords[i0 * 3 + 1]! + restCoords[i1 * 3 + 1]! + restCoords[i2 * 3 + 1]!) / 3;
+      const cz = (restCoords[i0 * 3 + 2]! + restCoords[i1 * 3 + 2]! + restCoords[i2 * 3 + 2]!) / 3;
+      out.push({
+        quadIndex: e,
+        elementId,
+        nodes: [i0, i1, i2, i2],
+        restCentroid: [cx, cy, cz],
+        region: letterRegion(cx, cy, cz),
+        lamTriA: lam,
+        lamTriB: lam,
+        lam,
+        area0: rest.A0,
+      });
+    }
+  }
+  return out;
+}
+
+export function nearestShellIndex(
+  field: readonly QuadStretch[],
+  xyz: readonly [number, number, number],
+): number {
+  if (field.length === 0) throw new Error("nearestShellIndex of empty field");
+  let best = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < field.length; i++) {
+    const c = field[i]!.restCentroid;
+    const d =
+      (c[0] - xyz[0]) * (c[0] - xyz[0]) +
+      (c[1] - xyz[1]) * (c[1] - xyz[1]) +
+      (c[2] - xyz[2]) * (c[2] - xyz[2]);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
 }
 
 export function quadKey(nodes: readonly [number, number, number, number]): string {

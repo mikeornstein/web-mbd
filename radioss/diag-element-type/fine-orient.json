@@ -1,0 +1,10 @@
+{
+  "source": "/tmp/inflation-abc/radioss/A-refine/meshes/A-fine.json",
+  "nNodes": 6216,
+  "nQuads": 6216,
+  "asWoundSignedVolume_mL": 353.9847819681873,
+  "orientedVolume_mL": 420.5477389711587,
+  "flippedQuadCount": 752,
+  "mixedQuadCount": 0,
+  "orientable": true
+}
