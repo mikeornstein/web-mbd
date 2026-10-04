@@ -14,11 +14,11 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   ).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
   await expect(pre.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
-  await expect(
-    pre.getByText("STOP: energy numbers are not trustworthy (bookkeeping failed). No verdicts."),
-  ).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A per-step energy bookkeeping (correctness gate on the toy)" })).toBeVisible();
-  await expect(pre.getByText("Results not yet written. Rules were committed first.")).toBeVisible();
+  await expect(pre.getByText("The earlier 2 ms-sample gap was sampling. Only the summation in the test and page changes.")).toBeVisible();
+  await expect(
+    pre.getByText("NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number."),
+  ).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();
   await expect(pre.getByRole("radio", { name: "Both" })).toBeChecked();

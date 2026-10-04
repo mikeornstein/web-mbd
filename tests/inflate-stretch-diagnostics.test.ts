@@ -24,7 +24,6 @@ import {
   VERDICT_DYNAMIC_LAG,
   VERDICT_MIXED,
   VERDICT_SPREADS_STRAIN,
-  VERDICT_STOP_BOOKKEEPING,
   scoreStretchDiagnostics,
   type EnergyFrameInput,
   type SeriesPoint,
@@ -122,9 +121,11 @@ describe("stretch diagnostic rules locked before the run", () => {
     const text = readFileSync(new URL("stretch-diagnostics-results.md", DIAG), "utf8").trim();
     const lines = text.split("\n");
     const last = lines[lines.length - 1];
-    expect(last).toBe(VERDICT_STOP_BOOKKEEPING);
+    expect(last).toContain("NO-ROW");
+    expect(last).toContain("energy-agrees=false");
     const page = stretchDiagnosticsPageText();
-    expect(page.results).toContain(VERDICT_STOP_BOOKKEEPING);
+    expect(page.results).toContain("sampling artifact");
+    expect(page.results).toContain("per-step gate");
     console.log(last);
   });
 

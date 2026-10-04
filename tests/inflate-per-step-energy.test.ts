@@ -93,8 +93,12 @@ describe("per-step energy rules locked before the run", () => {
     expect(page.rules).toContain(RULE_PER_STEP_1_TWO_SIZES.slice(0, 24));
     expect(page.rules).toContain(RULE_PER_STEP_2_SIGN.slice(0, 24));
     expect(page.rules).toContain(RULE_PER_STEP_3_DAMPING.slice(0, 24));
-    expect(page.results).toContain("Results not yet written. Rules were committed first.");
+    expect(page.results).toContain("The earlier 2 ms-sample gap was sampling");
     expect(PER_STEP_ENERGY_RULES_LINES.length).toBeGreaterThan(8);
+    const resultsMd = readFileSync(new URL("stretch-per-step-energy-results.md", DIAG), "utf8").trim();
+    const last = resultsMd.split("\n")[resultsMd.split("\n").length - 1];
+    expect(last).toContain("NO-ROW");
+    expect(resultsMd).toContain(VERDICT_PER_STEP_SAMPLING);
   });
 
   it("positive gap means pressure work larger (energy leaving uncounted)", () => {

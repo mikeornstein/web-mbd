@@ -176,6 +176,9 @@ energy 4 ms toy 0.150849 J vs golden n/a J (reported, not a decide row)
 median strain 8 ms toy 0.083258 vs golden 0.105452 rel 21.05%
 median strain 16 ms toy 0.225913 vs golden 0.248304 rel 9.02%
 
+The 2 ms-sample bookkeeping table above is a sampling artifact (29.62% / 30.00% / 8.79% / 5.46% at 2 / 4 / 6 / 8 ms). Per-step summation at the toy CFL step and at 2 microseconds closes under 3% at every reported frame. See `stretch-per-step-energy-results.md`.
+
 ## Verdict
 
-STOP: energy numbers are not trustworthy (bookkeeping failed). No verdicts.
+The earlier 2 ms-sample gap was sampling. Only the summation in the test and page changes.
+NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number. energy-agrees=false energy-low=false one-shift-fits=false median-agrees=false energy-comparable=false
