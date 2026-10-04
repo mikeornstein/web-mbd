@@ -15,9 +15,10 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   const pre = page.getByRole("region", { name: "Pre-processor" });
   await expect(pre.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
   await expect(pre.getByRole("heading", { name: "Letter A per-step energy bookkeeping (correctness gate on the toy)" })).toBeVisible();
-  await expect(pre.getByText("The earlier 2 ms-sample gap was sampling. Only the summation in the test and page changes.")).toBeVisible();
+  const perStepResults = pre.locator("pre").filter({ hasText: "Results (correctness gate on the toy; not compare:inflate):" });
+  await expect(perStepResults.getByText("The earlier 2 ms-sample gap was sampling. Only the summation in the test and page changes.")).toBeVisible();
   await expect(
-    pre.getByText("NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number."),
+    perStepResults.getByText("NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number."),
   ).toBeVisible();
   await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();
