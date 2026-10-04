@@ -82,7 +82,7 @@ describe("deck node-output plan locked before the run", () => {
     expect(SHIFT_MAX_ABS_MS).toBe(2);
     const page = deckNodeOutputPageText();
     expect(page.rules).toContain("MEASUREMENT, not a gate");
-    expect(page.results).toContain("Plan was committed first");
+    expect(page.results).toContain("spreads strain differently");
   });
 
   it("package pin matches the locked hash and size", () => {
@@ -152,5 +152,18 @@ describe("deck node-output plan locked before the run", () => {
     expect(fPlan.kind).toBe("fine-local");
     expect(fPlan.primaryTris).toHaveLength(6216 * 2);
     expect(fPlan.note).toContain("cannot share the 1554-quad node-pair map");
+  });
+
+  it("derived table records the locked-rule verdict and the package pin", () => {
+    const text = readFileSync(new URL("deck-node-output-results.md", DIAG), "utf8").trim();
+    const last = text.split("\n").at(-1);
+    expect(last).toContain("spreads strain differently");
+    expect(text).toContain(OPENCOURANT_ZIP_SHA256);
+    expect(text).toContain("real frame, not interpolated");
+    expect(text).toContain("convention difference");
+    expect(text).toContain("sensitivity");
+    expect(text).not.toContain("interpolated from 8");
+    const pred = readFileSync(new URL("deck-node-output-prediction.md", DIAG), "utf8");
+    expect(pred).toContain("Written **before** any engine run");
   });
 });

@@ -135,8 +135,14 @@ run_one() {
     local th
     for th in AinflateT01 Ainflate_T01 *T01; do
       if [[ -e "$th" ]]; then
-        "$TH_TO_CSV" "$th" > Ainflate_T01.csv || true
-        echo "wrote Ainflate_T01.csv from $th ($(wc -c < Ainflate_T01.csv 2>/dev/null || echo 0) bytes)"
+        "$TH_TO_CSV" "$th" || true
+        if [[ -f AinflateT01.csv ]]; then
+          echo "wrote AinflateT01.csv from $th ($(wc -c < AinflateT01.csv) bytes)"
+        elif [[ -f Ainflate_T01.csv ]]; then
+          echo "wrote Ainflate_T01.csv from $th ($(wc -c < Ainflate_T01.csv) bytes)"
+        else
+          echo "th_to_csv ran but no csv appeared from $th"
+        fi
         break
       fi
     done

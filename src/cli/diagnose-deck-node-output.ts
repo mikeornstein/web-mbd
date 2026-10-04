@@ -106,7 +106,7 @@ function parseThCsv(text: string): ThRow[] {
     headerIdx += 1;
   }
   const headerLine = lines[headerIdx]!.replace(/^#/, "");
-  const headers = headerLine.split(/[,;\t]/).map((h) => h.trim().toLowerCase());
+  const headers = headerLine.split(/[,;\t]/).map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
   const timeIdx = headers.findIndex((h) => h === "time" || h === "t" || h === "time(s)" || h.includes("time"));
   const ieIdx = headers.findIndex(
     (h) =>
@@ -331,8 +331,16 @@ export function diagnoseDeckNodeOutput(): {
     const sensRests = restsFromTris(rest, plan.sensitivityTris);
     const masses = lumpedMassesFromRests(spec.nNodes, primaryRests);
     let th: ThRow[] = [];
-    const csvPath = resolve(runDir, "Ainflate_T01.csv");
-    if (existsSync(csvPath)) th = parseThCsv(readFileSync(csvPath, "utf8"));
+    const csvCandidates = ["AinflateT01.csv", "Ainflate_T01.csv"];
+    for (const name of csvCandidates) {
+      const csvPath = resolve(runDir, name);
+      if (!existsSync(csvPath)) continue;
+      const parsed = parseThCsv(readFileSync(csvPath, "utf8"));
+      if (parsed.length > 0) {
+        th = parsed;
+        break;
+      }
+    }
     const rows: FrameRow[] = [];
     for (const t_ms of DECK_NODE_REQUESTED_MS) {
       const want = t_ms / 1000;
@@ -417,7 +425,11 @@ export function diagnoseDeckNodeOutput(): {
       const engineIe = thRow?.internal_J ?? null;
       const engineKe = thRow?.kinetic_J ?? null;
       const engineVsToy =
-        engineIe === null ? null : Math.abs(psiP - engineIe) / Math.max(Math.abs(engineIe), Math.abs(psiP), 1e-30);
+        engineIe === null
+          ? null
+          : Math.max(Math.abs(engineIe), Math.abs(psiP)) < 1e-9
+            ? 0
+            : Math.abs(psiP - engineIe) / Math.max(Math.abs(engineIe), Math.abs(psiP), 1e-30);
       const stretch = stretchFromTris(fr.coords, rest, plan.primaryTris);
       const vol = enclosedVolume(fr.coords, [], packTris(plan.primaryTris)) * 1e6;
       rows.push({
@@ -521,6 +533,14 @@ export function diagnoseDeckNodeOutput(): {
         `${String(row.requested_ms)} | ${fmt(row.actual_vtk_ms, 4)} | ${fmt(row.strainPrimary_J)} | ${fmt(row.strainSensitivity_J)} | ${fmt(row.strainDiffAbs_J)} | ${pct(row.strainDiffRel)} | ${fmt(row.keFromNodes_J)} | ${fmt(row.engineInternal_J)} | ${fmt(row.engineKinetic_J)} | ${pct(row.engineVsToyRel)} | ${fmt(row.medianStretch, 6)} | ${fmt(row.maxStretch, 6)} | ${fmt(row.volume_mL, 3)} | ${row.velocitiesPresent ? "yes" : "no"} | ${row.note}`,
       );
     }
+    if (spec.split === "triangle-committed") {
+      const last = rows.filter((r) => r.usable && r.actual_vtk_ms !== null).at(-1);
+      if (last?.actual_vtk_ms !== undefined && last.actual_vtk_ms !== null) {
+        md.push(
+          `Last real triangle frame used for a requested time: ${fmt(last.actual_vtk_ms, 4)} ms (requested ${String(last.requested_ms)} ms). A later animation sample exists at 11.459 ms; 12–16 ms are not interpolated.`,
+        );
+      }
+    }
     md.push("");
   }
 
@@ -528,7 +548,12 @@ export function diagnoseDeckNodeOutput(): {
   for (const spec of DECKS) {
     const rows = deckTables[spec.tableName];
     if (rows === undefined) continue;
-    const used = rows.filter((r) => r.usable && r.engineVsToyRel !== null);
+    const used = rows.filter(
+      (r) =>
+        r.usable &&
+        r.engineVsToyRel !== null &&
+        Math.max(Math.abs(r.strainPrimary_J ?? 0), Math.abs(r.engineInternal_J ?? 0)) >= 1e-6,
+    );
     if (used.length === 0) {
       md.push(`- ${spec.tableName}: engine internal energy not readable, or no usable frames.`);
       continue;
@@ -547,7 +572,9 @@ export function diagnoseDeckNodeOutput(): {
   for (const spec of DECKS) {
     const rows = deckTables[spec.tableName];
     if (rows === undefined) continue;
-    const used = rows.filter((r) => r.usable && r.strainDiffRel !== null);
+    const used = rows.filter(
+      (r) => r.usable && r.strainDiffRel !== null && Math.abs(r.strainPrimary_J ?? 0) >= 1e-6,
+    );
     if (used.length === 0) {
       md.push(`- ${spec.tableName}: sensitivity not computed.`);
       continue;
