@@ -102,6 +102,10 @@ export function assertInflateModel(model: InflateModelIR): void {
       throw new Error(`unhandled damping ${String(_exhaustive)}`);
     }
   }
+  const dtMax = model.controls.dtMax;
+  if (dtMax !== undefined && (!(dtMax > 0) || !Number.isFinite(dtMax))) {
+    throw new Error("dtMax must be a positive finite number when set");
+  }
 }
 
 export function solveInflate(model: InflateModelIR, options: InflateSolveOptions = {}): InflateSolveResult {
@@ -159,6 +163,8 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const dtCrit0 = minH / c;
   let dt = controls.cfl * dtCrit0;
   if (!(dt > 0) || dt > dtCrit0) dt = controls.cfl * dtCrit0;
+  const dtMax = controls.dtMax;
+  if (dtMax !== undefined && dt > dtMax) dt = dtMax;
 
   const volume0 =
     options.signedRestVolume === true || mesh.letter !== "A"
@@ -313,6 +319,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     for (const rest of rests) h = Math.min(h, triMinEdge(rest));
     const dtNew = controls.cfl * (h / c);
     if (dtNew > 0 && Number.isFinite(dtNew)) dt = Math.min(dtNew, 1.1 * dt);
+    if (dtMax !== undefined && dt > dtMax) dt = dtMax;
   };
 
   if (damping.kind === "adaptive-period") {

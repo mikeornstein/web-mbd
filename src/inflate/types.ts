@@ -74,6 +74,11 @@ export interface InflateModelIR {
      * an option. Discriminated: do not combine these as optional flags.
      */
     damping: InflateDamping;
+    /**
+     * Optional time-step cap. Convergence check only. Omit on the shipped
+     * default. Copied listing Δt is 1.971 microseconds, not a fitted number.
+     */
+    dtMax?: number;
   };
 }
 
