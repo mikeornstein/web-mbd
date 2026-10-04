@@ -34,4 +34,32 @@ describe("slow-load sphere vs closed-form curve (stop at first failure)", () => 
     });
     expect(createInflateAModel().controls.dtMax).toBeUndefined();
   });
+
+  it("committed Part 1 result is a fail on the 2% top-stretch yardstick; default unchanged", () => {
+    const md = readFileSync(new URL("slow-sphere-results.md", DIAG), "utf8");
+    expect(md).toContain("FAIL");
+    expect(md).toContain("Stop. Do not go on to Part 2");
+    expect(md).toContain("pinned only to the OpenCourant copy");
+    expect(md).toContain("4.7%");
+    const raw: unknown = JSON.parse(
+      readFileSync(new URL("slow-sphere-results.json", DIAG), "utf8"),
+    );
+    function isRecord(v: unknown): v is Record<string, unknown> {
+      return typeof v === "object" && v !== null;
+    }
+    function num(v: unknown, label: string): number {
+      if (typeof v !== "number" || !Number.isFinite(v)) throw new Error(`slow-sphere test: bad ${label}`);
+      return v;
+    }
+    if (!isRecord(raw)) throw new Error("slow-sphere json");
+    expect(raw["follows"]).toBe(false);
+    expect(raw["failKind"]).toBe("top-stretch-yardstick");
+    expect(raw["defaultUnchanged"]).toBe("peak-kill-0.18");
+    expect(raw["punchedThrough"]).toBe(false);
+    expect(raw["dtCapRun"]).toBe(false);
+    expect(raw["openCourantCommitOnly"]).toBe("6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba");
+    expect(num(raw["risingBranchMaxAbsRel"], "branch")).toBeCloseTo(0.009, 2);
+    expect(num(raw["topLamRel"], "topLam")).toBeCloseTo(0.047, 2);
+    expect(num(raw["topPRel"], "topP")).toBe(0);
+  });
 });

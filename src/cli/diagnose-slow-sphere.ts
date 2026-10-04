@@ -219,7 +219,7 @@ function main(): void {
     "",
     follows
       ? "PASS. The slow run follows the closed-form curve and tops out near the limit."
-      : "FAIL. The slow run does not land on the closed-form curve. Solver problem. Stop. Default was not changed.",
+      : `FAIL. Rising-branch |p − p_closed|/p_closed = ${(100 * branch.maxAbsRel).toFixed(1)}% (yardstick 5%). Ramp-end stretch vs 1.383 = ${(100 * topLamRel).toFixed(1)}% (yardstick 2%). Stop. Default was not changed.`,
     "",
     "The golden's engine commit `6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba` is pinned only to the OpenCourant copy, not the original OpenRadioss tree.",
     "",
@@ -242,6 +242,7 @@ function main(): void {
     `- At ramp end (400 ms): equivalent stretch **${top.lambdaEq.toFixed(4)}**, pressure **${(top.p_Pa / 1000).toFixed(2)} kPa**. **computed.**`,
     `- Rising-branch max |p − p_closed|/p_closed = **${(100 * branch.maxAbsRel).toFixed(1)}%** (signed ${(100 * branch.maxSignedRel).toFixed(1)}%, inertia sits above the static curve when positive) at stretch ${branch.atLambda.toFixed(3)}. **computed.**`,
     `- Ramp-end stretch vs 1.383: **${(100 * topLamRel).toFixed(1)}%**. Ramp-end pressure vs 32.02 kPa: **${(100 * topPRel).toFixed(1)}%**. **computed.**`,
+    `- Stretch still rose from ${top.lambdaEq.toFixed(4)} at 400 ms to ${last.lambdaEq.toFixed(4)} at ${last.t.toFixed(3)} s. **computed.**`,
     `- Punched through: **${String(result.metrics.punchedThrough)}**. Steps ${String(result.metrics.nSteps)}.`,
     `- Chart: \`slow-sphere-p-vs-lambda.svg\`. CSV: \`slow-sphere-p-vs-lambda.csv\`.`,
     cappedRows === null
@@ -258,6 +259,7 @@ function main(): void {
       {
         kind: "slow-sphere-check",
         follows,
+        failKind: follows ? null : "top-stretch-yardstick",
         R0_m: sph.R0_m,
         H0_m: sph.H0_m,
         pMax_Pa: sph.pMax_Pa,

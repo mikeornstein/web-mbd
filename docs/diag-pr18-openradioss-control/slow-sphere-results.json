@@ -1,0 +1,39 @@
+{
+  "kind": "slow-sphere-check",
+  "follows": false,
+  "failKind": "top-stretch-yardstick",
+  "R0_m": 0.04647744343919015,
+  "H0_m": 0.000381,
+  "pMax_Pa": 32024.85559237849,
+  "lambdaStar": 1.3830875542684886,
+  "Tcirc_s": 0.003197718839454451,
+  "Tbreathe_s": 0.005529372773727934,
+  "rayleighAlpha": 2272.657519866734,
+  "last": {
+    "t": 0.4200341685885159,
+    "lambdaMax": 1.3402309567071555,
+    "lambdaEq": 1.3397414182634662,
+    "p_Pa": 32024.85559237849,
+    "pClosed_Pa": 31900.98861472593,
+    "V_mL": 1002.5925453898427
+  },
+  "top": {
+    "t": 0.4000395201027797,
+    "lambdaMax": 1.3183916804032245,
+    "lambdaEq": 1.3179268154967534,
+    "p_Pa": 32024.85559237849,
+    "pClosed_Pa": 31727.131226653662,
+    "V_mL": 954.4109278042828
+  },
+  "risingBranchMaxAbsRel": 0.009383904381330061,
+  "risingBranchMaxSignedRel": 0.009383904381330061,
+  "topLamRel": 0.04711251906694987,
+  "topPRel": 0,
+  "punchedThrough": false,
+  "nSteps": 12132,
+  "dtCapRun": false,
+  "meshFingerprint": "25c695a9",
+  "csvSha256": "ad2dbce5089d66204db402faa8e7562164ddac536bf0a1575162c0109b8f22d7",
+  "defaultUnchanged": "peak-kill-0.18",
+  "openCourantCommitOnly": "6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba"
+}
