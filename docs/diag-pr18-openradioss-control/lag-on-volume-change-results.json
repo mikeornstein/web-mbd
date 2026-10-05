@@ -1,0 +1,89 @@
+{
+  "kind": "lag-on-volume-change",
+  "status": "run",
+  "notAGate": true,
+  "planCommit": "685cc339093095a1dfaf7e1fbc50db1013057797",
+  "procedure": "bestTimeShiftMs in src/oracle/stretchDiagnosticRules.ts (grid -4..+4 ms, step 0.01 ms; interpolates toy at gold.t + shift; RMS; positive = toy lags; never applied). Same call as the committed 0.510 ms volume-shift fit.",
+  "frames_ms": [0, 2, 4, 6, 8, 10, 12, 14, 16],
+  "series": "dV(t) = V(t) - V(0)",
+  "toySource": "killOffSamples in src/oracle/compareInflate.test.ts, labeled at requested milliseconds",
+  "deckSource": "docs/diag-pr18-openradioss-control/deck-node-output-results.json volume_mL at requested_ms",
+  "sanity_V_shift_vs_golden_all_frames_ms": 0.5099999999999593,
+  "outcomeLine": "(3) the lag is not a single shift",
+  "pageBody": "The lag is not a single shift. Golden all-frames dV shift 0.510 ms; windows 0.180, 1.010, 0.680 ms; spread 0.830 ms.\nDo not add a verdict row.",
+  "score": {
+    "decidingDeck": "golden Belytschko quad",
+    "allFrames_ms": 0.5099999999999593,
+    "window_0_4_ms": 0.17999999999995903,
+    "window_4_8_ms": 1.0099999999999596,
+    "window_8_16_ms": 0.6799999999999594,
+    "windowSpread_ms": 0.83,
+    "allFramesIn_0_35_to_0_65": true,
+    "windowSpreadLt_0_2": false,
+    "earlyMinus_4_8_ms": -0.83,
+    "earlyMinus_8_16_ms": -0.5,
+    "earlyExceedsLaterBy_0_2": false,
+    "firesRule1": false,
+    "firesRule2": false,
+    "firesRule3": true,
+    "outcomeLine": "(3) the lag is not a single shift"
+  },
+  "toy_V_mL": [
+    { "t_ms": 0, "y": 420.5477389711655 },
+    { "t_ms": 2, "y": 520.0139970474382 },
+    { "t_ms": 4, "y": 525.0123369833336 },
+    { "t_ms": 6, "y": 570.3991833132725 },
+    { "t_ms": 8, "y": 601.9857131699121 },
+    { "t_ms": 10, "y": 643.8240746767805 },
+    { "t_ms": 12, "y": 694.6543799496277 },
+    { "t_ms": 14, "y": 757.601942213197 },
+    { "t_ms": 16, "y": 866.0832041483628 }
+  ],
+  "toy_dV_mL": [
+    { "t_ms": 0, "y": 0 },
+    { "t_ms": 2, "y": 99.46625807627277 },
+    { "t_ms": 4, "y": 104.46459801216815 },
+    { "t_ms": 6, "y": 149.85144434210702 },
+    { "t_ms": 8, "y": 181.4379741987466 },
+    { "t_ms": 10, "y": 223.276335705615 },
+    { "t_ms": 12, "y": 274.1066409784622 },
+    { "t_ms": 14, "y": 337.0542032420316 },
+    { "t_ms": 16, "y": 445.53546517719735 }
+  ],
+  "decks": {
+    "golden Belytschko quad": {
+      "dV_fits": {
+        "0-4": { "shift_ms": 0.17999999999995903, "rms": 12.319748550479867, "n_gold": 3 },
+        "4-8": { "shift_ms": 1.0099999999999596, "rms": 0.42056089964757615, "n_gold": 3 },
+        "8-16": { "shift_ms": 0.6799999999999594, "rms": 5.504932089128474, "n_gold": 5 },
+        "all-frames": { "shift_ms": 0.5099999999999593, "rms": 11.91083174387359, "n_gold": 9 }
+      },
+      "V_all_frames_fit": { "shift_ms": 0.5099999999999593, "rms": 11.9108274077762 }
+    },
+    "Ishell 24 ismstr 2": {
+      "dV_fits": {
+        "0-4": { "shift_ms": 0.12999999999995898, "rms": 9.040346675730472, "n_gold": 3 },
+        "4-8": { "shift_ms": 0.6799999999999594, "rms": 1.5092441864287727, "n_gold": 3 },
+        "8-16": { "shift_ms": 0.42999999999995925, "rms": 2.941315563558712, "n_gold": 5 },
+        "all-frames": { "shift_ms": 0.31999999999995915, "rms": 7.5926271468818305, "n_gold": 9 }
+      }
+    },
+    "fine re-oriented": {
+      "dV_fits": {
+        "0-4": { "shift_ms": 0.19999999999995904, "rms": 13.861849020743426, "n_gold": 3 },
+        "4-8": { "shift_ms": 0.9699999999999597, "rms": 2.6433339273746865, "n_gold": 3 },
+        "8-16": { "shift_ms": 0.6599999999999594, "rms": 3.995448635669823, "n_gold": 5 },
+        "all-frames": { "shift_ms": 0.4999999999999593, "rms": 11.587857784076773, "n_gold": 9 }
+      }
+    },
+    "triangle /SH3N": {
+      "dV_fits": {
+        "0-4": { "shift_ms": 0.139999999999959, "rms": 9.57379954935185, "n_gold": 3 },
+        "4-8": { "shift_ms": 0.5499999999999593, "rms": 4.484225025001525, "n_gold": 3 },
+        "8-16": { "shift_ms": 0.33999999999995917, "rms": 0.8234607543746574, "n_gold": 2 },
+        "all-frames": { "shift_ms": 0.19999999999995904, "rms": 7.2136917285575475, "n_gold": 6 }
+      },
+      "note": "triangle deck died ~11.5 ms; 8-16 window uses 8 and 10 ms only; 12, 14, 16 ms missing"
+    }
+  }
+}
