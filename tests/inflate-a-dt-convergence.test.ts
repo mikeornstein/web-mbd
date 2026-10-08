@@ -27,9 +27,9 @@ describe("time-step convergence check (kill off, listing 2 μs cap)", () => {
     expect(text).toContain("32");
   });
 
-  it("shipped default does not cap the time step and stays peak-kill", () => {
+  it("shipped default does not cap the time step and is velocity kill off", () => {
     const model = createInflateAModel();
-    expect(model.controls.damping.kind).toBe("peak-kill");
+    expect(model.controls.damping.kind).toBe("off");
     expect(model.controls.dtMax).toBeUndefined();
   });
 

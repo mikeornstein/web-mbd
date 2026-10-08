@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ADYREL_VELOCITY_SCALE } from "../src/inflate/constants.js";
 import { createInflateAModel } from "../src/fixtures/inflateA.js";
 import {
   compareKillOffRun,
@@ -58,19 +57,14 @@ function parseRadioss(raw: unknown): KillOffFrame[] {
   });
 }
 
-describe("kill-off diagnosis (default toy unchanged)", () => {
-  it("default letter A still has the 0.18 kill on, even if the diagnosis env is off", () => {
+describe("kill-off diagnosis (historical tape; shipped default is now off)", () => {
+  it("shipped letter A is velocity kill off; diagnosis env does not change the factory", () => {
     const prev = process.env["WEB_MBD_TOY_KINETIC_DAMPING"];
-    process.env["WEB_MBD_TOY_KINETIC_DAMPING"] = "off";
+    process.env["WEB_MBD_TOY_KINETIC_DAMPING"] = "on";
     try {
-      expect(parseKillEnv(process.env)).toBe("off");
+      expect(parseKillEnv(process.env)).toBe("on");
       const model = createInflateAModel();
-      expect(model.controls.damping).toEqual({
-        kind: "peak-kill",
-        scale: ADYREL_VELOCITY_SCALE,
-        minInterval: 0,
-      });
-      expect(model.controls.damping.kind === "peak-kill" && model.controls.damping.scale).toBe(0.18);
+      expect(model.controls.damping).toEqual({ kind: "off" });
       expect(model.mesh.fingerprint).toBe("f9635c7f");
     } finally {
       if (prev === undefined) {
@@ -93,7 +87,7 @@ describe("kill-off diagnosis (default toy unchanged)", () => {
     expect(onUnoriented.controls.damping.kind).toBe("peak-kill");
     expect(onUnoriented.mesh.fingerprint).toBe("d9c56487");
 
-    expect(createInflateAModel().controls.damping.kind).toBe("peak-kill");
+    expect(createInflateAModel().controls.damping).toEqual({ kind: "off" });
     expect(createInflateAModel().mesh.fingerprint).toBe("f9635c7f");
   });
 

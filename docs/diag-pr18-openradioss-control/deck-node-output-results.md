@@ -1,0 +1,123 @@
+# Four-deck node-output re-run (measurement, not a gate)
+
+The golden’s engine commit `6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba`
+is pinned only to the OpenCourant copy, not the original OpenRadioss
+tree. Plan was committed first in `deck-node-output-prediction.md`
+and was not changed after this run.
+
+## Package
+
+- OpenCourant linux64 tag `latest-20261003`
+- zip sha256 `e0d2b8b956ba451b4214b5f04f019922a0bd0bdab134ce171037ae69c0309fa8`
+- zip bytes 83864216
+- engine commit `6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba`
+
+## Quad split (locked before the run)
+
+- golden Belytschko quad: every deck quad mapped to a toy quad by four-node set; primary diagonal is the toy i0–i2 pair (primary tris 3108, sensitivity tris 3108)
+- Ishell 24 ismstr 2: every deck quad mapped to a toy quad by four-node set; primary diagonal is the toy i0–i2 pair (primary tris 3108, sensitivity tris 3108)
+- fine re-oriented: fine 1-to-4 cannot share the 1554-quad node-pair map; primary is each fine shell’s written i0–i2 (primary tris 12432, sensitivity tris 12432)
+- triangle /SH3N: committed /SH3N triangles already use the toy i0–i2 pair on every parent quad (primary tris 3108, sensitivity tris 3108)
+
+Sensitivity is the other diagonal. It decides nothing.
+
+## Derived table
+
+Each row is a **real** animation frame (nearest VTK TIME to the requested
+time). Node coordinates are not interpolated. 10, 12 and 14 ms are real.
+Deciding rows stay 4, 8 and 16 ms.
+
+### golden Belytschko quad
+
+requested ms | actual VTK ms | toy-function strain (J, primary) | sensitivity strain (J) | |Δ| (J) | |Δ| rel | node kinetic (J) | engine internal (J) | engine kinetic (J) | engine vs toy-function rel | median stretch | max stretch | volume (mL) | velocities | note
+0 | 0.0000 | 0.000000 | 0.000000 | 0.000000 | 0.00% | 0.000000 | 0.000000 | 0.000000 | 0.00% | 1.000000 | 1.000000 | 420.548 | yes | real frame, not interpolated
+2 | 2.0222 | 0.394748 | 0.360409 | -0.034339 | 8.70% | 0.138988 | 0.083462 | 0.138976 | 78.86% | 1.035044 | 1.708723 | 526.332 | yes | real frame, not interpolated
+4 | 4.0037 | 0.550496 | 0.519927 | -0.030569 | 5.55% | 0.048427 | 0.157433 | 0.048264 | 71.40% | 1.048595 | 1.656990 | 547.557 | yes | real frame, not interpolated
+6 | 6.0049 | 0.765334 | 0.749767 | -0.015568 | 2.03% | 0.012703 | 0.413565 | 0.012672 | 45.96% | 1.066789 | 1.529388 | 586.974 | yes | real frame, not interpolated
+8 | 8.0014 | 1.232988 | 1.216987 | -0.016001 | 1.30% | 0.012786 | 0.794436 | 0.012785 | 35.57% | 1.089715 | 1.557846 | 623.114 | yes | real frame, not interpolated
+10 | 10.0002 | 1.970835 | 1.952105 | -0.018729 | 0.95% | 0.012810 | 1.400737 | 0.012806 | 28.93% | 1.116083 | 1.655984 | 666.053 | yes | real frame, not interpolated
+12 | 12.0007 | 3.034473 | 3.014325 | -0.020148 | 0.66% | 0.010359 | 2.335770 | 0.010361 | 23.03% | 1.145521 | 1.679855 | 719.050 | yes | real frame, not interpolated
+14 | 14.0025 | 4.605772 | 4.581358 | -0.024414 | 0.53% | 0.014875 | 3.783358 | 0.014885 | 17.86% | 1.180959 | 1.829087 | 788.150 | yes | real frame, not interpolated
+16 | 16.0038 | 7.297366 | 7.265039 | -0.032327 | 0.44% | 0.024254 | 6.290036 | 0.024254 | 13.80% | 1.228097 | 2.128162 | 891.711 | yes | real frame, not interpolated
+
+### Ishell 24 ismstr 2
+
+requested ms | actual VTK ms | toy-function strain (J, primary) | sensitivity strain (J) | |Δ| (J) | |Δ| rel | node kinetic (J) | engine internal (J) | engine kinetic (J) | engine vs toy-function rel | median stretch | max stretch | volume (mL) | velocities | note
+0 | 0.0000 | 0.000000 | 0.000000 | 0.000000 | 0.00% | 0.000000 | 0.000000 | 0.000000 | 0.00% | 1.000000 | 1.000000 | 420.548 | yes | real frame, not interpolated
+2 | 2.0096 | 0.111495 | 0.109780 | -0.001715 | 1.54% | 0.118279 | 0.083215 | 0.118454 | 25.36% | 1.025303 | 1.199156 | 520.328 | yes | real frame, not interpolated
+4 | 4.0034 | 0.235200 | 0.233360 | -0.001840 | 0.78% | 0.046110 | 0.167206 | 0.046140 | 28.91% | 1.037416 | 1.375363 | 542.224 | yes | real frame, not interpolated
+6 | 6.0071 | 0.523049 | 0.523688 | 0.000640 | 0.12% | 0.010094 | 0.406073 | 0.010086 | 22.36% | 1.059120 | 1.344257 | 579.387 | yes | real frame, not interpolated
+8 | 8.0053 | 0.960946 | 0.960558 | -0.000388 | 0.04% | 0.007452 | 0.786568 | 0.007451 | 18.15% | 1.080130 | 1.432375 | 615.437 | yes | real frame, not interpolated
+10 | 10.0023 | 1.611540 | 1.608571 | -0.002969 | 0.18% | 0.010605 | 1.368432 | 0.010608 | 15.09% | 1.105501 | 1.529949 | 656.884 | yes | real frame, not interpolated
+12 | 12.0006 | 2.595031 | 2.590922 | -0.004109 | 0.16% | 0.013501 | 2.271828 | 0.013503 | 12.45% | 1.135638 | 1.630694 | 708.649 | yes | real frame, not interpolated
+14 | 14.0024 | 4.122838 | 4.115679 | -0.007158 | 0.17% | 0.015977 | 3.713076 | 0.015981 | 9.94% | 1.170540 | 1.858058 | 777.765 | yes | real frame, not interpolated
+16 | 16.0004 | 6.649384 | 6.639844 | -0.009540 | 0.14% | 0.022815 | 6.136814 | 0.022819 | 7.71% | 1.214927 | 2.176202 | 878.021 | yes | real frame, not interpolated
+
+### fine re-oriented
+
+requested ms | actual VTK ms | toy-function strain (J, primary) | sensitivity strain (J) | |Δ| (J) | |Δ| rel | node kinetic (J) | engine internal (J) | engine kinetic (J) | engine vs toy-function rel | median stretch | max stretch | volume (mL) | velocities | note
+0 | 0.0000 | 0.000000 | 0.000000 | 0.000000 | 0.00% | 0.000000 | 0.000000 | 0.000000 | 0.00% | 1.000000 | 1.000000 | 420.548 | yes | real frame, not interpolated
+2 | 2.0008 | 0.177143 | 0.186311 | 0.009168 | 5.18% | 0.135280 | 0.081491 | 0.135677 | 54.00% | 1.028232 | 1.235921 | 526.930 | yes | real frame, not interpolated
+4 | 4.0029 | 0.256082 | 0.265126 | 0.009045 | 3.53% | 0.023540 | 0.159691 | 0.023447 | 37.64% | 1.039988 | 1.256780 | 550.440 | yes | real frame, not interpolated
+6 | 6.0024 | 0.538666 | 0.550865 | 0.012199 | 2.26% | 0.009582 | 0.387681 | 0.009652 | 28.03% | 1.059783 | 1.397237 | 583.538 | yes | real frame, not interpolated
+8 | 8.0004 | 0.971121 | 0.988619 | 0.017498 | 1.80% | 0.012965 | 0.773949 | 0.012920 | 20.30% | 1.081715 | 1.462636 | 620.145 | yes | real frame, not interpolated
+10 | 10.0008 | 1.638352 | 1.661888 | 0.023535 | 1.44% | 0.014463 | 1.389956 | 0.014502 | 15.16% | 1.108607 | 1.510755 | 664.072 | yes | real frame, not interpolated
+12 | 12.0015 | 2.639728 | 2.668845 | 0.029117 | 1.10% | 0.011981 | 2.349280 | 0.011983 | 11.00% | 1.139504 | 1.671788 | 718.564 | yes | real frame, not interpolated
+14 | 14.0015 | 4.174994 | 4.208142 | 0.033148 | 0.79% | 0.014067 | 3.818424 | 0.014064 | 8.54% | 1.174415 | 1.913620 | 788.605 | yes | real frame, not interpolated
+16 | 16.0019 | 6.703378 | 6.738290 | 0.034913 | 0.52% | 0.020766 | 6.278884 | 0.020722 | 6.33% | 1.218049 | 2.237168 | 890.042 | yes | real frame, not interpolated
+
+### triangle /SH3N
+
+requested ms | actual VTK ms | toy-function strain (J, primary) | sensitivity strain (J) | |Δ| (J) | |Δ| rel | node kinetic (J) | engine internal (J) | engine kinetic (J) | engine vs toy-function rel | median stretch | max stretch | volume (mL) | velocities | note
+0 | 0.0000 | 0.000000 | 0.000000 | 0.000000 | 0.00% | 0.000000 | 0.000000 | 0.000000 | 0.00% | 1.000000 | 1.000000 | 420.548 | yes | real frame, not interpolated
+2 | 2.0031 | 0.099088 | 0.120104 | 0.021016 | 21.21% | 0.120741 | 0.091737 | 0.121128 | 7.42% | 1.025756 | 1.106647 | 520.421 | yes | real frame, not interpolated
+4 | 4.0057 | 0.193366 | 0.244191 | 0.050825 | 26.28% | 0.023819 | 0.174295 | 0.023804 | 9.86% | 1.038963 | 1.160529 | 543.239 | yes | real frame, not interpolated
+6 | 6.0012 | 0.438337 | 0.479391 | 0.041055 | 9.37% | 0.008339 | 0.402471 | 0.008328 | 8.18% | 1.055910 | 1.262327 | 575.153 | yes | real frame, not interpolated
+8 | 8.0021 | 0.832261 | 0.864956 | 0.032695 | 3.93% | 0.010799 | 0.774510 | 0.010797 | 6.94% | 1.077138 | 1.364068 | 610.049 | yes | real frame, not interpolated
+10 | 10.0002 | 1.453835 | 1.481940 | 0.028106 | 1.93% | 0.013346 | 1.363037 | 0.013348 | 6.25% | 1.102970 | 1.464995 | 651.792 | yes | real frame, not interpolated
+12 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | no | triangle deck died ~11.5 ms; not a late-window reference
+14 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | no | triangle deck died ~11.5 ms; not a late-window reference
+16 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | no | triangle deck died ~11.5 ms; not a late-window reference
+Last real triangle frame used for a requested time: 10.0002 ms (requested 10 ms). A later animation sample exists at 11.459 ms; 12–16 ms are not interpolated.
+
+## Engine-versus-toy-function energy gap (convention, not toy evidence)
+
+- golden Belytschko quad: worst |engine internal − toy-function strain| / denom = 78.86% at requested 2 ms. If they disagree, that is a convention difference in how the decks account for energy, not evidence about the toy.
+- Ishell 24 ismstr 2: worst |engine internal − toy-function strain| / denom = 28.91% at requested 4 ms. If they disagree, that is a convention difference in how the decks account for energy, not evidence about the toy.
+- fine re-oriented: worst |engine internal − toy-function strain| / denom = 54.00% at requested 2 ms. If they disagree, that is a convention difference in how the decks account for energy, not evidence about the toy.
+- triangle /SH3N: worst |engine internal − toy-function strain| / denom = 9.86% at requested 4 ms. If they disagree, that is a convention difference in how the decks account for energy, not evidence about the toy.
+
+## Quad-split sensitivity (other diagonal; decides nothing)
+
+- golden Belytschko quad: largest |primary − other diagonal| / primary = 8.70% (-0.034339 J) at requested 2 ms.
+- Ishell 24 ismstr 2: largest |primary − other diagonal| / primary = 1.54% (-0.001715 J) at requested 2 ms.
+- fine re-oriented: largest |primary − other diagonal| / primary = 5.18% (0.009168 J) at requested 2 ms.
+- triangle /SH3N: largest |primary − other diagonal| / primary = 26.28% (0.050825 J) at requested 4 ms.
+
+## Run times
+
+- golden Belytschko quad: 6 s
+- Ishell 24 ismstr 2: 5 s
+- fine re-oriented: 25 s
+- triangle /SH3N: 3 s
+
+## Locked Chiron/Themis score (per-step energy gate already closed under 3%)
+
+Bookkeeping worst relative (this toy re-solve, per-step): 1.77% (bar 3.00%).
+Energy at 4 ms: toy 0.150849 J vs golden 0.550496 J (rel 72.60%).
+Energy at 8 ms: toy 0.772281 J vs golden 1.232988 J (rel 37.37%).
+Energy at 16 ms: toy 6.203683 J vs golden 7.297366 J (rel 14.99%).
+Median strain at 8 ms: toy 0.075418 vs golden 0.089715 (rel 15.94%).
+Median strain at 16 ms: toy 0.210249 vs golden 0.228097 (rel 7.82%).
+Shifts (ms, diagnostic only, never applied): volume 0.510, median stretch 0.830, maximum stretch 3.460. shifts disagree or exceed 2 ms; diagnostic only, never applied
+Booleans: energy-agrees=false energy-low=true one-shift-fits=false median-agrees=false energy-comparable=true bookkeeping-ok=true
+
+Energy low and shifts disagree: the toy spreads strain differently from the decks; toy physics, not timing.
+
+## Note (read-only follow-up; no table, bar, or rule changed)
+
+This note does not change any number above and does not move a bar.
+
+**Why the two median-strain series differ.** The earlier 21.05% low at 8 ms, 9.02% low at 16 ms, and 1.88 ms median-stretch shift used the committed golden stretch-measure field stats (per-quad median: each four-node shell takes the larger of its two constant-strain triangles) against this solve’s per-quad median from the same max-of-two rule. Those golden values were 1.105452 and 1.248304; the toy’s matching per-quad medians were 1.0833 and 1.2259. The new table’s 15.94% / 7.82% / 0.83 ms used real animation node frames on both sides, with the median of all 3,108 triangles (not the per-quad max). Recomputing the same golden frames both ways recovers both series: per-triangle 1.0897 / 1.2281 (the new table) and per-quad-max 1.1055 / 1.2484 (the committed stretch-measure tape). The locked energy and median rules should use the real node frames and the toy’s own function, now that those frames exist. The stretch-measure tape was the fallback while animation was missing.
+
+**Does the toy strain function charge node-scale distortion the engine’s quad does not?** Yes, that is the reading of the data already in hand, as a convention difference, not a change to a bar. The golden engine’s own internal energy tracks the toy’s own strain energy (0.157 / 0.794 / 6.290 J versus 0.151 / 0.772 / 6.204 J). The same toy function on the golden’s node positions is much higher (0.550 / 1.233 / 7.297 J). The engine’s hourglass column is only about 0.004 J at those times, so the extra is not the listed hourglass energy. Flattening each golden quad onto its four-corner mean plane drops only 16% / 4% / 2% of that extra. A light neighbor average of the golden positions (one pass, mix 0.25) drops 35% / 12% / 6% and still leaves a large gap at 4 and 8 ms; a full replace-by-neighbors Laplacian actually raises strain, so it is not a clean wobble filter. The per-element split is the clearer signal: on the same golden quads the two constant-strain triangles disagree, with |Wa−Wb| equal to 66% / 37% / 23% of the toy-function total and median relative splits 0.58 / 0.27 / 0.17. A one-point membrane quad sees something closer to the mean of those two triangles and does not put that sawtooth into internal energy. The already-printed deck table agrees: the triangle deck, where the engine is also constant-strain triangles, has only a 10% / 7% engine-versus-toy-function gap at 4 and 8 ms, against 71% / 36% on the golden Belytschko quads. Other-diagonal sensitivity on the golden at 8 and 16 ms is only 1.3% / 0.44%, so this is not “the wrong diagonal”; it is two triangles on one quad charging distortion the engine’s quad does not.

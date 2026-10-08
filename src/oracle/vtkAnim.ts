@@ -9,6 +9,8 @@ export interface VtkAnimFrame {
   elementIdByCell: Uint32Array;
   /** Four VTK point indices per cell. */
   cells: Uint32Array;
+  /** Point velocities in VTK point order, or null if the file has none. */
+  velocities: Float64Array | null;
 }
 
 export interface VtkShellFrame {
@@ -18,6 +20,8 @@ export interface VtkShellFrame {
   elementIdByCell: Uint32Array;
   /** VTK point indices per cell: 3 for a triangle shell, 4 for a quad. */
   cellPoints: number[][];
+  /** Point velocities in VTK point order, or null if the file has none. */
+  velocities: Float64Array | null;
 }
 
 function isIntTok(v: string): boolean {
@@ -36,6 +40,52 @@ function parseHeaderTime(vtk: string): number {
     }
   }
   throw new Error("VTK missing TIME");
+}
+
+function isVelocityVectorName(name: string): boolean {
+  switch (name) {
+    case "VEL":
+    case "Velocity":
+    case "VELOCITY":
+    case "V":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function parsePointVectors(vtk: string, expected: number): Float64Array | null {
+  const lines = vtk.split(/\r?\n/);
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!;
+    if (line.startsWith("VECTORS ")) {
+      const name = line.trim().split(/\s+/)[1];
+      if (name !== undefined && isVelocityVectorName(name)) {
+        i += 1;
+        const out = new Float64Array(expected * 3);
+        let n = 0;
+        while (i < lines.length && n < expected * 3) {
+          const raw = lines[i]!.trim();
+          i += 1;
+          if (!raw) continue;
+          if (/^(SCALARS|TENSORS|VECTORS|CELL_DATA|POINT_DATA|LOOKUP_TABLE)/.test(raw)) break;
+          for (const tok of raw.split(/\s+/)) {
+            if (tok.length === 0) continue;
+            const v = Number(tok);
+            if (!Number.isFinite(v)) throw new Error(`VTK ${name}: bad token ${tok}`);
+            out[n] = v;
+            n += 1;
+            if (n === expected * 3) break;
+          }
+        }
+        if (n !== expected * 3) throw new Error(`VTK ${name}: got ${n / 3} vectors, expected ${expected}`);
+        return out;
+      }
+    }
+    i += 1;
+  }
+  return null;
 }
 
 function parseIntScalars(vtk: string, name: string, expected: number): Uint32Array {
@@ -123,7 +173,8 @@ export function parseVtkAnimFrame(vtk: string, expectedNodes: number, expectedCe
   const nodeIdByPoint = parseIntScalars(vtk, "NODE_ID", expectedNodes);
   const elementIdByCell = parseIntScalars(vtk, "ELEMENT_ID", expectedCells);
   const cells = parseQuadCells(vtk, expectedCells);
-  return { t, coords, nodeIdByPoint, elementIdByCell, cells };
+  const velocities = parsePointVectors(vtk, expectedNodes);
+  return { t, coords, nodeIdByPoint, elementIdByCell, cells, velocities };
 }
 
 /** Animation frame with three- or four-node shells (triangle-deck diagnosis). */
@@ -136,7 +187,8 @@ export function parseVtkAnimShells(vtk: string, expectedNodes: number): VtkShell
   const cellPoints = parseShellCells(vtk);
   const nodeIdByPoint = parseIntScalars(vtk, "NODE_ID", expectedNodes);
   const elementIdByCell = parseIntScalars(vtk, "ELEMENT_ID", cellPoints.length);
-  return { t, coords, nodeIdByPoint, elementIdByCell, cellPoints };
+  const velocities = parsePointVectors(vtk, expectedNodes);
+  return { t, coords, nodeIdByPoint, elementIdByCell, cellPoints, velocities };
 }
 
 /** Scatter VTK point coordinates into 0-based Radioss/toy node order. */
@@ -180,6 +232,23 @@ export function scatterShellToNodeOrder(frame: VtkShellFrame, nNodes: number): F
     nodeIdByPoint: frame.nodeIdByPoint,
     elementIdByCell: frame.elementIdByCell,
     cells: new Uint32Array(0),
+    velocities: frame.velocities,
+  };
+  return scatterToNodeOrder(fake, nNodes);
+}
+
+export function scatterVelocitiesToNodeOrder(
+  nodeIdByPoint: Uint32Array,
+  velocities: Float64Array,
+  nNodes: number,
+): Float64Array {
+  const fake: VtkAnimFrame = {
+    t: 0,
+    coords: velocities,
+    nodeIdByPoint,
+    elementIdByCell: new Uint32Array(0),
+    cells: new Uint32Array(0),
+    velocities,
   };
   return scatterToNodeOrder(fake, nNodes);
 }

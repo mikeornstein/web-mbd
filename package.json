@@ -28,7 +28,13 @@
     "diagnose:slow-sphere": "tsx src/cli/diagnose-slow-sphere.ts",
     "diagnose:sphere-probe": "tsx src/cli/diagnose-sphere-probe.ts",
     "diagnose:stretch-measure": "tsx src/cli/diagnose-stretch-measure.ts",
-    "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts"
+    "diagnose:element-type": "tsx src/cli/diagnose-element-type.ts",
+    "diagnose:stretch-diagnostics": "tsx src/cli/diagnose-stretch-diagnostics.ts",
+    "diagnose:per-step-energy": "tsx src/cli/diagnose-per-step-energy.ts",
+    "diagnose:deck-node-output": "tsx src/cli/diagnose-deck-node-output.ts",
+    "diagnose:deck-quad-averaged": "tsx src/cli/diagnose-deck-quad-averaged.ts",
+    "diagnose:deck-energy-split": "tsx src/cli/diagnose-deck-energy-split.ts",
+    "diagnose:deck-mass-work-lookups": "tsx src/cli/diagnose-deck-mass-work-lookups.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

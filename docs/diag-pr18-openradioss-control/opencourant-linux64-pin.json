@@ -1,0 +1,16 @@
+{
+  "kind": "opencourant-linux64-pin",
+  "writtenBeforeRun": true,
+  "tag": "latest-20261003",
+  "zipUrl": "https://github.com/OpenCourant/OpenCourant/releases/download/latest-20261003/OpenCourant_linux64.zip",
+  "zipSha256": "e0d2b8b956ba451b4214b5f04f019922a0bd0bdab134ce171037ae69c0309fa8",
+  "zipBytes": 83864216,
+  "engineCommit": "6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba",
+  "binaries": [
+    "starter_linux64_gf",
+    "engine_linux64_gf",
+    "anim_to_vtk_linux64_gf",
+    "th_to_csv"
+  ],
+  "note": "Pinned only to the OpenCourant copy, not the original OpenRadioss tree. Recorded before the deck node-output re-run. The run script must refuse a zip whose sha256 or size does not match. Do not change this file after seeing numbers."
+}

@@ -1,4 +1,4 @@
-import { ADYREL_VELOCITY_SCALE, ANIM_DT, T_END } from "../inflate/constants.js";
+import { ANIM_DT, T_END } from "../inflate/constants.js";
 import { lockedLawCard } from "../inflate/lawCard.js";
 import { loadShipMesh } from "../inflate/meshA.js";
 import type { InflateLetter, InflateModelIR } from "../inflate/types.js";
@@ -34,11 +34,7 @@ function createInflateLetterModel(letter: InflateLetter): InflateModelIR {
       maxSteps: 2_000_000,
       historyInterval: ANIM_DT,
       contactKind: "node-node",
-      damping: {
-        kind: "peak-kill",
-        scale: ADYREL_VELOCITY_SCALE,
-        minInterval: 0,
-      },
+      damping: { kind: "off" },
     },
   };
 }

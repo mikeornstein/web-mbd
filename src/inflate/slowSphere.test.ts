@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { createInflateAModel } from "../fixtures/inflateA.js";
-import { ADYREL_VELOCITY_SCALE, H0, MU, RAYLEIGH_ALPHA } from "./constants.js";
+import { H0, MU, RAYLEIGH_ALPHA } from "./constants.js";
 import { trueEnclosedVolume } from "./meshA.js";
 import {
   SPHERE_LAMBDA_STAR,
@@ -50,7 +50,7 @@ test("independent closed-form invert at 28 kPa is 1.18757 on the stated 46.48 mm
   expect(nhSpherePressure(1.34, MU, H0, SPHERE_R0_STATED_M) / pStar).toBeCloseTo(0.9962, 4);
 });
 
-test("slow-sphere model is kill-off, 400 ms to closed-form p_max, and does not change the shipped default", () => {
+test("slow-sphere model is kill-off, 400 ms to closed-form p_max; shipped Letter A is also kill-off", () => {
   const sph = orientedEquivalentSphere();
   const model = createSlowSphereModel();
   expect(model.controls.damping).toEqual({ kind: "off" });
@@ -60,15 +60,11 @@ test("slow-sphere model is kill-off, 400 ms to closed-form p_max, and does not c
   expect(model.law.rayleighAlpha).toBeCloseTo(slowSphereRayleighAlpha(sph.R0_m), 12);
   expect(sphereCircuitPeriodS(sph.R0_m)).toBeCloseTo(0.0032, 3);
   expect(sphereBreathingPeriodS(sph.R0_m)).toBeCloseTo(0.00553, 4);
-  expect(createInflateAModel().controls.damping).toEqual({
-    kind: "peak-kill",
-    scale: ADYREL_VELOCITY_SCALE,
-    minInterval: 0,
-  });
+  expect(createInflateAModel().controls.damping).toEqual({ kind: "off" });
   expect(createInflateAModel().controls.dtMax).toBeUndefined();
 });
 
-test("sphere probe model is kill-off with starter Rayleigh 80 /s and does not change the shipped default", () => {
+test("sphere probe model is kill-off with starter Rayleigh 80 /s; shipped Letter A is also kill-off", () => {
   const model = createSphereProbeModel({
     pMax: SPHERE_HOLD_P_PA,
     tRamp: 0.4,
@@ -78,5 +74,5 @@ test("sphere probe model is kill-off with starter Rayleigh 80 /s and does not ch
   expect(model.controls.damping).toEqual({ kind: "off" });
   expect(model.law.rayleighAlpha).toBe(80);
   expect(model.law.pMax).toBe(28_000);
-  expect(createInflateAModel().controls.damping.kind).toBe("peak-kill");
+  expect(createInflateAModel().controls.damping.kind).toBe("off");
 });

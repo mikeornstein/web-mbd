@@ -1,0 +1,818 @@
+{
+  "kind": "deck-quad-averaged-measurement",
+  "status": "run",
+  "notAGate": true,
+  "engineColumnPrimary": true,
+  "package": {
+    "tag": "latest-20261003",
+    "zipSha256": "e0d2b8b956ba451b4214b5f04f019922a0bd0bdab134ce171037ae69c0309fa8",
+    "zipBytes": 83864216,
+    "engineCommit": "6ac7e7d39847cc1c8abfed73d34651a50d2fc3ba"
+  },
+  "score": {
+    "energyAgrees": false,
+    "energyLow": false,
+    "energyComparable": true,
+    "medianAgrees": false,
+    "oneShiftFits": false,
+    "distanceBarHolds": false,
+    "energyAt4": {
+      "toy": 0.15093620618166395,
+      "goldenEngine": 0.1574329,
+      "rel": 0.041266430449645765
+    },
+    "energyAt8": {
+      "toy": 0.77134747041019,
+      "goldenEngine": 0.7944365,
+      "rel": 0.02906340480303959
+    },
+    "energyAt16": {
+      "toy": 6.203835023601441,
+      "goldenEngine": 6.290036,
+      "rel": 0.01370436932293538
+    },
+    "medianStrainAt8": {
+      "toy": 0.0724444660971777,
+      "golden": 0.08276047000294495,
+      "ishell": 0.07829534622235168,
+      "relToGolden": 0.12464892847273791,
+      "goldIshellAbs": 0.004465123780593272,
+      "bar": 0.004465123780593272,
+      "agrees": false
+    },
+    "medianStrainAt16": {
+      "toy": 0.2111434367591234,
+      "golden": 0.21757116854668768,
+      "ishell": 0.2135682844049014,
+      "relToGolden": 0.02954312297212755,
+      "goldIshellAbs": 0.004002884141786289,
+      "bar": 0.010878558427334385,
+      "agrees": true
+    },
+    "shift": {
+      "volume_ms": 0.5099999999999593,
+      "median_ms": 0.4799999999999593,
+      "max_ms": -0.080000000000041,
+      "oneShiftFits": false,
+      "note": "shifts disagree or exceed 2 ms; diagnostic only, never applied"
+    },
+    "distanceAt4": {
+      "toyGoldRms": 0.0018290430441856335,
+      "goldIshellRms": 0.0006446905397771396,
+      "ratio": 2.837086836760328,
+      "holds": false
+    },
+    "distanceAt8": {
+      "toyGoldRms": 0.0011767721345951937,
+      "goldIshellRms": 0.00044977342302502234,
+      "ratio": 2.616366540025034,
+      "holds": false
+    },
+    "distanceAt16": {
+      "toyGoldRms": 0.0014261228040419282,
+      "goldIshellRms": 0.0004413410424319038,
+      "ratio": 3.2313396374459558,
+      "holds": false
+    },
+    "lockedKind": "no-row",
+    "lockedLine": "NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number. energy-agrees=false energy-low=false one-shift-fits=false median-agrees=false energy-comparable=true",
+    "ruleCKind": "stores-strain-more-evenly",
+    "ruleCLine": "Median still low means the toy genuinely stores strain more evenly than the decks, and the next step is the energy and damping partition (report only, do not change it)."
+  },
+  "energyTables": {
+    "golden": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "engine_J": 0,
+        "toyFnOnDeck_J": 2.1990402298226772e-16,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.02219,
+        "engine_J": 0.08346218,
+        "toyFnOnDeck_J": 0.39474806612237817,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.003699999999999,
+        "engine_J": 0.1574329,
+        "toyFnOnDeck_J": 0.5504957468081546,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.004930000000001,
+        "engine_J": 0.4135652,
+        "toyFnOnDeck_J": 0.7653344428463632,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.00139,
+        "engine_J": 0.7944365,
+        "toyFnOnDeck_J": 1.2329882596145445,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.000200000000001,
+        "engine_J": 1.400737,
+        "toyFnOnDeck_J": 1.970834895131947,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": 12.0007,
+        "engine_J": 2.33577,
+        "toyFnOnDeck_J": 3.0344729244919986,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": 14.0025,
+        "engine_J": 3.783358,
+        "toyFnOnDeck_J": 4.605771884205747,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": 16.0038,
+        "engine_J": 6.290036,
+        "toyFnOnDeck_J": 7.297366013933045,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      }
+    ],
+    "ishell": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "engine_J": 0,
+        "toyFnOnDeck_J": 2.1990402298226772e-16,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.00963,
+        "engine_J": 0.08321457,
+        "toyFnOnDeck_J": 0.11149531898467939,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.003439999999999,
+        "engine_J": 0.1672059,
+        "toyFnOnDeck_J": 0.2351999324737594,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.00709,
+        "engine_J": 0.4060726,
+        "toyFnOnDeck_J": 0.5230485547852283,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.00527,
+        "engine_J": 0.786568,
+        "toyFnOnDeck_J": 0.9609459901622629,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.0023,
+        "engine_J": 1.368432,
+        "toyFnOnDeck_J": 1.611540003370175,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": 12.0006,
+        "engine_J": 2.271828,
+        "toyFnOnDeck_J": 2.595030903636709,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": 14.0024,
+        "engine_J": 3.713076,
+        "toyFnOnDeck_J": 4.122837836821677,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": 16.000400000000003,
+        "engine_J": 6.136814,
+        "toyFnOnDeck_J": 6.649384236826652,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      }
+    ],
+    "fine": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "engine_J": 0,
+        "toyFnOnDeck_J": 6.961936912564469e-17,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.0008299999999997,
+        "engine_J": 0.08149081,
+        "toyFnOnDeck_J": 0.17714349820904016,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.00293,
+        "engine_J": 0.1596909,
+        "toyFnOnDeck_J": 0.25608162936456846,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.00238,
+        "engine_J": 0.3876806,
+        "toyFnOnDeck_J": 0.5386662452828463,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.000399999999999,
+        "engine_J": 0.7739487,
+        "toyFnOnDeck_J": 0.9711209839067927,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.0008,
+        "engine_J": 1.389956,
+        "toyFnOnDeck_J": 1.638352045734033,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": 12.0015,
+        "engine_J": 2.34928,
+        "toyFnOnDeck_J": 2.639728416665643,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": 14.0015,
+        "engine_J": 3.818424,
+        "toyFnOnDeck_J": 4.174994240356964,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": 16.0019,
+        "engine_J": 6.278884,
+        "toyFnOnDeck_J": 6.703377579486904,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      }
+    ],
+    "triangle": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "engine_J": 0,
+        "toyFnOnDeck_J": 2.1990402298226772e-16,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.00314,
+        "engine_J": 0.09173732,
+        "toyFnOnDeck_J": 0.09908752270838775,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.00565,
+        "engine_J": 0.174295,
+        "toyFnOnDeck_J": 0.19336567621084386,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.00122,
+        "engine_J": 0.4024707,
+        "toyFnOnDeck_J": 0.43833665032760283,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.00206,
+        "engine_J": 0.7745101,
+        "toyFnOnDeck_J": 0.8322613043611962,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.000200000000001,
+        "engine_J": 1.363037,
+        "toyFnOnDeck_J": 1.453834813014967,
+        "note": "convention difference, not evidence about the toy; engine column is primary"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": null,
+        "engine_J": null,
+        "toyFnOnDeck_J": null,
+        "note": "triangle deck died ~11.5 ms; not a late-window reference"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": null,
+        "engine_J": null,
+        "toyFnOnDeck_J": null,
+        "note": "triangle deck died ~11.5 ms; not a late-window reference"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": null,
+        "engine_J": null,
+        "toyFnOnDeck_J": null,
+        "note": "triangle deck died ~11.5 ms; not a late-window reference"
+      }
+    ]
+  },
+  "distRows": [
+    {
+      "requested_ms": 0,
+      "actual_vtk_ms": 0,
+      "goldIshellRms": 0,
+      "goldIshellP95": 0,
+      "toyGoldRms": 3.915759674355961e-8,
+      "toyGoldP95": 6.054337698346574e-8,
+      "toyIshellRms": 3.915759674355961e-8,
+      "toyIshellP95": 6.054337698346574e-8,
+      "toyFineRms": 3.915759674355961e-8,
+      "toyFineP95": 6.054337698346574e-8,
+      "rmsRatio": null,
+      "p95Ratio": null,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 2,
+      "actual_vtk_ms": 2.02219,
+      "goldIshellRms": 0.0004249785520295751,
+      "goldIshellP95": 0.0008881450474405617,
+      "toyGoldRms": 0.0005244024059458779,
+      "toyGoldP95": 0.001171219097331269,
+      "toyIshellRms": 0.0005361476979222918,
+      "toyIshellP95": 0.0009750126714048132,
+      "toyFineRms": 0.00037221423638327396,
+      "toyFineP95": 0.0007370665076084624,
+      "rmsRatio": 1.2339502862944098,
+      "p95Ratio": 1.318725022119376,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 4,
+      "actual_vtk_ms": 4.003699999999999,
+      "goldIshellRms": 0.0006446905397771396,
+      "goldIshellP95": 0.0013385528799511998,
+      "toyGoldRms": 0.0018290430441856335,
+      "toyGoldP95": 0.002808085560621179,
+      "toyIshellRms": 0.001981613099374686,
+      "toyIshellP95": 0.003080182603444118,
+      "toyFineRms": 0.0019624233970199595,
+      "toyFineP95": 0.0031010838034157178,
+      "rmsRatio": 2.837086836760328,
+      "p95Ratio": 2.0978517940386148,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 6,
+      "actual_vtk_ms": 6.004930000000001,
+      "goldIshellRms": 0.0004195752817031964,
+      "goldIshellP95": 0.0006729311919692062,
+      "toyGoldRms": 0.0011571961438688405,
+      "toyGoldP95": 0.0019696238878576557,
+      "toyIshellRms": 0.001109707853286317,
+      "toyIshellP95": 0.0017486586996630885,
+      "toyFineRms": 0.001171530617449135,
+      "toyFineP95": 0.0018656947343411775,
+      "rmsRatio": 2.7580179155726103,
+      "p95Ratio": 2.9269320717530163,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 8,
+      "actual_vtk_ms": 8.00139,
+      "goldIshellRms": 0.00044977342302502234,
+      "goldIshellP95": 0.0006822251740933082,
+      "toyGoldRms": 0.0011767721345951937,
+      "toyGoldP95": 0.0019480978622653435,
+      "toyIshellRms": 0.001276985819244766,
+      "toyIshellP95": 0.0020754990941259867,
+      "toyFineRms": 0.0011591873066742267,
+      "toyFineP95": 0.0017607561143810422,
+      "rmsRatio": 2.616366540025034,
+      "p95Ratio": 2.8555056838153283,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 10,
+      "actual_vtk_ms": 10.000200000000001,
+      "goldIshellRms": 0.0007453757471400251,
+      "goldIshellP95": 0.0014549206966332456,
+      "toyGoldRms": 0.00125753638915467,
+      "toyGoldP95": 0.00194472806152129,
+      "toyIshellRms": 0.0011408390181500041,
+      "toyIshellP95": 0.0018834621335862827,
+      "toyFineRms": 0.0011577154020949822,
+      "toyFineP95": 0.0017582921278586948,
+      "rmsRatio": 1.6871173954609917,
+      "p95Ratio": 1.3366557132780374,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 12,
+      "actual_vtk_ms": 12.0007,
+      "goldIshellRms": 0.0006373749867016348,
+      "goldIshellP95": 0.001186748038659363,
+      "toyGoldRms": 0.0017376414034197334,
+      "toyGoldP95": 0.003080519630021315,
+      "toyIshellRms": 0.0013372694998476178,
+      "toyIshellP95": 0.002263431406499721,
+      "toyFineRms": 0.0017549119403984647,
+      "toyFineP95": 0.003253391170234596,
+      "rmsRatio": 2.7262466203951465,
+      "p95Ratio": 2.5957655118615524,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 14,
+      "actual_vtk_ms": 14.0025,
+      "goldIshellRms": 0.0003819967579799617,
+      "goldIshellP95": 0.000630900683534381,
+      "toyGoldRms": 0.0014031813660978399,
+      "toyGoldP95": 0.0021285006538478753,
+      "toyIshellRms": 0.0011966779500716927,
+      "toyIshellP95": 0.0019370902520981876,
+      "toyFineRms": 0.0013802048834489567,
+      "toyFineP95": 0.0023213277352243404,
+      "rmsRatio": 3.6732808244708877,
+      "p95Ratio": 3.3737491643276725,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    },
+    {
+      "requested_ms": 16,
+      "actual_vtk_ms": 16.0038,
+      "goldIshellRms": 0.0004413410424319038,
+      "goldIshellP95": 0.000708292913371659,
+      "toyGoldRms": 0.0014261228040419282,
+      "toyGoldP95": 0.00243487547842768,
+      "toyIshellRms": 0.0013963269705960903,
+      "toyIshellP95": 0.002149792871704639,
+      "toyFineRms": 0.0012674922059549112,
+      "toyFineP95": 0.001904740151060474,
+      "rmsRatio": 3.2313396374459558,
+      "p95Ratio": 3.437667428913043,
+      "note": "real frames; toy interpolated to golden VTK TIME; fine uses parent nodes 1–1554"
+    }
+  ],
+  "stretchTables": {
+    "golden": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "median": 1.000004399996671,
+        "p95": 1.0000151393283518,
+        "max": 1.0000227873818257,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.02219,
+        "median": 1.0276826617525252,
+        "p95": 1.042686698031665,
+        "max": 1.073809898317215,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.003699999999999,
+        "median": 1.040204602114998,
+        "p95": 1.0582667666672325,
+        "max": 1.0944297999180823,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.004930000000001,
+        "median": 1.0610207341448263,
+        "p95": 1.0978106212905674,
+        "max": 1.1922214063069774,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.00139,
+        "median": 1.082760470002945,
+        "p95": 1.1389945847926308,
+        "max": 1.2651306933235256,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.000200000000001,
+        "median": 1.107365110949135,
+        "p95": 1.1858989096231904,
+        "max": 1.3240887433362454,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": 12.0007,
+        "median": 1.1383469932518078,
+        "p95": 1.238437478847329,
+        "max": 1.3963341500958864,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": 14.0025,
+        "median": 1.1729747424333312,
+        "p95": 1.3072861738422374,
+        "max": 1.5732404515800666,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": 16.0038,
+        "median": 1.2175711685466877,
+        "p95": 1.404287167741223,
+        "max": 1.8267469197999677,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      }
+    ],
+    "ishell": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "median": 1.000004399996671,
+        "p95": 1.0000151393283518,
+        "max": 1.0000227873818257,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.00963,
+        "median": 1.0244633459197634,
+        "p95": 1.0410661569452953,
+        "max": 1.0745814671445981,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.003439999999999,
+        "median": 1.035859929920563,
+        "p95": 1.0538106785069479,
+        "max": 1.0978987976375252,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.00709,
+        "median": 1.0568987295185743,
+        "p95": 1.0892071533892134,
+        "max": 1.2051556029249342,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.00527,
+        "median": 1.0782953462223517,
+        "p95": 1.1305812684859147,
+        "max": 1.2638995728401232,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.0023,
+        "median": 1.1023036546119267,
+        "p95": 1.174903303905863,
+        "max": 1.3262109480849862,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": 12.0006,
+        "median": 1.1338960943205905,
+        "p95": 1.2310301933346854,
+        "max": 1.4159329370715694,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": 14.0024,
+        "median": 1.1682697158170603,
+        "p95": 1.306511094998826,
+        "max": 1.5877442851099584,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": 16.000400000000003,
+        "median": 1.2135682844049014,
+        "p95": 1.3961267802803972,
+        "max": 1.8177898680078166,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      }
+    ],
+    "fine": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "median": 1,
+        "p95": 1.000000005268356,
+        "max": 1.0000000074505808,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.0008299999999997,
+        "median": 1.0251012382810198,
+        "p95": 1.0458906636526688,
+        "max": 1.0952941990107041,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.00293,
+        "median": 1.0380709193425233,
+        "p95": 1.0590473148758668,
+        "max": 1.1139302982668955,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.00238,
+        "median": 1.0562496638079755,
+        "p95": 1.0911899617249687,
+        "max": 1.1887364553770972,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.000399999999999,
+        "median": 1.0784847261229975,
+        "p95": 1.1313692625120844,
+        "max": 1.2692403387224624,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.0008,
+        "median": 1.1053569748173815,
+        "p95": 1.1815362176144535,
+        "max": 1.367377903531303,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": 12.0015,
+        "median": 1.1367095820356758,
+        "p95": 1.2365833458117077,
+        "max": 1.4728004062713969,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": 14.0015,
+        "median": 1.1719589505667267,
+        "p95": 1.3068882622424485,
+        "max": 1.6531894853522409,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": 16.0019,
+        "median": 1.2164188550035917,
+        "p95": 1.397420371556716,
+        "max": 1.9194711727466796,
+        "n": 6216,
+        "note": "quad-centre stretch from four corners; real frame"
+      }
+    ],
+    "triangle": [
+      {
+        "requested_ms": 0,
+        "actual_vtk_ms": 0,
+        "median": 1.000004399996671,
+        "p95": 1.0000151393283518,
+        "max": 1.0000227873818257,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 2,
+        "actual_vtk_ms": 2.00314,
+        "median": 1.0249373949925262,
+        "p95": 1.0391619133554248,
+        "max": 1.0840523004935751,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 4,
+        "actual_vtk_ms": 4.00565,
+        "median": 1.0377781068499663,
+        "p95": 1.0564248349558276,
+        "max": 1.1185947909304523,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 6,
+        "actual_vtk_ms": 6.00122,
+        "median": 1.0555022476406402,
+        "p95": 1.091381590804408,
+        "max": 1.1913674196293418,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 8,
+        "actual_vtk_ms": 8.00206,
+        "median": 1.0758798566838532,
+        "p95": 1.126709039247875,
+        "max": 1.266637918489048,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 10,
+        "actual_vtk_ms": 10.000200000000001,
+        "median": 1.1008528692685404,
+        "p95": 1.1751308518503616,
+        "max": 1.346137997650187,
+        "n": 1554,
+        "note": "quad-centre stretch from four corners; real frame"
+      },
+      {
+        "requested_ms": 12,
+        "actual_vtk_ms": null,
+        "median": null,
+        "p95": null,
+        "max": null,
+        "n": null,
+        "note": "triangle deck died ~11.5 ms; not a late-window reference"
+      },
+      {
+        "requested_ms": 14,
+        "actual_vtk_ms": null,
+        "median": null,
+        "p95": null,
+        "max": null,
+        "n": null,
+        "note": "triangle deck died ~11.5 ms; not a late-window reference"
+      },
+      {
+        "requested_ms": 16,
+        "actual_vtk_ms": null,
+        "median": null,
+        "p95": null,
+        "max": null,
+        "n": null,
+        "note": "triangle deck died ~11.5 ms; not a late-window reference"
+      }
+    ]
+  },
+  "verdictLine": "NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number. energy-agrees=false energy-low=false one-shift-fits=false median-agrees=false energy-comparable=true",
+  "ruleCLine": "Median still low means the toy genuinely stores strain more evenly than the decks, and the next step is the energy and damping partition (report only, do not change it).",
+  "pageBody": "Engine internal energy is the primary energy column.\nenergy-agrees=false energy-low=false median-agrees=false one-shift-fits=false distance-bar-holds=false\nLocked table: NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number. energy-agrees=false energy-low=false one-shift-fits=false median-agrees=false energy-comparable=true\nRule C outcome: Median still low means the toy genuinely stores strain more evenly than the decks, and the next step is the energy and damping partition (report only, do not change it)."
+}

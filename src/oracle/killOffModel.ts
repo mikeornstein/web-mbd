@@ -39,9 +39,9 @@ export function parseMeshKind(raw: string): KillOffMeshKind {
 }
 
 /**
- * Diagnosis assemble. Does not change createInflateAModel(). Kill off only
- * flips the kinetic-energy peak velocity scale; shear modulus and the load
- * law stay locked.
+ * Diagnosis assemble. Kill off only flips the kinetic-energy peak velocity
+ * scale; shear modulus and the load law stay locked. Shipped
+ * createInflateAModel() is already kill off.
  */
 export function buildKillOffModel(opts: {
   mesh: KillOffMeshKind;

@@ -3,7 +3,13 @@ import { solveInflate } from "../fe/inflateSolver.js";
 import { solveExplicitAsync } from "../fe/solveAsync.js";
 import type { InflateModelIR, InflateSolveResult } from "../inflate/types.js";
 import type { EnergySample, ModelIR, SolveResult } from "../ir/types.js";
-import { compareInflateToGolden } from "../oracle/compareInflate.js";
+import { compareInflateToGolden, toySamplesFromSolve } from "../oracle/compareInflate.js";
+import { stretchDiagnosticsPageText } from "../oracle/stretchDiagnosticResults.js";
+import { perStepEnergyPageText } from "../oracle/perStepEnergyResults.js";
+import { deckNodeOutputPageText } from "../oracle/deckNodeOutputResults.js";
+import { deckQuadAveragedPageText } from "../oracle/deckQuadAveragedResults.js";
+import { deckEnergySplitPageText } from "../oracle/deckEnergySplitResults.js";
+import { deckMassWorkLookupPageText } from "../oracle/deckMassWorkLookupResults.js";
 import { loadInflateGolden } from "../oracle/inflateGolden.js";
 import {
   getResearchStockModel,
@@ -120,7 +126,7 @@ export function mountWorkbench(root: HTMLElement): void {
   const researchHelp = document.createElement("p");
   researchHelp.className = "muted";
   researchHelp.textContent =
-    "Letter A inflate is the only validated inflate letter (open Radioss fast-load reference on a consistently outward-oriented mesh, at first stretch ≥ 2). Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Its source mesh has 404 of 2178 triangles wound against their neighbors. Letter C is hidden: degenerate / unstable. Its source mesh has 412 of 1972 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+    "Letter A inflate is the only validated inflate letter (open Radioss fast-load reference on a consistently outward-oriented mesh, at first stretch ≥ 2). The film runs about half a millisecond behind the reference solvers throughout the run. That shows up as roughly 12% low in median stretch mid-run (8 ms) and about 3% low at the 16 ms freeze; the 0.5 ms fit was made across all frames, so the lag does not disappear at the freeze, it only looks smaller there because stretch changes more slowly near the end. Node positions sit about three times farther from the decks than the decks sit from each other, so the shape does not match. Letter B is an unvalidated demo, unstable past stretch 2 (first stretch ≥ 2 at 4.4, past the warn line; no Radioss tape). Its source mesh has 404 of 2178 triangles wound against their neighbors. Letter C is hidden: degenerate / unstable. Its source mesh has 412 of 1972 triangles wound against their neighbors. The Inflation ABC refine ladder (coarse, fine, finer) inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
 
   const catalog = document.createElement("ul");
   catalog.className = "catalog";
@@ -193,7 +199,7 @@ export function mountWorkbench(root: HTMLElement): void {
     li.append(title, badge, summary, meta, loadBtn);
     catalog.append(li);
   }
-  researchPanel.append(researchHeading, researchHelp, catalog);
+  researchPanel.append(researchHeading, researchHelp, catalog, createStretchDiagSection());
 
   const prePanel = document.createElement("section");
   prePanel.className = "panel";
@@ -260,7 +266,7 @@ export function mountWorkbench(root: HTMLElement): void {
     state.statusMessage = "Ready to run the explicit solver.";
     render();
   });
-  prePanel.append(preHeading, preTree, preShading.root, preVizHost, toSolve);
+  prePanel.append(preHeading, preTree, preShading.root, preVizHost, toSolve, createStretchDiagSection());
 
   const solvePanel = document.createElement("section");
   solvePanel.className = "panel";
@@ -295,6 +301,7 @@ export function mountWorkbench(root: HTMLElement): void {
     postVizHost,
     scrubber.root,
     chartHost,
+    createStretchDiagSection(),
   );
 
   panels.append(researchPanel, prePanel, solvePanel, postPanel);
@@ -584,10 +591,96 @@ function createTimeScrubber(onIndex: (index: number) => void): {
   };
 }
 
+function createStretchDiagSection(): HTMLElement {
+  const wrap = document.createElement("section");
+  wrap.className = "diag-block";
+  wrap.setAttribute("aria-label", "Letter A stretch diagnostics");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A stretch diagnostics (measurement, not a gate)";
+  const copy = stretchDiagnosticsPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  wrap.append(heading, rules, results);
+  const perStep = createPerStepEnergySection();
+  wrap.append(perStep);
+  wrap.append(createDeckNodeOutputSection());
+  wrap.append(createDeckQuadAveragedSection());
+  wrap.append(createDeckEnergySplitSection());
+  wrap.append(createDeckMassWorkLookupSection());
+  return wrap;
+}
+
+function createPerStepEnergySection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A per-step energy bookkeeping (correctness gate on the toy)";
+  const copy = perStepEnergyPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckNodeOutputSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A deck node-output re-run (measurement, not a gate)";
+  const copy = deckNodeOutputPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckQuadAveragedSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A quad-averaged stretch and node-distance (measurement, not a gate)";
+  const copy = deckQuadAveragedPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckEnergySplitSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A energy and damping split (measurement, not a gate)";
+  const copy = deckEnergySplitPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
+function createDeckMassWorkLookupSection(): HTMLElement {
+  const inner = document.createElement("div");
+  const heading = document.createElement("h3");
+  heading.textContent = "Letter A film mass, work, and ringing lookups (measurement, not a gate)";
+  const copy = deckMassWorkLookupPageText();
+  const rules = document.createElement("pre");
+  rules.textContent = copy.rules;
+  const results = document.createElement("pre");
+  results.textContent = copy.results;
+  inner.append(heading, rules, results);
+  return inner;
+}
+
 function validationLabel(status: InflateStockModel["validation"]): string {
   switch (status) {
     case "radioss-dynamic-golden":
-      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · stretch ≤2% · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
+      return "fast-load (dynamic) open Radioss reference on a consistently outward-oriented mesh only · the film runs about half a millisecond behind the reference solvers throughout the run · roughly 12% low in median stretch mid-run (8 ms) and about 3% low at the 16 ms freeze · the 0.5 ms fit was made across all frames, so the lag does not disappear at the freeze, it only looks smaller there because stretch changes more slowly near the end · node positions sit about three times farther from the decks than the decks sit from each other, so the shape does not match · volume ≤5% · pressure ≤5%. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo":
       return "unvalidated demo, unstable past stretch 2 · source mesh 404 of 2178 triangles wound against neighbors · open Radioss golden NOT-YET. The Inflation ABC refine ladder inherits the old winding unless fixed. Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.";
     case "unvalidated-demo-unstable":
@@ -766,7 +859,14 @@ function fillGate(gateEl: HTMLParagraphElement, loaded: Exclude<LoadedSession, {
       switch (loaded.stock.validation) {
         case "radioss-dynamic-golden": {
           const golden = loadInflateGolden();
-          const cmp = compareInflateToGolden({ ...loaded.result.metrics, law: loaded.result.law }, golden);
+          const cmp = compareInflateToGolden(
+            {
+              ...loaded.result.metrics,
+              law: loaded.result.law,
+              samples: toySamplesFromSolve(loaded.result),
+            },
+            golden,
+          );
           gateEl.textContent = cmp.ok
             ? "Acceptance gate: PASS (open Radioss fast-load / dynamic reference on a consistently outward-oriented mesh · stretch / volume / pressure bands). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed."
             : `Acceptance gate: FAIL vs open Radioss fast-load golden (${cmp.reasons[0] ?? "see compare:inflate"}). Slow-load (quasi-static) is not validated. The Inflation ABC ~54 kPa figure is not claimed.`;

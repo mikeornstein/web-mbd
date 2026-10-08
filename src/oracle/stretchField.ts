@@ -241,6 +241,57 @@ export function indexByNodeKey(field: readonly QuadStretch[]): Map<string, numbe
   return m;
 }
 
+export function membraneStrainEnergyFromCoords(
+  coords: ArrayLike<number>,
+  restCoords: ArrayLike<number>,
+  quads: ArrayLike<number>,
+  mu: number = MU,
+  h0: number = H0,
+): number {
+  let psi = 0;
+  const nq = quads.length / 4;
+  for (let e = 0; e < nq; e++) {
+    const i0 = quads[e * 4]!;
+    const i1 = quads[e * 4 + 1]!;
+    const i2 = quads[e * 4 + 2]!;
+    const i3 = quads[e * 4 + 3]!;
+    const pair = splitQuadCsts(restCoords, i0, i1, i2, i3);
+    if (!pair) continue;
+    psi += cstSample(coords, pair.a, mu, h0).W;
+    psi += cstSample(coords, pair.b, mu, h0).W;
+  }
+  return psi;
+}
+
+export function membraneStrainEnergyFromShells(
+  coords: ArrayLike<number>,
+  restCoords: ArrayLike<number>,
+  shells: readonly number[][],
+  mu: number = MU,
+  h0: number = H0,
+): number {
+  let psi = 0;
+  for (const nodes of shells) {
+    if (nodes.length === 4 && nodes[2] !== nodes[3]) {
+      const i0 = nodes[0]!;
+      const i1 = nodes[1]!;
+      const i2 = nodes[2]!;
+      const i3 = nodes[3]!;
+      const pair = splitQuadCsts(restCoords, i0, i1, i2, i3);
+      if (!pair) continue;
+      psi += cstSample(coords, pair.a, mu, h0).W;
+      psi += cstSample(coords, pair.b, mu, h0).W;
+      continue;
+    }
+    if (nodes.length === 3 || (nodes.length === 4 && nodes[2] === nodes[3])) {
+      const rest = buildCstRest(restCoords, nodes[0]!, nodes[1]!, nodes[2]!);
+      if (!rest) continue;
+      psi += cstSample(coords, rest, mu, h0).W;
+    }
+  }
+  return psi;
+}
+
 export function relErr(ours: number, gold: number): number {
   return Math.abs(ours - gold) / Math.max(Math.abs(gold), 1e-30);
 }

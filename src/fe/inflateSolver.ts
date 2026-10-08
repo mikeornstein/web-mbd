@@ -23,6 +23,8 @@ import {
 } from "../inflate/adaptivePeriod.js";
 import type {
   InflateModelIR,
+  InflatePerStepEnergyLedger,
+  InflatePerStepEnergySnapshot,
   InflateSolveMetrics,
   InflateSolveResult,
   InflateWarnMetrics,
@@ -44,6 +46,12 @@ export interface InflateSolveOptions {
    * as-wound mesh can be run without flipping faces.
    */
   signedRestVolume?: boolean;
+  /**
+   * Diagnosis only. Default (omit/false): no per-step energy ledger.
+   * True accumulates pressure work and damping at every solver step without
+   * changing forces, positions, or time-step size.
+   */
+  recordPerStepEnergy?: boolean;
 }
 
 export function assertInflateModel(model: InflateModelIR): void {
@@ -204,6 +212,18 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
   const maxWallMs = options.maxWallMs ?? 180_000;
   const alpha = law.rayleighAlpha;
   const damping = controls.damping;
+  const recordPerStepEnergy = options.recordPerStepEnergy === true;
+  let pressW = 0;
+  let dampLogged = 0;
+  let keIntegral = 0;
+  let dampForce = 0;
+  let dtSum = 0;
+  let minDt = Infinity;
+  let maxDt = 0;
+  let kissPushedTotal = 0;
+  let peakKillEvents = 0;
+  let volPrev = enclosedVolume(x, mesh.quads, mesh.tris);
+  const energySnapshots: InflatePerStepEnergySnapshot[] = [];
   let tKeDamp = -Infinity;
   let periodState = createAdaptivePeriodState();
   let lastOmega = 0;
@@ -255,6 +275,23 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     pressureHistory.push(p);
     volumeHistory.push(m.volume);
     psiHistory.push(m.psi);
+    if (recordPerStepEnergy) {
+      energySnapshots.push({
+        t,
+        pressureWork_J: pressW,
+        strain_J: m.psi,
+        kinetic_J: m.ke,
+        dampingLogged_J: dampLogged,
+        keIntegral_J_s: keIntegral,
+        dampingForceWork_J: dampForce,
+        nSteps: step,
+        meanDt_s: step > 0 ? dtSum / step : 0,
+        minDt_s: step > 0 ? minDt : 0,
+        maxDt_s: maxDt,
+        kissPushed: kissPushedTotal,
+        peakKillEvents,
+      });
+    }
     if (damping.kind === "adaptive-period") {
       relaxationHistory.push({
         step,
@@ -350,6 +387,15 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
       acc[i * 3 + 2] = f[i * 3 + 2]! * rtmp;
     }
     recomputeDt();
+    let keAssemble = 0;
+    if (recordPerStepEnergy) {
+      for (let i = 0; i < nNodes; i++) {
+        const vx = v[i * 3]!,
+          vy = v[i * 3 + 1]!,
+          vz = v[i * 3 + 2]!;
+        keAssemble += 0.5 * masses[i]! * (vx * vx + vy * vy + vz * vz);
+      }
+    }
     const dt12 = 0.5 * (dt1 + dt);
     lastOmega = 0;
     if (damping.kind === "adaptive-period" && periodState.ratePerSecond > 0) {
@@ -415,6 +461,7 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
           ke *= scale * scale;
         }
         tKeDamp = t;
+        peakKillEvents += 1;
       }
       kePrev2 = kePrev;
       kePrev = ke;
@@ -451,6 +498,18 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     }
 
     const vol = enclosedVolume(x, mesh.quads, mesh.tris);
+    if (recordPerStepEnergy) {
+      const pNow = ploadAt(t, law);
+      pressW += 0.5 * (p + pNow) * (vol - volPrev);
+      dampLogged += alpha * (ke + keAssemble) * dt;
+      keIntegral += 0.5 * (ke + keAssemble) * dt;
+      dampForce += 2 * alpha * keAssemble * dt;
+      volPrev = vol;
+      dtSum += dt;
+      if (dt < minDt) minDt = dt;
+      if (dt > maxDt) maxDt = dt;
+      kissPushedTotal += lastKiss.pushed;
+    }
     if (punchedThrough(vol, volume0)) {
       punched = true;
       break;
@@ -511,5 +570,17 @@ export function solveInflate(model: InflateModelIR, options: InflateSolveOptions
     },
     metrics,
     law,
+    ...(recordPerStepEnergy
+      ? {
+          perStepEnergy: {
+            alpha,
+            snapshots: energySnapshots,
+            nSteps: step,
+            meanDt_s: step > 0 ? dtSum / step : 0,
+            minDt_s: step > 0 && minDt !== Infinity ? minDt : 0,
+            maxDt_s: maxDt,
+          } satisfies InflatePerStepEnergyLedger,
+        }
+      : {}),
   };
 }

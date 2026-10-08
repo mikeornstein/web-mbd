@@ -70,8 +70,9 @@ export interface InflateModelIR {
      */
     contactKind: InflateKissKind;
     /**
-     * Peak-kill 0.18 is the shipped default. Continuous period relaxation is
-     * an option. Discriminated: do not combine these as optional flags.
+     * Velocity kill off is the shipped default (Rayleigh mass 80 /s stays).
+     * Peak-kill 0.18 and continuous period relaxation remain options.
+     * Discriminated: do not combine these as optional flags.
      */
     damping: InflateDamping;
     /**
@@ -130,8 +131,33 @@ export interface InflateSolveMetrics {
   punchedThrough: boolean;
   minGap: number;
   contactViol: number;
-  contactClass: InflateContactClass;
-  incompressResidualMax: number;
+    contactClass: InflateContactClass;
+    incompressResidualMax: number;
+}
+
+export interface InflatePerStepEnergySnapshot {
+  t: number;
+  pressureWork_J: number;
+  strain_J: number;
+  kinetic_J: number;
+  dampingLogged_J: number;
+  keIntegral_J_s: number;
+  dampingForceWork_J: number;
+  nSteps: number;
+  meanDt_s: number;
+  minDt_s: number;
+  maxDt_s: number;
+  kissPushed: number;
+  peakKillEvents: number;
+}
+
+export interface InflatePerStepEnergyLedger {
+  alpha: number;
+  snapshots: InflatePerStepEnergySnapshot[];
+  nSteps: number;
+  meanDt_s: number;
+  minDt_s: number;
+  maxDt_s: number;
 }
 
 export interface InflateSolveResult {
@@ -147,6 +173,7 @@ export interface InflateSolveResult {
     adaptiveOnset: AdaptiveOnsetReport;
     metrics: InflateSolveMetrics;
   law: InflateLawCard;
+  perStepEnergy?: InflatePerStepEnergyLedger;
 }
 
 export interface RadiossInflateGolden {

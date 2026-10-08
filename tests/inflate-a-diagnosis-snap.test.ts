@@ -8,17 +8,18 @@ import {
   shellWindingReport,
   signedVolumeOfTriangles,
 } from "../src/inflate/orientShell.js";
-import { compareInflateToGolden, diagnosisMissMatchesLock } from "../src/oracle/compareInflate.js";
+import { compareInflateToGolden, diagnosisMissMatchesLock, toySamplesFromSolve } from "../src/oracle/compareInflate.js";
 import { assertGoldenLawMatchesLock, loadInflateGolden } from "../src/oracle/inflateGolden.js";
 
-describe("diagnosis: toy snap is expected to miss (not a physics pass)", () => {
-  it("diagnosis: toy snap is expected to miss, locked at frame 12 / stretch 4.33", () => {
+describe("diagnosis: kill-off freeze locked; Themis deck-spread expected to miss", () => {
+  it("diagnosis: kill-off freeze at frame 8 / stretch 2.105, Themis miss, no punch", () => {
     assertGoldenLawMatchesLock();
     const golden = loadInflateGolden();
     expect(golden.bands.lambdaRel).toBe(0.02);
     expect(golden.bands.volumeRel).toBe(0.05);
     expect(golden.bands.pressureRel).toBe(0.05);
     const model = createInflateAModel();
+    expect(model.controls.damping).toEqual({ kind: "off" });
     const a = solveInflate(model, { maxWallMs: 600_000 });
     const b = solveInflate(model, { maxWallMs: 600_000 });
     expect(a.metrics.nSteps).toBe(b.metrics.nSteps);
@@ -27,17 +28,21 @@ describe("diagnosis: toy snap is expected to miss (not a physics pass)", () => {
     expect(Object.is(a.metrics.warn.lambdaMax, b.metrics.warn.lambdaMax)).toBe(true);
     expect(a.metrics.warn.psi_J).toBeGreaterThanOrEqual(0);
     expect(a.metrics.punchedThrough).toBe(false);
-    expect(a.metrics.warn.frame).toBe(12);
-    expect(a.metrics.warn.lambdaMax).toBeCloseTo(4.332389712832123, 8);
-    expect(a.lambdaHistory[11]).toBeCloseTo(1.6119729537867542, 8);
+    expect(a.metrics.warn.frame).toBe(8);
+    expect(a.metrics.warn.lambdaMax).toBeCloseTo(2.105201010510652, 8);
     expect(a.metrics.warn.frame).toBe(a.lambdaHistory.length - 1);
     expect(a.metrics.lambdaMax).toBe(a.metrics.warn.lambdaMax);
     expect(a.law.mu1).toBe(golden.law.mu1);
     expect(a.law.rho).toBe(golden.law.rho);
-    const cmp = compareInflateToGolden({ ...a.metrics, law: a.law }, golden);
+    const cmp = compareInflateToGolden(
+      { ...a.metrics, law: a.law, samples: toySamplesFromSolve(a) },
+      golden,
+    );
     expect(cmp.lawEqual).toBe(true);
     expect(cmp.loadFamilyEqual).toBe(true);
+    expect(cmp.gatingBar).toBe("themis-deck-spread");
     expect(cmp.ok).toBe(false);
+    expect(cmp.themisOk).toBe(false);
     const diagnosis = diagnosisMissMatchesLock(cmp, golden, a.metrics.warn);
     expect(diagnosis.ok).toBe(true);
 

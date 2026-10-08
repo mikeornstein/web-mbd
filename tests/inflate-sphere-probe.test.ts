@@ -7,7 +7,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createInflateAModel } from "../src/fixtures/inflateA.js";
-import { ADYREL_VELOCITY_SCALE } from "../src/inflate/constants.js";
 
 const DIAG = new URL("../docs/diag-pr18-openradioss-control/", import.meta.url);
 
@@ -28,12 +27,8 @@ describe("sphere snap-through and 28 kPa hold (prediction before any run)", () =
     expect(text).toContain("Part 1 stays as recorded");
   });
 
-  it("shipped default is still the 0.18 peak kill", () => {
-    expect(createInflateAModel().controls.damping).toEqual({
-      kind: "peak-kill",
-      scale: ADYREL_VELOCITY_SCALE,
-      minInterval: 0,
-    });
+  it("shipped default is velocity kill off", () => {
+    expect(createInflateAModel().controls.damping).toEqual({ kind: "off" });
   });
 
   it("Part 1 recorded result is left as a 4.7% top-stretch miss", () => {

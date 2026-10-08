@@ -9,11 +9,33 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   await expect(page.getByLabel("Model tree").getByText("dynamic-pload-40ms", { exact: true })).toBeVisible();
   await expect(
     page.getByLabel("Model tree").getByText(
-      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · stretch ≤2% · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
+      /fast-load \(dynamic\) open Radioss reference on a consistently outward-oriented mesh only · the film runs about half a millisecond behind the reference solvers throughout the run · roughly 12% low in median stretch mid-run \(8 ms\) and about 3% low at the 16 ms freeze · the 0\.5 ms fit was made across all frames, so the lag does not disappear at the freeze, it only looks smaller there because stretch changes more slowly near the end · node positions sit about three times farther from the decks than the decks sit from each other, so the shape does not match · volume ≤5% · pressure ≤5%\. Slow-load \(quasi-static\) is not validated\. The Inflation ABC ~54 kPa figure is not claimed\./,
     ),
   ).toBeVisible();
-  await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   const pre = page.getByRole("region", { name: "Pre-processor" });
+  await expect(pre.getByRole("heading", { name: "Letter A stretch diagnostics (measurement, not a gate)" })).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A per-step energy bookkeeping (correctness gate on the toy)" })).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A deck node-output re-run (measurement, not a gate)" })).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A quad-averaged stretch and node-distance (measurement, not a gate)" })).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A energy and damping split (measurement, not a gate)" })).toBeVisible();
+  await expect(pre.getByRole("heading", { name: "Letter A film mass, work, and ringing lookups (measurement, not a gate)" })).toBeVisible();
+  const massLookupResults = pre.locator("pre").filter({ hasText: "Results (measurement; mass, work, and ringing lookups, not compare:inflate):" });
+  await expect(massLookupResults.getByText("ringing")).toBeVisible();
+  await expect(massLookupResults.getByText("Do not add a verdict row")).toBeVisible();
+  const energySplitResults = pre.locator("pre").filter({ hasText: "Results (measurement; energy and damping split, not compare:inflate):" });
+  await expect(energySplitResults.getByText("the lag points to how mass is spread")).toBeVisible();
+  await expect(energySplitResults.getByText("No verdict row was added")).toBeVisible();
+  const deckNodeResults = pre.locator("pre").filter({ hasText: "Results (measurement; node output re-run, not compare:inflate):" });
+  await expect(deckNodeResults.getByText("spreads strain differently from the decks")).toBeVisible();
+  const quadAvgResults = pre.locator("pre").filter({ hasText: "Results (measurement; engine column primary, not compare:inflate):" });
+  await expect(quadAvgResults.getByText("NO-ROW")).toBeVisible();
+  await expect(quadAvgResults.getByText("stores strain more evenly than the decks")).toBeVisible();
+  const perStepResults = pre.locator("pre").filter({ hasText: "Results (correctness gate on the toy; not compare:inflate):" });
+  await expect(perStepResults.getByText("The earlier 2 ms-sample gap was sampling. Only the summation in the test and page changes.")).toBeVisible();
+  await expect(
+    perStepResults.getByText("NO-ROW: no printed verdict row matches. Report the four booleans and every underlying number."),
+  ).toBeVisible();
+  await expect(page.getByText("mesh edges default ON", { exact: true })).toBeVisible();
   await expect(pre.getByRole("group", { name: "Mesh shading" })).toBeVisible();
   await expect(pre.getByRole("radio", { name: "Both" })).toBeChecked();
   await expect(page.getByRole("img", { name: /Undeformed mesh/ })).toBeVisible();
@@ -45,7 +67,7 @@ test("letter A inflate: mesh edges default ON and warn mark at first stretch ≥
   expect(max).toBeGreaterThan(0);
   await expect(page.getByText(new RegExp(`index ${String(max)} / ${String(max)}`))).toBeVisible();
   await expect(metrics.getByText(new RegExp(`frame ${String(max)}`))).toBeVisible();
-  await expect(metrics.getByText(/λ=4\.\d/)).toBeVisible();
+  await expect(metrics.getByText(/λ=2\.\d/)).toBeVisible();
   const post = page.getByRole("region", { name: "Post-processor" });
   await expect(post.getByRole("radio", { name: "Both" })).toBeChecked();
   const postMesh = page.getByRole("img", { name: /Deformed mesh/ });
